@@ -15,7 +15,7 @@ visual interface and a convincing live demo.
 
 ## Current Phase
 
-PHASE 3 --- COMPLETE (Interactive Marine Map Reasoning Surface)
+PHASE 4 --- COMPLETE (Multi-Agent Orchestration + Pipeline Trace)
 
 ## Current Priority
 
@@ -23,8 +23,8 @@ PHASE 3 --- COMPLETE (Interactive Marine Map Reasoning Surface)
 2.  Phase 1 Design System (COMPLETED - Integrated from Stitch)
 3.  Phase 2 Command Center & Real Multi-Page App (COMPLETED)
 4.  Phase 3 Interactive Marine Map Reasoning (COMPLETED)
-5.  Phase 4 Agent Orchestration & Pipeline Trace (NEXT)
-6.  Phase 5 Decision Engine & Safety Override Logic
+5.  Phase 4 Agent Orchestration & Pipeline Trace (COMPLETED)
+6.  Phase 5 Decision Engine & Safety Override Logic (NEXT)
 7.  Phase 6 Evidence & Explainability Panel
 8.  Phase 7 What-If Scenario Simulator
 9.  Phase 8 Voice & Multilingual Localization
@@ -35,12 +35,14 @@ PHASE 3 --- COMPLETE (Interactive Marine Map Reasoning Surface)
 
 User asks: \> "Can I go fishing tomorrow morning for five hours?"
 
-Current flow established in Phase 3:
-- Interactive Marine Map (`/dashboard/map`) acts as a full operational reasoning surface.
-- 8 independent toggleable layers: User Location, Active Vessel, PFZ Fishing Zones, Weather Risk Overlays, Navigational Hazards, Geofences & Sanctuaries, Recommended Route Corridor, and Safe Navigation Corridors.
-- Clicking any map feature (or quick selector chip) triggers the Context Inspector Panel, showing SST, Chlorophyll gradient, depth, target pelagic species, restricted buffer requirements, mandatory hazard advisories, and data provenance (`DEMO SNAPSHOT`).
-- "Focus on Map" triggers smooth map flight (`flyTo`) centering on the selected entity coordinates.
-- "Plan Trip" navigates seamlessly to the Mission Planner with preset zone parameters.
+Current flow established in Phase 4:
+- Query entered in the ORCA Mission Assistant or triggered via suggested chips.
+- Real deterministic Multi-Agent Orchestrator executes:
+  1. Planner Agent runs sequentially to extract intent (`FISHING`), departure (`05:45 IST`), duration (`5 hours`), and assign subtasks.
+  2. Oceanography, Meteorology, PFZ/Fisheries, and Geo/Safety agents run concurrently over local demo datasets (`data/demo/`).
+- Reasoning Pipeline Trace in the Command Center animates through real execution states (`queued` &rarr; `running` &rarr; `completed`).
+- Operators can click on any agent in the pipeline trace to open the Agent Inspector Modal, reviewing normalized observations, structured evidence items, source provenance (`DEMO SNAPSHOT`), and orchestration handshakes.
+- Produces a typed `OrchestrationPackage` (`analysisStatus: 'ready'`) ready for consumption by Phase 5.
 
 ## Prototype Data Policy
 
@@ -61,23 +63,24 @@ Scientific maritime intelligence center:
 
 ## Decisions Made
 
-- Implemented 8 distinct, independently toggleable map layers with active state indicators and count badges.
-- Created reusable `MapContextPanel`, `MapLayerControl`, and `MapLegend` modular components.
-- Added smooth map flight animation using `useMap` controller hook when features are selected.
-- Highlighted safe navigation bathymetry corridors (20m - 50m depth envelope) and squall warning risk areas.
-- Maintained strict data honesty (`DEMO SNAPSHOT` stamps on all context panels).
+- Implemented 5 specialized agent modules: Planner, Ocean, Weather, PFZ, and GeoSafety.
+- Implemented deterministic async multi-agent orchestrator with step-by-step progress callbacks.
+- Upgraded Reasoning Trace to reflect live execution states and support click-to-inspect modal.
+- Connected Mission Assistant queries to trigger the orchestrator and quote real agent findings.
+- Strictly preserved phase boundary: Phase 5's decision engine / GO-CAUTION-AVOID scoring was NOT implemented yet.
 
 ## Last Completed Work
 
-PHASE 3 — INTERACTIVE MARINE MAP
-- Created `src/types/map.ts` with `MapLayerVisibility` and `SelectedMapEntity` interfaces.
-- Created `src/components/map/MapLayerControl.tsx` with 8 layer toggles and batch all/none controls.
-- Created `src/components/map/MapLegend.tsx` with professional cartographic symbols.
-- Created `src/components/map/MapContextPanel.tsx` with detailed parameters, target fish species, hazard advisories, and provenance tags.
-- Enhanced `src/components/map/MarineMapCanvas.tsx` with smooth flight controller, user port marker, vessel heading marker, PFZ zones, weather risk overlays, geofence polygons, and recommended route corridor.
-- Updated `src/pages/MarineMapPage.tsx` into a master Marine Geospatial Explorer.
-- Tested and verified: `npm run build` (Passed, 0 errors, 355ms) and `npx eslint src` (Passed, 0 errors).
+PHASE 4 — AGENT ORCHESTRATION + TRACE
+- Created `src/types/agents.ts` with agent models, analysis outputs, and orchestration package.
+- Created `src/agents/plannerAgent.ts`, `src/agents/oceanAgent.ts`, `src/agents/weatherAgent.ts`, `src/agents/pfzAgent.ts`, and `src/agents/geoSafetyAgent.ts`.
+- Created `src/orchestration/agentOrchestrator.ts` for sequential and parallel execution.
+- Created `src/context/OrchestrationContext.tsx` and `src/hooks/useOrchestration.ts`.
+- Created `src/components/agents/AgentInspectionModal.tsx` for granular observation/provenance auditing.
+- Updated `src/components/agents/ReasoningChain.tsx` with live node statuses and click-to-inspect modal.
+- Updated `src/components/agents/OrcaAssistant.tsx` to trigger orchestration on query input.
+- Tested and verified: `npm run build` (Passed, 0 errors, 381ms) and `npx eslint src` (Passed, 0 errors).
 
 ## Next Action
 
-Awaiting user direction to proceed to **PHASE 4 — AGENT ORCHESTRATION & PIPELINE TRACE**.
+Awaiting user direction to proceed to **PHASE 5 — DECISION ENGINE & SAFETY OVERRIDE LOGIC**.

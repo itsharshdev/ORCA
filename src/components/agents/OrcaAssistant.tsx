@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Send, Bot, User, Sparkles, Mic } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Mic, Loader2 } from 'lucide-react';
+import { useOrchestration } from '@/hooks/useOrchestration';
 
 interface Message {
   id: string;
@@ -9,6 +10,8 @@ interface Message {
 }
 
 export const OrcaAssistant: React.FC = () => {
+  const { runOrchestration, isOrchestrating } = useOrchestration();
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'msg-1',
@@ -19,13 +22,12 @@ export const OrcaAssistant: React.FC = () => {
     {
       id: 'msg-2',
       sender: 'orca',
-      text: 'Based on coordinated analysis from Ocean, Weather, and PFZ agents, your recommended decision is CAUTION. Zone Alpha (18.5 km offshore) offers high fishing potential, but wave swell will increase from 1.1m to 2.1m after 12:00 IST. Ensure you conclude operations before 11:30 IST.',
+      text: 'Multi-agent orchestration complete: Planner scheduled 5h morning window starting 05:45 IST. PFZ Agent confirms Zone Alpha (18.5 km, 245° WSW) with favorable SST (27.8°C). Meteorology notes morning swell at 1.4m rising to 2.1m post-12:00 IST. Geo/Safety confirms 4.2 km Naval geofence clearance. Analysis package is ready.',
       timestamp: '08:30 IST',
     },
   ]);
 
   const [inputText, setInputText] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const suggestedPrompts = [
     'Can I go fishing tomorrow morning for five hours?',
@@ -33,9 +35,9 @@ export const OrcaAssistant: React.FC = () => {
     'Show me the safest route avoiding the naval geofence.',
   ];
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const text = textToSend || inputText;
-    if (!text.trim()) return;
+    if (!text.trim() || isOrchestrating) return;
 
     setMessages((prev) => [
       ...prev,
@@ -47,34 +49,32 @@ export const OrcaAssistant: React.FC = () => {
       },
     ]);
     setInputText('');
-    setIsAnalyzing(true);
 
-    // Simulate Agent Reasoning Response
-    setTimeout(() => {
-      let reply = 'ORCA orchestrator analyzed the requested coordinates. Conditions are optimal during morning hours (05:45 - 11:00).';
-      if (text.toLowerCase().includes('pfz') || text.toLowerCase().includes('zone')) {
-        reply = 'PFZ-MUM-01 (Zone Alpha) shows strong chlorophyll gradient (1.82 mg/m³) and favorable SST (27.8°C). Distance is 18.5 km at 245° bearing.';
-      } else if (text.toLowerCase().includes('wave') || text.toLowerCase().includes('weather')) {
-        reply = 'Wave height is 1.1m at 06:00, rising to 1.4m by 09:00 and 2.1m post-12:00 with wind gusts up to 18.5 kts.';
-      } else if (text.toLowerCase().includes('geofence') || text.toLowerCase().includes('route') || text.toLowerCase().includes('safest')) {
-        reply = 'Route to Zone Alpha maintains 4.2 km clearance from Naval Anchorage Security Geofence. Safe corridor confirmed.';
-      }
+    // Trigger real Multi-Agent Orchestration Pipeline
+    const orchResult = await runOrchestration(text);
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `msg-${prev.length + 1}`,
-          sender: 'orca',
-          text: reply,
-          timestamp: '08:35 IST',
-        },
-      ]);
-      setIsAnalyzing(false);
-    }, 800);
+    // Construct response referencing actual specialized agent findings
+    let reply = `ORCA orchestrator completed cross-agent correlation for query: "${text}".\n• Planner: ${orchResult.planner.summary}\n• PFZ: Candidate ${orchResult.pfz.data.topCandidateZoneName} (${orchResult.pfz.data.distanceKm} km, ${orchResult.pfz.data.opportunityLevel.toUpperCase()} opportunity).\n• Ocean/Weather: Swell ${orchResult.ocean.data.waveSwellMeters}m, Wind ${orchResult.weather.data.windSpeedKnots} kts.\n• Geo/Safety: ${orchResult.geoSafety.data.geofenceClearanceKm} km clearance from ${orchResult.geoSafety.data.nearestGeofenceName}.`;
+
+    if (text.toLowerCase().includes('wave') || text.toLowerCase().includes('forecast')) {
+      reply = `Meteorology Agent Report: Coastal swell is ${orchResult.weather.data.waveHeightMeters}m (Period: ${orchResult.weather.data.wavePeriodSeconds}s). Wave risk is currently ${orchResult.weather.data.weatherRiskLevel.toUpperCase()}. Wind is ${orchResult.weather.data.windSpeedKnots} kts ${orchResult.weather.data.windDirection}. ${orchResult.weather.data.activeAdvisories[0]}.`;
+    } else if (text.toLowerCase().includes('geofence') || text.toLowerCase().includes('safest') || text.toLowerCase().includes('naval')) {
+      reply = `Geo/Safety Agent Report: Navigation corridor maintains ${orchResult.geoSafety.data.geofenceClearanceKm} km clearance from ${orchResult.geoSafety.data.nearestGeofenceName}. Incursion risk is ${orchResult.geoSafety.data.incursionRisk.toUpperCase()}. Safe bathymetry corridor (20m-50m) is verified.`;
+    }
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `msg-${prev.length + 1}`,
+        sender: 'orca',
+        text: reply,
+        timestamp: '08:35 IST',
+      },
+    ]);
   };
 
   return (
-    <div className="hud-glass rounded-xl flex flex-col flex-1 min-h-[360px] border border-slate-800/80 shadow-lg overflow-hidden">
+    <div className="hud-glass rounded-xl flex flex-col flex-1 min-h-[360px] border border-slate-800/80 shadow-lg overflow-hidden select-none">
       {/* Header */}
       <div className="bg-slate-900/90 border-b border-slate-800/80 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -87,7 +87,7 @@ export const OrcaAssistant: React.FC = () => {
         </div>
         <span className="text-[10px] font-telemetry text-emerald-400 flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          AGENTIC REASONING READY
+          ORCHESTRATOR CONNECTED
         </span>
       </div>
 
@@ -98,8 +98,9 @@ export const OrcaAssistant: React.FC = () => {
           <button
             key={idx}
             type="button"
+            disabled={isOrchestrating}
             onClick={() => handleSend(prompt)}
-            className="text-[11px] whitespace-nowrap bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 text-slate-300 hover:text-cyan-300 px-2.5 py-1 rounded-full transition-colors shrink-0"
+            className="text-[11px] whitespace-nowrap bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 text-slate-300 hover:text-cyan-300 px-2.5 py-1 rounded-full transition-colors shrink-0 disabled:opacity-50"
           >
             {prompt}
           </button>
@@ -124,13 +125,13 @@ export const OrcaAssistant: React.FC = () => {
                 ) : (
                   <>
                     <Bot className="w-3 h-3 text-cyan-400" />
-                    <span className="text-cyan-400 font-semibold">ORCA</span>
+                    <span className="text-cyan-400 font-semibold">ORCA ORCHESTRATOR</span>
                   </>
                 )}
                 <span>• {msg.timestamp}</span>
               </div>
               <div
-                className={`p-3 rounded-xl text-xs leading-relaxed max-w-[90%] sm:max-w-[85%] ${
+                className={`p-3 rounded-xl text-xs leading-relaxed max-w-[90%] sm:max-w-[85%] whitespace-pre-line ${
                   isUser
                     ? 'bg-slate-800 border border-slate-700 text-slate-100 rounded-tr-none'
                     : 'bg-cyan-950/30 border border-cyan-500/30 text-slate-200 rounded-tl-none shadow-[0_0_12px_rgba(70,234,237,0.08)]'
@@ -142,15 +143,11 @@ export const OrcaAssistant: React.FC = () => {
           );
         })}
 
-        {isAnalyzing && (
+        {isOrchestrating && (
           <div className="flex flex-col items-start">
             <div className="p-3 rounded-xl bg-cyan-950/20 border border-cyan-500/20 text-xs text-cyan-300 flex items-center gap-2">
-              <span>Coordinating agents</span>
-              <span className="flex gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms' }} />
-              </span>
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+              <span>Orchestrating Planner, Ocean, Weather, PFZ &amp; Geo/Safety agents...</span>
             </div>
           </div>
         )}
@@ -169,8 +166,9 @@ export const OrcaAssistant: React.FC = () => {
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            disabled={isOrchestrating}
             placeholder="Ask ORCA marine intelligence..."
-            className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 rounded-lg py-2 pl-3 pr-10 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-colors"
+            className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 rounded-lg py-2 pl-3 pr-10 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none transition-colors disabled:opacity-50"
           />
           <button
             type="button"
@@ -183,10 +181,14 @@ export const OrcaAssistant: React.FC = () => {
 
         <button
           type="submit"
-          disabled={!inputText.trim()}
+          disabled={!inputText.trim() || isOrchestrating}
           className="p-2 rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400 disabled:opacity-40 disabled:hover:bg-cyan-500 transition-colors shrink-0"
         >
-          <Send className="w-3.5 h-3.5" />
+          {isOrchestrating ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Send className="w-3.5 h-3.5" />
+          )}
         </button>
       </form>
     </div>
