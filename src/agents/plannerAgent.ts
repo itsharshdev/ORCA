@@ -1,10 +1,12 @@
 import type { PlannerResult, PlannerOutput } from '@/types/agents';
+import { getRegionData, type RegionId } from '@/data';
 
 /**
  * Planner Agent: Interprets the operator's mission query, extracts structured intent,
  * timing, activity parameters, and dispatches tasks to specialized downstream agents.
  */
-export const runPlannerAgent = async (query: string): Promise<PlannerResult> => {
+export const runPlannerAgent = async (query: string, regionId: RegionId = 'maharashtra'): Promise<PlannerResult> => {
+  const region = getRegionData(regionId);
   const normalized = query.toLowerCase();
 
   // Intent parsing rules
@@ -43,7 +45,7 @@ export const runPlannerAgent = async (query: string): Promise<PlannerResult> => 
     requestedPeriod,
     departureTime,
     durationHours,
-    locationContext: 'Alibaug Coastal Sector / Mumbai Offshore',
+    locationContext: `${region.subSector} / ${region.seaBody}`,
     vesselRequired: true,
     assignedTasks: ['ocean', 'weather', 'pfz', 'geoSafety'],
   };
@@ -55,7 +57,7 @@ export const runPlannerAgent = async (query: string): Promise<PlannerResult> => 
     status: 'completed',
     startedAt: '08:30:00 IST',
     completedAt: '08:30:01 IST',
-    summary: `Parsed intent: ${activity.toUpperCase()} mission • Departure ${departureTime} (${durationHours}h duration) • 4 agent subtasks dispatched.`,
+    summary: `Parsed intent: ${activity.toUpperCase()} mission • Departure ${departureTime} (${durationHours}h duration) • Sector: ${region.shortLabel}.`,
     data: plannerData,
     evidence: [
       {

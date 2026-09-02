@@ -1,19 +1,32 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, Polygon, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { pfzData, hazardsData, boundariesData, vesselsData, weatherData, oceanData } from '@/data';
+import { useRegion } from '@/hooks/useRegion';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import type { MapLayerVisibility, SelectedMapEntity } from '@/types/map';
+import type { PFZRecord, HazardAlert } from '@/types/marine';
 
-// Custom Map Controller to smoothly pan / zoom when an entity is selected
-const MapViewController: React.FC<{ targetCoords?: [number, number] | null }> = ({ targetCoords }) => {
+// Custom Map Controller to smoothly pan / zoom when target coordinates change
+const MapViewController: React.FC<{ targetCoords?: [number, number] | null; zoom?: number }> = ({ targetCoords, zoom = 10 }) => {
   const map = useMap();
+  const prevCoordsRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (targetCoords) {
-      map.flyTo(targetCoords, 11, { duration: 1.2 });
+    if (!targetCoords || !map || !Array.isArray(targetCoords)) return;
+    const [lat, lng] = targetCoords;
+    if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) return;
+
+    const coordsKey = `${lat.toFixed(4)},${lng.toFixed(4)},${zoom}`;
+    if (prevCoordsRef.current === coordsKey) return;
+    prevCoordsRef.current = coordsKey;
+
+    try {
+      map.flyTo([lat, lng], zoom, { duration: 1.2 });
+    } catch (err) {
+      console.warn('Map flyTo ignored:', err);
     }
-  }, [targetCoords, map]);
+  }, [targetCoords, zoom, map]);
 
   return null;
 };
@@ -174,7 +187,7 @@ const DEFAULT_LAYERS: MapLayerVisibility = {
   riskAreas: true,
 };
 
-export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
+const MarineMapCanvasInner: React.FC<MarineMapCanvasProps> = ({
   interactive = true,
   className = 'w-full h-full min-h-[400px]',
   layers = DEFAULT_LAYERS,
@@ -182,37 +195,83 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
   onSelectEntity,
   flyToCoords,
 }) => {
-  const vessel = vesselsData.profiles[0];
-  const mapCenter: [number, number] = [18.78, 72.72];
+  const { activeRegion, activeRegionId } = useRegion();
+  const vessel = activeRegion.vesselsData.profiles[0] || {
+    id: 'VESSEL-01',
+    name: 'Matsya Sagar 1',
+    vesselType: 'motorized',
+    lengthMeters: 8.5,
+    maxWaveToleranceMeters: 1.4,
+    cruisingSpeedKnots: 8,
+    fuelCapacityHours: 12,
+    homePort: { name: 'Harbor', latitude: 18.92, longitude: 72.84 },
+    currentLocation: { latitude: 18.92, longitude: 72.84 },
+    currentHeadingDegrees: 245,
+  };
+
+  const { pfzData, hazardsData, boundariesData, weatherData, oceanData, mapCenter } = activeRegion;
 
   // Planned demo route: Home Port -> Waypoint -> Target Zone Alpha
+  const topPfz = pfzData?.zones?.[0] || {
+    id: 'PFZ-01',
+    zoneName: 'Zone Alpha',
+    location: { latitude: 18.78, longitude: 72.72 },
+    potentialScore: 'high',
+  };
+
+  const portLat = vessel.homePort?.latitude ?? mapCenter[0];
+  const portLng = vessel.homePort?.longitude ?? mapCenter[1];
+  const targetLat = topPfz.location?.latitude ?? mapCenter[0];
+  const targetLng = topPfz.location?.longitude ?? mapCenter[1];
+
   const routeCoordinates: [number, number][] = [
-    [vessel.homePort.latitude, vessel.homePort.longitude],
-    [18.84, 72.76],
-    [18.72, 72.65],
+    [portLat, portLng],
+    [
+      (portLat + targetLat) / 2 + (activeRegionId === 'tamil_nadu' ? 0.04 : 0.06),
+      (portLng + targetLng) / 2,
+    ],
+    [targetLat, targetLng],
   ];
 
   // Safe navigation corridor polygon (depth envelope)
-  const safeCorridorPolygon: [number, number][] = [
-    [18.92, 72.82],
-    [18.86, 72.78],
-    [18.74, 72.67],
-    [18.70, 72.62],
-    [18.68, 72.64],
-    [18.82, 72.78],
-    [18.90, 72.84],
-    [18.92, 72.82],
-  ];
+  const safeCorridorPolygon: [number, number][] = activeRegionId === 'tamil_nadu'
+    ? [
+        [10.85, 79.86],
+        [10.82, 80.02],
+        [10.60, 80.12],
+        [10.40, 80.05],
+        [10.35, 79.92],
+        [10.55, 79.88],
+        [10.85, 79.86],
+      ]
+    : [
+        [18.92, 72.82],
+        [18.86, 72.78],
+        [18.74, 72.67],
+        [18.70, 72.62],
+        [18.68, 72.64],
+        [18.82, 72.78],
+        [18.90, 72.84],
+        [18.92, 72.82],
+      ];
 
-  // Squall / elevated risk area beyond 25 nm offshore post-midday
-  const elevatedRiskAreaPolygon: [number, number][] = [
-    [18.90, 72.30],
-    [18.40, 72.35],
-    [18.00, 72.45],
-    [18.05, 72.20],
-    [18.85, 72.10],
-    [18.90, 72.30],
-  ];
+  // Squall / elevated risk area beyond shelf
+  const elevatedRiskAreaPolygon: [number, number][] = activeRegionId === 'tamil_nadu'
+    ? [
+        [10.95, 80.20],
+        [10.90, 80.45],
+        [10.30, 80.50],
+        [10.35, 80.25],
+        [10.95, 80.20],
+      ]
+    : [
+        [18.90, 72.30],
+        [18.40, 72.35],
+        [18.00, 72.45],
+        [18.05, 72.20],
+        [18.85, 72.10],
+        [18.90, 72.30],
+      ];
 
   const handleVesselClick = () => {
     if (onSelectEntity) {
@@ -220,7 +279,7 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
         id: vessel.id,
         type: 'vessel',
         title: vessel.name,
-        subtitle: `${vessel.vesselType.replace('_', ' ').toUpperCase()} • Reg: ${vessel.registrationNo}`,
+        subtitle: `${vessel.vesselType.replace('_', ' ').toUpperCase()} • Reg: ${vessel.registrationNo || 'IND-REG'}`,
         status: 'Active Operations',
         severity: 'favorable',
         location: {
@@ -229,13 +288,13 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
         },
         details: {
           vesselLength: `${vessel.lengthMeters} m`,
-          enginePower: `${vessel.engineHp} HP`,
+          enginePower: `${vessel.engineHp || 30} HP`,
           cruisingSpeed: `${vessel.cruisingSpeedKnots} kts`,
           waveLimit: `${vessel.maxWaveToleranceMeters} m`,
-          homePort: vessel.homePort.name,
+          homePort: vessel.homePort?.name || 'Harbor Terminal',
           fuelCapacity: `${vessel.fuelCapacityHours} hrs`,
         },
-        source: vesselsData.metadata.source,
+        source: activeRegion.vesselsData.metadata.source,
         observedAt: '2026-09-02 08:30 IST',
       });
     }
@@ -244,35 +303,34 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
   const handleUserLocationClick = () => {
     if (onSelectEntity) {
       onSelectEntity({
-        id: 'PORT-SASSOON',
+        id: 'PORT-MAIN',
         type: 'userLocation',
-        title: 'Sassoon Docks Harbor',
+        title: vessel.homePort?.name || 'Harbor Terminal',
         subtitle: 'Primary artisanal and mechanized fishing terminal',
         status: 'Operational',
         severity: 'favorable',
         location: {
-          latitude: vessel.homePort.latitude,
-          longitude: vessel.homePort.longitude,
+          latitude: portLat,
+          longitude: portLng,
         },
         details: {
           berthStatus: 'Berth Clearance OK',
-          tideLevel: 'High Tide 3.82m CD',
           harborSpeedLimit: '6 kts',
           vhfChannel: 'Channel 16 / 68',
         },
-        source: 'MUMBAI_PORT_TRUST_DEMO',
+        source: `${activeRegion.shortLabel.toUpperCase()}_PORT_DEMO`,
         observedAt: '2026-09-02 08:00 IST',
       });
     }
   };
 
-  const handlePfzClick = (zone: typeof pfzData.zones[0]) => {
-    if (onSelectEntity) {
+  const handlePfzClick = (zone: PFZRecord) => {
+    if (onSelectEntity && zone.location) {
       onSelectEntity({
         id: zone.id,
         type: 'pfz',
         title: zone.zoneName,
-        subtitle: `Optimal pelagic aggregation zone detected via EO Thermal/Chlorophyll Fronts`,
+        subtitle: 'Optimal pelagic aggregation zone detected via EO Thermal/Chlorophyll Fronts',
         status: zone.potentialScore.toUpperCase(),
         severity: zone.potentialScore === 'high' ? 'favorable' : 'cautionary',
         location: {
@@ -281,28 +339,28 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
         },
         details: {
           potentialScore: zone.potentialScore.toUpperCase(),
-          distance: `${zone.distanceKmFromPort} km`,
-          bearing: `${zone.bearingDegrees}° WSW`,
-          waterDepth: `${zone.location.depthMeters} m`,
+          distance: `${zone.distanceKmFromPort || 18.5} km`,
+          bearing: `${zone.bearingDegrees || 245}°`,
+          waterDepth: `${zone.location.depthMeters || 35} m`,
           sstGradient: zone.sstIndicator,
           chlorophyll: zone.chlorophyllIndicator,
         },
         source: pfzData.metadata.source,
-        observedAt: pfzData.metadata.updatedAt,
+        observedAt: pfzData.metadata.updatedAt || '2026-09-02 06:00 IST',
         validUntil: pfzData.metadata.validUntil,
         recommendedFishTypes: zone.recommendedFishTypes,
       });
     }
   };
 
-  const handleHazardClick = (hazard: typeof hazardsData.alerts[0]) => {
-    if (onSelectEntity) {
+  const handleHazardClick = (hazard: HazardAlert) => {
+    if (onSelectEntity && hazard.affectedCoordinates?.[0]) {
       onSelectEntity({
         id: hazard.id,
         type: 'hazard',
         title: hazard.title,
         subtitle: hazard.areaDescription,
-        status: hazard.severity.toUpperCase(),
+        status: String(hazard.severity).toUpperCase(),
         severity: hazard.severity as any,
         location: {
           latitude: hazard.affectedCoordinates[0][0],
@@ -310,11 +368,11 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
         },
         details: {
           hazardType: hazard.hazardType.toUpperCase(),
-          severity: hazard.severity.toUpperCase(),
+          severity: String(hazard.severity).toUpperCase(),
           activeState: hazard.isActive ? 'ACTIVE WARNING' : 'INACTIVE',
         },
         source: hazardsData.metadata.source,
-        observedAt: hazardsData.metadata.updatedAt,
+        observedAt: hazardsData.metadata.updatedAt || '2026-09-02 06:00 IST',
         validUntil: hazardsData.metadata.validUntil,
         actionRequired: hazard.advisoryAction,
       });
@@ -336,7 +394,7 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
           incursionSeverity: feature.properties.severityOnIncursion.toUpperCase(),
         },
         source: boundariesData.metadata.source,
-        observedAt: boundariesData.metadata.updatedAt,
+        observedAt: boundariesData.metadata.updatedAt || '2026-09-02 06:00 IST',
         actionRequired: feature.properties.restrictionDescription,
       });
     }
@@ -352,7 +410,7 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
         zoomControl={false}
         className="w-full h-full z-0"
       >
-        <MapViewController targetCoords={flyToCoords} />
+        <MapViewController targetCoords={flyToCoords || null} zoom={flyToCoords ? 11 : 10} />
 
         {/* Dark Marine Cartographic Tile Layer */}
         <TileLayer
@@ -375,7 +433,7 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
             <Popup>
               <div className="text-xs p-1">
                 <div className="font-bold text-teal-400 font-label-caps">SAFE NAVIGATION CORRIDOR</div>
-                <div className="text-slate-300 text-[11px] mt-1">Recommended coastal bathymetry depth envelope (20m - 50m).</div>
+                <div className="text-slate-300 text-[11px] mt-1">Recommended bathymetry depth envelope.</div>
               </div>
             </Popup>
           </Polygon>
@@ -396,7 +454,7 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
             <Popup>
               <div className="text-xs p-1">
                 <div className="font-bold text-amber-400 font-label-caps">ELEVATED WEATHER RISK ZONE</div>
-                <div className="text-slate-300 text-[11px] mt-1">Wind gusts &gt; 22 kts &amp; wave swell &gt; 2.2m post-12:00 IST.</div>
+                <div className="text-slate-300 text-[11px] mt-1">Wind gusts &gt; 22 kts &amp; wave swell &gt; 2.2m post-midday.</div>
               </div>
             </Popup>
           </Polygon>
@@ -405,14 +463,14 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
         {/* Home Port / User Location Marker */}
         {layers.userLocation && (
           <Marker
-            position={[vessel.homePort.latitude, vessel.homePort.longitude]}
+            position={[portLat, portLng]}
             icon={createUserLocationIcon()}
             eventHandlers={{ click: handleUserLocationClick }}
           >
             <Popup>
               <div className="text-xs p-1">
-                <div className="font-bold text-blue-400 font-label-caps">{vessel.homePort.name}</div>
-                <div className="text-slate-300 text-[11px] mt-0.5">Operator Departure Port</div>
+                <div className="font-bold text-blue-400 font-label-caps">{vessel.homePort?.name || 'Home Port'}</div>
+                <div className="text-slate-300 text-[11px] mt-0.5">Departure Port</div>
               </div>
             </Popup>
           </Marker>
@@ -435,35 +493,23 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
           </Marker>
         )}
 
-        {/* Recommended Route Polyline with Corridor Width */}
+        {/* Recommended Route Polyline */}
         {layers.recommendedRoute && (
-          <>
-            <Polyline
-              positions={routeCoordinates}
-              pathOptions={{
-                color: '#46eaed',
-                weight: 3,
-                dashArray: '6, 6',
-                opacity: 0.95,
-              }}
-            />
-            {/* Waypoint Indicator */}
-            <Circle
-              center={[18.84, 72.76]}
-              radius={800}
-              pathOptions={{
-                color: '#46eaed',
-                fillColor: '#46eaed',
-                fillOpacity: 0.3,
-                weight: 1,
-              }}
-            />
-          </>
+          <Polyline
+            positions={routeCoordinates}
+            pathOptions={{
+              color: '#46eaed',
+              weight: 3,
+              dashArray: '6, 6',
+              opacity: 0.95,
+            }}
+          />
         )}
 
         {/* PFZ Zones */}
         {layers.pfzZones &&
-          pfzData.zones.map((zone) => {
+          pfzData?.zones?.map((zone: PFZRecord) => {
+            if (!zone.location) return null;
             const isSelected = selectedEntityId === zone.id;
             return (
               <React.Fragment key={zone.id}>
@@ -500,7 +546,8 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
 
         {/* Restricted Boundaries from GeoJSON */}
         {layers.boundaries &&
-          boundariesData.features.map((feature: any) => {
+          boundariesData?.features?.map((feature: any) => {
+            if (!feature.geometry?.coordinates?.[0]) return null;
             const rawCoords: number[][] = feature.geometry.coordinates[0];
             const polygonCoords: [number, number][] = rawCoords.map(([lng, lat]: number[]) => [lat, lng]);
             const isRestricted = feature.properties.zoneType === 'restricted';
@@ -534,40 +581,43 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
 
         {/* Navigational Hazards */}
         {layers.hazards &&
-          hazardsData.alerts.map((hazard) => (
-            <React.Fragment key={hazard.id}>
-              <Circle
-                center={[hazard.affectedCoordinates[0][0], hazard.affectedCoordinates[0][1]]}
-                radius={7500}
-                pathOptions={{
-                  color: '#f1c40f',
-                  fillColor: '#f1c40f',
-                  fillOpacity: 0.12,
-                  weight: 1.5,
-                }}
-                eventHandlers={{ click: () => handleHazardClick(hazard) }}
-              />
-              <Marker
-                position={[hazard.affectedCoordinates[0][0], hazard.affectedCoordinates[0][1]]}
-                icon={createHazardIcon()}
-                eventHandlers={{ click: () => handleHazardClick(hazard) }}
-              >
-                <Popup>
-                  <div className="text-xs p-1">
-                    <div className="font-bold text-amber-400 font-label-caps">{hazard.title}</div>
-                    <div className="text-slate-300 text-[11px] mt-1">{hazard.areaDescription}</div>
-                    <div className="text-slate-400 text-[11px] mt-1">Advisory: {hazard.advisoryAction}</div>
-                  </div>
-                </Popup>
-              </Marker>
-            </React.Fragment>
-          ))}
+          hazardsData?.alerts?.map((hazard: HazardAlert) => {
+            if (!hazard.affectedCoordinates?.[0]) return null;
+            return (
+              <React.Fragment key={hazard.id}>
+                <Circle
+                  center={[hazard.affectedCoordinates[0][0], hazard.affectedCoordinates[0][1]]}
+                  radius={7500}
+                  pathOptions={{
+                    color: '#f1c40f',
+                    fillColor: '#f1c40f',
+                    fillOpacity: 0.12,
+                    weight: 1.5,
+                  }}
+                  eventHandlers={{ click: () => handleHazardClick(hazard) }}
+                />
+                <Marker
+                  position={[hazard.affectedCoordinates[0][0], hazard.affectedCoordinates[0][1]]}
+                  icon={createHazardIcon()}
+                  eventHandlers={{ click: () => handleHazardClick(hazard) }}
+                >
+                  <Popup>
+                    <div className="text-xs p-1">
+                      <div className="font-bold text-amber-400 font-label-caps">{hazard.title}</div>
+                      <div className="text-slate-300 text-[11px] mt-1">{hazard.areaDescription}</div>
+                      <div className="text-slate-400 text-[11px] mt-1">Advisory: {hazard.advisoryAction}</div>
+                    </div>
+                  </Popup>
+                </Marker>
+              </React.Fragment>
+            );
+          })}
       </MapContainer>
 
       {/* Telemetry Bar at Base of Canvas */}
       <div className="absolute bottom-0 left-0 right-0 h-8 hud-glass border-t border-slate-800/80 z-20 flex items-center justify-between px-4 text-[11px] font-telemetry text-slate-400">
         <div className="flex items-center gap-3 sm:gap-4">
-          <span>CENTER: 18°46'N 72°43'E</span>
+          <span>CENTER: {mapCenter[0]}°N {mapCenter[1]}°E</span>
           <span className="hidden sm:inline">SST: {oceanData.parameters.seaSurfaceTemperatureCelsius}°C</span>
           <span className="hidden md:inline">WIND: {weatherData.currentConditions.windSpeedKnots} kts ({weatherData.currentConditions.windDirection})</span>
         </div>
@@ -577,5 +627,16 @@ export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = ({
         </div>
       </div>
     </div>
+  );
+};
+
+export const MarineMapCanvas: React.FC<MarineMapCanvasProps> = (props) => {
+  return (
+    <ErrorBoundary
+      fallbackTitle="MARINE MAP CONTAINER RECOVERY"
+      fallbackMessage="The geospatial map canvas encountered a rendering issue. Click Retry to re-initialize Leaflet tiles."
+    >
+      <MarineMapCanvasInner {...props} />
+    </ErrorBoundary>
   );
 };

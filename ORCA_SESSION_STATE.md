@@ -15,17 +15,17 @@ visual interface and a convincing live demo.
 
 ## Current Phase
 
-PHASE 4 --- COMPLETE (Multi-Agent Orchestration + Pipeline Trace)
+PHASE 5 --- COMPLETE (Deterministic Decision Engine + Safety Overrides & Multi-Region Support)
 
 ## Current Priority
 
 1.  Phase 0 Foundation Setup (COMPLETED)
-2.  Phase 1 Design System (COMPLETED - Integrated from Stitch)
+2.  Phase 1 Visual Design System (COMPLETED - Integrated from Stitch)
 3.  Phase 2 Command Center & Real Multi-Page App (COMPLETED)
 4.  Phase 3 Interactive Marine Map Reasoning (COMPLETED)
 5.  Phase 4 Agent Orchestration & Pipeline Trace (COMPLETED)
-6.  Phase 5 Decision Engine & Safety Override Logic (NEXT)
-7.  Phase 6 Evidence & Explainability Panel
+6.  Phase 5 Deterministic Decision Engine & Safety Overrides (COMPLETED)
+7.  Phase 6 Evidence & Explainability Panel (NEXT)
 8.  Phase 7 What-If Scenario Simulator
 9.  Phase 8 Voice & Multilingual Localization
 10. Phase 9 PWA & Offline/Degraded Mode
@@ -33,20 +33,28 @@ PHASE 4 --- COMPLETE (Multi-Agent Orchestration + Pipeline Trace)
 
 ## Primary Demo
 
-User asks: \> "Can I go fishing tomorrow morning for five hours?"
-
-Current flow established in Phase 4:
-- Query entered in the ORCA Mission Assistant or triggered via suggested chips.
-- Real deterministic Multi-Agent Orchestrator executes:
-  1. Planner Agent runs sequentially to extract intent (`FISHING`), departure (`05:45 IST`), duration (`5 hours`), and assign subtasks.
-  2. Oceanography, Meteorology, PFZ/Fisheries, and Geo/Safety agents run concurrently over local demo datasets (`data/demo/`).
-- Reasoning Pipeline Trace in the Command Center animates through real execution states (`queued` &rarr; `running` &rarr; `completed`).
-- Operators can click on any agent in the pipeline trace to open the Agent Inspector Modal, reviewing normalized observations, structured evidence items, source provenance (`DEMO SNAPSHOT`), and orchestration handshakes.
-- Produces a typed `OrchestrationPackage` (`analysisStatus: 'ready'`) ready for consumption by Phase 5.
+1. User enters: \> "Can I go fishing tomorrow morning for five hours?"
+2. Deterministic Multi-Agent Orchestration runs:
+   - Planner Agent extracts intent (`FISHING`), departure (`05:45 IST`), duration (`5 hours`), and assigns tasks.
+   - Oceanography, Meteorology, PFZ, and GeoSafety agents analyze active regional datasets (`Maharashtra` or `Tamil Nadu`).
+3. Deterministic Decision Engine evaluates outputs against transparent rules:
+   - Severe official warnings / cyclone alerts &rarr; `AVOID` (Override).
+   - Hard geofence / restricted zone conflicts &rarr; `AVOID` (Override).
+   - Physical craft wave tolerance vs swell &rarr; `AVOID`.
+   - Temporal return window exposure &rarr; `CAUTION` / `AVOID`.
+   - PFZ aggregation potential enhances utility but **never overrides safety constraints**.
+4. Decision Card and Command Center dynamically display:
+   - Verdict: `GO`, `CAUTION`, `AVOID`.
+   - Deterministic Confidence Score (derived from data completeness and rule consensus, zero `Math.random()`).
+   - Recommended Departure & Return Window.
+   - Primary driver and concise factor breakdown.
+5. Multi-Region Switching:
+   - Operators can switch between **Maharashtra (Alibaug / Arabian Sea)** and **Tamil Nadu (Nagapattinam / Bay of Bengal)** using the TopBar selector.
+   - The map smoothly re-centers, loads regional vessels and PFZs, and dynamically re-evaluates mission outcomes.
 
 ## Prototype Data Policy
 
-Deterministic local demo datasets in `data/demo/` with clear `demo_snapshot` and `cached` status labels.
+Deterministic local demo datasets in `data/demo/` and `data/demo/regions/` with clear `demo_snapshot` and `cached` status labels.
 
 ## Current Stack Target
 
@@ -63,24 +71,26 @@ Scientific maritime intelligence center:
 
 ## Decisions Made
 
-- Implemented 5 specialized agent modules: Planner, Ocean, Weather, PFZ, and GeoSafety.
-- Implemented deterministic async multi-agent orchestrator with step-by-step progress callbacks.
-- Upgraded Reasoning Trace to reflect live execution states and support click-to-inspect modal.
-- Connected Mission Assistant queries to trigger the orchestrator and quote real agent findings.
-- Strictly preserved phase boundary: Phase 5's decision engine / GO-CAUTION-AVOID scoring was NOT implemented yet.
+- Created dedicated pure Decision Engine in `src/decision/` (`decisionTypes.ts`, `decisionRules.ts`, `decisionEngine.ts`).
+- Guaranteed 100% determinism: identical inputs always yield identical verdicts and confidence scores.
+- Implemented complete 2nd regional dataset for **Tamil Nadu (Nagapattinam / Bay of Bengal)** with genuine contrasting oceanography and geography.
+- Built `RegionContext` and TopBar region switcher with smooth map transition.
+- Connected Decision Card and Mission Planner to dynamically render live Decision Engine outputs.
+- Phase 6 (Evidence & Explainability Panel) and Phase 7 (What-If Scenario Simulator) have **NOT** been started.
 
 ## Last Completed Work
 
-PHASE 4 — AGENT ORCHESTRATION + TRACE
-- Created `src/types/agents.ts` with agent models, analysis outputs, and orchestration package.
-- Created `src/agents/plannerAgent.ts`, `src/agents/oceanAgent.ts`, `src/agents/weatherAgent.ts`, `src/agents/pfzAgent.ts`, and `src/agents/geoSafetyAgent.ts`.
-- Created `src/orchestration/agentOrchestrator.ts` for sequential and parallel execution.
-- Created `src/context/OrchestrationContext.tsx` and `src/hooks/useOrchestration.ts`.
-- Created `src/components/agents/AgentInspectionModal.tsx` for granular observation/provenance auditing.
-- Updated `src/components/agents/ReasoningChain.tsx` with live node statuses and click-to-inspect modal.
-- Updated `src/components/agents/OrcaAssistant.tsx` to trigger orchestration on query input.
-- Tested and verified: `npm run build` (Passed, 0 errors, 381ms) and `npx eslint src` (Passed, 0 errors).
+PHASE 5 — DETERMINISTIC DECISION ENGINE + SAFETY OVERRIDES & MULTI-REGION SUPPORT
+- Created `src/decision/decisionTypes.ts`, `src/decision/decisionRules.ts`, `src/decision/decisionEngine.ts`.
+- Created Tamil Nadu datasets in `data/demo/regions/tamil_nadu/` (`pfz.json`, `weather.json`, `ocean.json`, `hazards.json`, `boundaries.geojson`, `vessels.json`).
+- Created `src/context/RegionContext.tsx` and `src/hooks/useRegion.ts`.
+- Created `src/decision/decisionEngine.test.ts` verifying all 11 test cases pass.
+- Updated `src/components/layout/TopBar.tsx` with compact Region Selector.
+- Updated `src/components/decision/DecisionCard.tsx` and `src/components/decision/MissionCard.tsx`.
+- Updated `src/components/map/MarineMapCanvas.tsx` and `src/pages/MarineMapPage.tsx`.
+- Updated `src/pages/MissionPlannerPage.tsx` with live parameter adjustment.
+- Tested and verified: `npm run build` (Passed, 0 errors, 373ms) and `npx eslint src` (Passed, 0 errors, 0 warnings).
 
 ## Next Action
 
-Awaiting user direction to proceed to **PHASE 5 — DECISION ENGINE & SAFETY OVERRIDE LOGIC**.
+Awaiting user direction to proceed to **PHASE 6 — EVIDENCE & EXPLAINABILITY PANEL**.

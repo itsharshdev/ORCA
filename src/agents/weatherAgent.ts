@@ -1,13 +1,14 @@
 import type { WeatherResult, WeatherAnalysisOutput } from '@/types/agents';
 import type { DataStatus } from '@/types/marine';
-import { weatherData } from '@/data';
+import { getRegionData, type RegionId } from '@/data';
 
 /**
  * Weather Agent: Evaluates meteorological conditions, wind speed, gusts,
- * wave heights, visibility, and severe weather / squall line advisories.
+ * wave heights, visibility, and severe weather / squall line advisories for the specified region.
  */
-export const runWeatherAgent = async (): Promise<WeatherResult> => {
-  const { currentConditions, metadata } = weatherData;
+export const runWeatherAgent = async (regionId: RegionId = 'maharashtra'): Promise<WeatherResult> => {
+  const region = getRegionData(regionId);
+  const { currentConditions, metadata } = region.weatherData;
   const windSpeed = currentConditions.windSpeedKnots;
   const windGust = currentConditions.windGustKnots;
   const waveHeight = currentConditions.waveHeightMeters;
@@ -21,8 +22,8 @@ export const runWeatherAgent = async (): Promise<WeatherResult> => {
   }
 
   const activeAdvisories = [
-    'Moderate wave swell (1.4m) rising to 2.1m post-12:00 IST',
-    'Squall line advisory for outer continental shelf post-13:00 IST',
+    `Moderate wave swell (${waveHeight}m) rising post-12:00 IST in ${region.seaBody}`,
+    `Squall line warning for outer continental shelf post-13:00 IST`,
   ];
 
   const data: WeatherAnalysisOutput = {
@@ -40,6 +41,7 @@ export const runWeatherAgent = async (): Promise<WeatherResult> => {
   };
 
   const status = (metadata.status as DataStatus) || 'demo_snapshot';
+  const timestamp = metadata.updatedAt || metadata.timestamp || '2026-09-02 06:00 IST';
 
   return {
     agentId: 'weather',
@@ -48,7 +50,7 @@ export const runWeatherAgent = async (): Promise<WeatherResult> => {
     status: 'completed',
     startedAt: '08:30:01 IST',
     completedAt: '08:30:02 IST',
-    summary: `Wind ${windSpeed} kts (${currentConditions.windDirection}) • Gusts ${windGust} kts • Wave ${waveHeight}m (Period: ${currentConditions.wavePeriodSeconds}s) • Weather Risk: ${weatherRiskLevel.toUpperCase()}.`,
+    summary: `Wind ${windSpeed} kts (${currentConditions.windDirection}) • Gusts ${windGust} kts • Wave ${waveHeight}m (Period: ${currentConditions.wavePeriodSeconds}s) • Sector: ${region.shortLabel}.`,
     data,
     evidence: [
       {
@@ -58,18 +60,18 @@ export const runWeatherAgent = async (): Promise<WeatherResult> => {
         impact: windSpeed <= 15 ? 'positive' : 'cautionary',
         provenance: {
           source: metadata.source,
-          timestamp: metadata.updatedAt,
+          timestamp,
           status,
         },
       },
       {
         key: 'wave_forecast',
         label: 'Coastal Wave Swell',
-        value: `${waveHeight}m Swell (Morning optimal, afternoon rising > 2.0m)`,
+        value: `${waveHeight}m Swell (${currentConditions.seaState})`,
         impact: 'cautionary',
         provenance: {
           source: metadata.source,
-          timestamp: metadata.updatedAt,
+          timestamp,
           status,
         },
       },
@@ -80,7 +82,7 @@ export const runWeatherAgent = async (): Promise<WeatherResult> => {
         impact: 'positive',
         provenance: {
           source: metadata.source,
-          timestamp: metadata.updatedAt,
+          timestamp,
           status,
         },
       },

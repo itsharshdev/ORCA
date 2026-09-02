@@ -1,120 +1,84 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useConnectivity } from '@/hooks/useConnectivity';
+import { useRegion } from '@/hooks/useRegion';
+import { useOrchestration } from '@/hooks/useOrchestration';
+import { DataFreshnessBadge } from '@/components/ui/DataFreshnessBadge';
 import { 
-  Anchor, 
   Wifi, 
   WifiOff, 
   MapPin, 
-  Globe, 
-  User, 
-  Satellite
+  Radio, 
+  ChevronDown
 } from 'lucide-react';
-import { ROUTES } from '@/routes';
-import { APP_NAME } from '@/lib/constants';
-import { useConnectivity } from '@/hooks/useConnectivity';
-import { DataFreshnessBadge } from '@/components/ui/DataFreshnessBadge';
+import type { RegionId } from '@/data';
 
 export const TopBar: React.FC = () => {
   const { isOnline } = useConnectivity();
-  const location = useLocation();
+  const { activeRegionId, activeRegion, setRegion } = useRegion();
+  const { runOrchestration, isOrchestrating } = useOrchestration();
 
-  const getPageTitle = (pathname: string) => {
-    switch (pathname) {
-      case ROUTES.DASHBOARD:
-        return 'Command Center';
-      case ROUTES.MISSION:
-        return 'Mission Planner';
-      case ROUTES.MAP:
-        return 'Marine Map Explorer';
-      case ROUTES.DECISIONS:
-        return 'Decision Intelligence';
-      case ROUTES.HISTORY:
-        return 'Mission Audit History';
-      case ROUTES.SETTINGS:
-        return 'System Settings';
-      default:
-        return 'Command Center';
-    }
+  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newRegionId = e.target.value as RegionId;
+    setRegion(newRegionId);
+    runOrchestration('Can I go fishing tomorrow morning for five hours?', newRegionId);
   };
 
   return (
-    <header className="h-16 w-full hud-glass border-b border-slate-800/80 px-4 sm:px-6 flex items-center justify-between shrink-0 z-40">
-      {/* Brand & Active Route Header */}
-      <div className="flex items-center gap-3 sm:gap-6">
-        <Link to={ROUTES.DASHBOARD} className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:border-cyan-400 transition-colors">
-            <Anchor className="w-5 h-5" />
+    <header className="h-14 border-b border-slate-800 bg-[#071424]/95 backdrop-blur-md px-4 flex items-center justify-between z-30 shrink-0 select-none">
+      {/* Left: Region Telemetry & Switcher */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 text-xs font-telemetry text-slate-300">
+          <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+          
+          {/* Subtle Region Selector Dropdown */}
+          <div className="relative inline-flex items-center">
+            <select
+              value={activeRegionId}
+              onChange={handleRegionChange}
+              disabled={isOrchestrating}
+              className="bg-slate-900 border border-slate-700/80 hover:border-cyan-500/50 rounded-lg py-1 pl-2.5 pr-7 text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-400 cursor-pointer appearance-none transition-colors"
+            >
+              <option value="maharashtra">Maharashtra (Alibaug / Mumbai)</option>
+              <option value="tamil_nadu">Tamil Nadu (Nagapattinam / Bay of Bengal)</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-cyan-400 absolute right-2 pointer-events-none" />
           </div>
-          <span className="font-display-decision text-xl font-bold tracking-wider text-white">
-            {APP_NAME}
-          </span>
-        </Link>
 
-        <div className="hidden sm:block h-5 w-px bg-slate-800" />
+          <span className="hidden lg:inline text-slate-500">• {activeRegion.seaBody}</span>
+        </div>
 
-        <div className="hidden sm:flex items-center gap-2">
-          <span className="text-xs text-slate-400 font-medium">CONSOLE /</span>
-          <span className="text-xs font-semibold text-cyan-400 font-label-caps">
-            {getPageTitle(location.pathname)}
-          </span>
+        {/* Live Regional Telemetry Status */}
+        <div className="hidden xl:flex items-center gap-2 text-[11px] font-telemetry text-slate-400 bg-slate-900/60 px-2.5 py-1 rounded border border-slate-800">
+          <Radio className="w-3 h-3 text-cyan-400 animate-pulse" />
+          <span>DATUM: WGS84 • INCOIS TELEMETRY ACTIVE</span>
         </div>
       </div>
 
-      {/* Telemetry, Status & Profile Actions */}
-      <div className="flex items-center gap-2 sm:gap-4">
-        {/* Regional Telemetry */}
-        <div className="hidden xl:flex items-center gap-2 bg-slate-900/90 border border-slate-800 px-3 py-1 rounded text-xs">
-          <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-          <span className="font-telemetry text-slate-300 text-[11px]">
-            18°54'N, 72°49'E • ARABIAN SEA
-          </span>
-        </div>
+      {/* Right: Connectivity, Freshness Badge, Satellite & Language */}
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* Data Freshness Indicator */}
+        <DataFreshnessBadge status="demo_snapshot" />
 
-        {/* Connectivity Status */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-900/80 border border-slate-800 text-[11px] font-label-caps">
+        {/* Connectivity Status Pill */}
+        <div
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-label-caps border ${
+            isOnline
+              ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/40'
+              : 'bg-rose-950/40 text-rose-400 border-rose-800/40'
+          }`}
+          title={isOnline ? 'Online (Coastal Mesh / 4G / Satellite)' : 'Offline (Local Pre-cached Mode)'}
+        >
           {isOnline ? (
             <>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <Wifi className="w-3.5 h-3.5 text-emerald-400 hidden sm:inline" />
-              <span className="text-emerald-400">CONNECTED</span>
+              <Wifi className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">ONLINE</span>
             </>
           ) : (
             <>
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
-              <WifiOff className="w-3.5 h-3.5 text-amber-400 hidden sm:inline" />
-              <span className="text-amber-400">OFFLINE</span>
+              <WifiOff className="w-3.5 h-3.5 text-rose-400" />
+              <span className="hidden sm:inline">OFFLINE</span>
             </>
           )}
-        </div>
-
-        {/* Demo Snapshot Tag */}
-        <div className="hidden md:block">
-          <DataFreshnessBadge status="demo_snapshot" />
-        </div>
-
-        {/* Utility Shortcuts */}
-        <div className="flex items-center gap-1">
-          <button 
-            type="button"
-            title="Satellite Feed (Simulated)"
-            className="p-1.5 sm:p-2 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-slate-800/60 transition-colors"
-          >
-            <Satellite className="w-4 h-4" />
-          </button>
-          <button 
-            type="button"
-            title="Language: English (EN / HI / MR)"
-            className="p-1.5 sm:p-2 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-slate-800/60 transition-colors"
-          >
-            <Globe className="w-4 h-4" />
-          </button>
-          <Link 
-            to={ROUTES.SETTINGS} 
-            title="Vessel & Operator Profile"
-            className="p-1.5 sm:p-2 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-slate-800/60 transition-colors"
-          >
-            <User className="w-4 h-4" />
-          </Link>
         </div>
       </div>
     </header>

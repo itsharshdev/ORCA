@@ -1,4 +1,5 @@
 import type { DataStatus } from './marine';
+import type { DecisionResult } from '@/decision/decisionTypes';
 
 export type AgentId = 'planner' | 'ocean' | 'weather' | 'pfz' | 'geoSafety';
 
@@ -113,4 +114,5 @@ export interface OrchestrationPackage {
   weather: WeatherResult;
   pfz: PfzResult;
   geoSafety: GeoSafetyResult;
+  decision?: DecisionResult;
 }

@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "source": "TAMIL_NADU_FISHERIES_REGISTRY",
+    "region": "Tamil Nadu Coastal Sector (Nagapattinam)",
+    "generatedAt": "2026-09-02T04:00:00Z",
+    "status": "demo_snapshot",
+    "isLive": false,
+    "disclaimer": "Fictional/demo dataset for prototype demonstration only. Not for navigation or official advisory."
+  },
+  "profiles": [
+    {
+      "id": "VESSEL-TN-01",
+      "name": "Kadal Thozhan 2",
+      "registrationNo": "IND-TN-06-MM-4421",
+      "vesselType": "motorized_traditional",
+      "lengthMeters": 9.2,
+      "beamMeters": 2.4,
+      "draftMeters": 0.85,
+      "engineHp": 30,
+      "cruisingSpeedKnots": 7.5,
+      "maxWaveToleranceMeters": 1.6,
+      "fuelCapacityHours": 10,
+      "crewCapacity": 4,
+      "homePort": {
+        "name": "Nagapattinam Fishing Harbor",
+        "latitude": 10.765,
+        "longitude": 79.845
+      },
+      "currentLocation": {
+        "latitude": 10.765,
+        "longitude": 79.845
+      },
+      "currentHeadingDegrees": 115
+    },
+    {
+      "id": "VESSEL-TN-02",
+      "name": "Kumaran Deepsea 1",
+      "registrationNo": "IND-TN-06-MM-8890",
+      "vesselType": "mechanized_trawler",
+      "lengthMeters": 15.5,
+      "beamMeters": 4.5,
+      "draftMeters": 1.8,
+      "engineHp": 140,
+      "cruisingSpeedKnots": 9.0,
+      "maxWaveToleranceMeters": 2.6,
+      "fuelCapacityHours": 48,
+      "crewCapacity": 8,
+      "homePort": {
+        "name": "Nagapattinam Fishing Harbor",
+        "latitude": 10.765,
+        "longitude": 79.845
+      },
+      "currentLocation": {
+        "latitude": 10.765,
+        "longitude": 79.845
+      },
+      "currentHeadingDegrees": 115
+    }
+  ]
+}

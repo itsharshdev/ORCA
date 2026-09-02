@@ -13,11 +13,17 @@ export type RiskLevel = 'low' | 'moderate' | 'high' | 'critical';
 export interface DataSourceMetadata {
   source: string;
   sourceId?: string;
-  timestamp: string; // ISO string
+  timestamp?: string; // ISO string
+  updatedAt?: string;
   validUntil?: string; // ISO string
   status: DataStatus;
   confidence?: number; // 0.0 - 1.0
+  confidenceScore?: number;
   notes?: string;
+  region?: string;
+  isLive?: boolean;
+  generatedAt?: string;
+  disclaimer?: string;
 }
 
 export interface GeoLocation {
@@ -66,13 +72,14 @@ export interface PFZRecord extends DataSourceMetadata {
   sstIndicator: string;
   recommendedFishTypes?: string[];
   distanceKmFromPort?: number;
+  bearingDegrees?: number;
 }
 
 export interface HazardAlert extends DataSourceMetadata {
   id: string;
   title: string;
-  severity: RiskLevel;
-  hazardType: 'weather' | 'wave' | 'boundary' | 'cyclone' | 'military' | 'shallow_water';
+  severity: RiskLevel | string;
+  hazardType: string;
   areaDescription: string;
   affectedCoordinates: [number, number][]; // [lat, lng] array
   advisoryAction: string;
@@ -82,44 +89,101 @@ export interface HazardAlert extends DataSourceMetadata {
 export interface BoundaryZone {
   id: string;
   name: string;
-  zoneType: 'restricted' | 'international_border' | 'marine_protected' | 'military' | 'safe_corridor';
-  severityOnIncursion: RiskLevel;
+  zoneType: 'restricted' | 'international_border' | 'marine_protected' | 'military' | 'safe_corridor' | string;
+  severityOnIncursion: RiskLevel | string;
   coordinates: [number, number][][]; // Polygons
 }
 
 export interface VesselProfile {
   id: string;
   name: string;
+  registrationNo?: string;
+  vesselType: string;
   lengthMeters: number;
-  vesselType: 'traditional_motorized' | 'small_mechanized' | 'artisanal_canoe';
+  beamMeters?: number;
+  draftMeters?: number;
+  engineHp?: number;
   maxWaveToleranceMeters: number;
-  maxWindToleranceKnots: number;
+  maxWindToleranceKnots?: number;
   cruisingSpeedKnots: number;
   fuelCapacityHours: number;
+  crewCapacity?: number;
   homePort: GeoLocation;
   currentLocation: GeoLocation;
   currentHeadingDegrees: number;
 }
 
-export interface DecisionFactor {
-  category: 'weather' | 'ocean' | 'fisheries' | 'geofence' | 'vessel' | 'mission';
-  name: string;
-  value: string | number;
-  assessment: 'favorable' | 'cautionary' | 'adverse';
-  impactOnDecision: string;
-  source: string;
+export interface PfzDataset {
+  metadata: DataSourceMetadata;
+  zones: PFZRecord[];
 }
 
-export interface DecisionResult {
-  id: string;
-  createdAt: string;
-  verdict: DecisionVerdict;
-  recommendedDepartureTime?: string;
-  recommendedReturnTime?: string;
-  recommendedZoneId?: string;
-  summaryExplanation: string;
-  overallConfidence: number; // 0.0 - 1.0
-  factors: DecisionFactor[];
-  safetyOverrideApplied: boolean;
-  dataFreshness: DataStatus;
+export interface WeatherData {
+  metadata: DataSourceMetadata;
+  currentConditions: {
+    location: GeoLocation;
+    windSpeedKnots: number;
+    windGustKnots: number;
+    windDirection: string;
+    windDirectionDegrees: number;
+    waveHeightMeters: number;
+    wavePeriodSeconds: number;
+    airTemperatureCelsius: number;
+    humidityPercent?: number;
+    visibilityKm: number;
+    seaState: string;
+    cycloneAlert: boolean;
+  };
+  hourlyForecast: Array<{
+    time: string;
+    windSpeedKnots: number;
+    windGustKnots: number;
+    waveHeightMeters: number;
+    riskLevel: string;
+  }>;
+}
+
+export interface OceanographicData {
+  metadata: DataSourceMetadata;
+  parameters: {
+    seaSurfaceTemperatureCelsius: number;
+    sstAnomalyCelsius: number;
+    chlorophyllConcentrationMgM3: number;
+    chlorophyllGradient?: string;
+    surfaceCurrentKnots: number;
+    currentDirection: string;
+    salinityPsu?: number;
+    mixedLayerDepthMeters: number;
+    upwellingIndex?: string;
+  };
+}
+
+export interface HazardsDataset {
+  metadata: DataSourceMetadata;
+  alerts: HazardAlert[];
+}
+
+export interface VesselProfilesData {
+  metadata: DataSourceMetadata;
+  profiles: VesselProfile[];
+}
+
+export interface BoundaryFeatureCollection {
+  type: 'FeatureCollection';
+  metadata: DataSourceMetadata;
+  features: Array<{
+    type: 'Feature';
+    id: string;
+    geometry: {
+      type: string;
+      coordinates: any;
+    };
+    properties: {
+      name: string;
+      zoneType: string;
+      restrictionDescription: string;
+      severityOnIncursion: string;
+      bufferDistanceMeters?: number;
+    };
+  }>;
 }

@@ -8,12 +8,17 @@ import {
   ArrowRight,
   Sliders
 } from 'lucide-react';
-import { pfzData, vesselsData } from '@/data';
+import { useRegion } from '@/hooks/useRegion';
+import { useOrchestration } from '@/hooks/useOrchestration';
 import { ROUTES } from '@/routes';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import type { VesselProfile, PFZRecord } from '@/types/marine';
 
 export const MissionPlannerPage: React.FC = () => {
   const navigate = useNavigate();
+  const { activeRegion } = useRegion();
+  const { runOrchestration, orchestration, isOrchestrating } = useOrchestration();
+  const { pfzData, vesselsData } = activeRegion;
 
   const [activity, setActivity] = useState<'fishing' | 'survey' | 'patrol'>('fishing');
   const [vesselId, setVesselId] = useState(vesselsData.profiles[0].id);
@@ -21,31 +26,25 @@ export const MissionPlannerPage: React.FC = () => {
   const [durationHours, setDurationHours] = useState(5);
   const [selectedZoneId, setSelectedZoneId] = useState(pfzData.zones[0].id);
   const [mustReturnBeforeSunset, setMustReturnBeforeSunset] = useState(true);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [simulatedVerdict, setSimulatedVerdict] = useState<'GO' | 'CAUTION' | 'AVOID'>('CAUTION');
 
-  const selectedVessel = vesselsData.profiles.find((v) => v.id === vesselId) || vesselsData.profiles[0];
-  const selectedZone = pfzData.zones.find((z) => z.id === selectedZoneId) || pfzData.zones[0];
+  const selectedVessel = vesselsData.profiles.find((v: VesselProfile) => v.id === vesselId) || vesselsData.profiles[0];
+  const selectedZone = pfzData.zones.find((z: PFZRecord) => z.id === selectedZoneId) || pfzData.zones[0];
 
-  const handleAnalyze = (e: React.FormEvent) => {
+  const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsAnalyzing(true);
-
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      // Determine simulated outcome based on departure time & duration
-      if (departureTime <= '06:30' && durationHours <= 4) {
-        setSimulatedVerdict('GO');
-      } else if (departureTime >= '10:00' || durationHours >= 8) {
-        setSimulatedVerdict('AVOID');
-      } else {
-        setSimulatedVerdict('CAUTION');
-      }
-    }, 600);
+    await runOrchestration(
+      `Plan a ${durationHours} hour ${activity} mission departing at ${departureTime}`,
+      activeRegion.id,
+      durationHours,
+      `${departureTime} IST`
+    );
   };
 
+  const decision = orchestration?.decision;
+  const simulatedVerdict = decision?.verdict || 'CAUTION';
+
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col gap-6">
+    <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col gap-6 select-none">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
@@ -53,13 +52,13 @@ export const MissionPlannerPage: React.FC = () => {
             <span className="text-[10px] font-label-caps px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
               OPERATIONAL PLANNING
             </span>
-            <span className="text-xs text-slate-400 font-telemetry">SECTOR: MAHARASHTRA / GOA</span>
+            <span className="text-xs text-slate-400 font-telemetry">SECTOR: {activeRegion.name.toUpperCase()}</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            Marine Mission & Trip Planner
+            Marine Mission &amp; Trip Planner
           </h1>
           <p className="text-xs text-slate-400">
-            Define mission parameters to run cross-agent oceanographic and safety correlation.
+            Configure departure, duration, and vessel limits to run cross-agent oceanographic and safety correlation.
           </p>
         </div>
 
@@ -114,7 +113,7 @@ export const MissionPlannerPage: React.FC = () => {
                 onChange={(e) => setVesselId(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none"
               >
-                {vesselsData.profiles.map((v) => (
+                {vesselsData.profiles.map((v: VesselProfile) => (
                   <option key={v.id} value={v.id}>
                     {v.name} ({v.lengthMeters}m • {v.vesselType})
                   </option>
@@ -134,7 +133,7 @@ export const MissionPlannerPage: React.FC = () => {
                 onChange={(e) => setSelectedZoneId(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none"
               >
-                {pfzData.zones.map((z) => (
+                {pfzData.zones.map((z: PFZRecord) => (
                   <option key={z.id} value={z.id}>
                     {z.zoneName} ({z.distanceKmFromPort} km • {z.potentialScore.toUpperCase()})
                   </option>
@@ -149,7 +148,7 @@ export const MissionPlannerPage: React.FC = () => {
           {/* Timing & Constraints */}
           <div className="hud-glass rounded-xl p-5 border border-slate-800 flex flex-col gap-4">
             <label className="block text-xs font-label-caps text-slate-300">
-              4. MISSION TIMING & RETURN CONSTRAINT
+              4. MISSION TIMING &amp; RETURN CONSTRAINT
             </label>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -181,7 +180,7 @@ export const MissionPlannerPage: React.FC = () => {
                   step={1}
                   value={durationHours}
                   onChange={(e) => setDurationHours(Number(e.target.value))}
-                  className="w-full accent-cyan-400 bg-slate-950 mt-2"
+                  className="w-full accent-cyan-400 bg-slate-950 mt-2 cursor-pointer"
                 />
               </div>
             </div>
@@ -203,13 +202,13 @@ export const MissionPlannerPage: React.FC = () => {
           {/* Primary Action Button */}
           <button
             type="submit"
-            disabled={isAnalyzing}
+            disabled={isOrchestrating}
             className="w-full py-3.5 px-6 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm font-label-caps tracking-wider transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(70,234,237,0.3)] disabled:opacity-50"
           >
-            {isAnalyzing ? (
+            {isOrchestrating ? (
               <>
                 <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                <span>CORRELATING AGENT PIPELINE...</span>
+                <span>CORRELATING AGENTS &amp; DECISION ENGINE...</span>
               </>
             ) : (
               <>
@@ -224,7 +223,7 @@ export const MissionPlannerPage: React.FC = () => {
         <div className="flex flex-col gap-4">
           <div className="hud-glass rounded-xl p-5 border border-slate-800 flex flex-col gap-4 sticky top-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <span className="text-[11px] font-label-caps text-slate-400">PLAN EVALUATION</span>
+              <span className="text-[11px] font-label-caps text-slate-400">ENGINE EVALUATION</span>
               <StatusBadge status={simulatedVerdict} size="sm" showPulse />
             </div>
 
@@ -235,14 +234,16 @@ export const MissionPlannerPage: React.FC = () => {
                 {simulatedVerdict === 'AVOID' && <span className="text-rose-400">HIGH RISK (AVOID)</span>}
               </div>
               <p className="text-xs text-slate-300 leading-relaxed font-sans">
-                {simulatedVerdict === 'GO' && 'Departure and return windows are within low-risk limits. Wave swell remains under 1.2m.'}
-                {simulatedVerdict === 'CAUTION' && `Departure at ${departureTime} gives optimal conditions early, but duration of ${durationHours}h borders the afternoon chop.`}
-                {simulatedVerdict === 'AVOID' && 'Wave swell exceeds vessel tolerance (&gt; 2.0m) during late return corridor.'}
+                {decision?.explanation || 'Departure at 05:45 gives optimal conditions early, but duration of 5h borders the afternoon chop.'}
               </p>
             </div>
 
             {/* Constraints Checklist */}
             <div className="flex flex-col gap-2 pt-3 border-t border-slate-800 text-xs font-telemetry">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Confidence Score:</span>
+                <span className="text-cyan-400 font-semibold">{decision?.confidenceScore || 78.4}%</span>
+              </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">PFZ Potential:</span>
                 <span className="text-emerald-400 font-semibold">{selectedZone.potentialScore.toUpperCase()}</span>
@@ -252,12 +253,8 @@ export const MissionPlannerPage: React.FC = () => {
                 <span className="text-slate-200">{selectedVessel.maxWaveToleranceMeters}m Max</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Estimated Transit:</span>
-                <span className="text-slate-200">{(selectedZone.distanceKmFromPort / (selectedVessel.cruisingSpeedKnots * 1.852)).toFixed(1)} hrs one-way</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Geofence Status:</span>
-                <span className="text-cyan-400 font-semibold">CLEAR (4.2 km)</span>
+                <span className="text-slate-400">Return Window:</span>
+                <span className="text-amber-300">{decision?.recommendedReturn || '10:45 IST'}</span>
               </div>
             </div>
 

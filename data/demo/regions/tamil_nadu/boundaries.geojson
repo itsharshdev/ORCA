@@ -1,0 +1,60 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "source": "TAMIL_NADU_MARITIME_BOARD_GEOJSON",
+    "region": "Tamil Nadu Coastal Sector (Nagapattinam)",
+    "generatedAt": "2026-09-02T04:00:00Z",
+    "updatedAt": "2026-09-02 06:00 IST",
+    "status": "demo_snapshot",
+    "isLive": false,
+    "disclaimer": "Fictional/demo dataset for prototype demonstration only. Not for navigation or official advisory."
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "BND-TN-01",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.82, 10.35],
+            [79.95, 10.35],
+            [79.95, 10.22],
+            [79.82, 10.22],
+            [79.82, 10.35]
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Point Calimere Marine Protected Sanctuary",
+        "zoneType": "marine_protected_area",
+        "restrictionDescription": "Strict environmental conservation sanctuary. Commercial fishing prohibited.",
+        "severityOnIncursion": "critical",
+        "bufferDistanceMeters": 1000
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "BND-TN-02",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.10, 10.90],
+            [80.25, 10.90],
+            [80.25, 10.75],
+            [80.10, 10.75],
+            [80.10, 10.90]
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Coast Guard Outer Surveillance Sector",
+        "zoneType": "restricted",
+        "restrictionDescription": "Specialized tactical patrol zone. Non-authorized entry restricted during live drills.",
+        "severityOnIncursion": "high",
+        "bufferDistanceMeters": 1200
+      }
+    }
+  ]
+}

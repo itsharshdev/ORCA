@@ -1,17 +1,18 @@
 import type { OceanResult, OceanAnalysisOutput } from '@/types/agents';
 import type { DataStatus } from '@/types/marine';
-import { oceanData, weatherData } from '@/data';
+import { getRegionData, type RegionId } from '@/data';
 
 /**
  * Ocean Agent: Analyzes oceanographic parameters, thermal gradients (SST),
- * surface currents, mixed-layer depth, and chlorophyll boundaries.
+ * surface currents, mixed-layer depth, and chlorophyll boundaries for the specified region.
  */
-export const runOceanAgent = async (): Promise<OceanResult> => {
-  const { parameters, metadata } = oceanData;
+export const runOceanAgent = async (regionId: RegionId = 'maharashtra'): Promise<OceanResult> => {
+  const region = getRegionData(regionId);
+  const { parameters, metadata } = region.oceanData;
   const sst = parameters.seaSurfaceTemperatureCelsius;
   const currentSpeed = parameters.surfaceCurrentKnots;
   const chlorophyll = parameters.chlorophyllConcentrationMgM3;
-  const swell = weatherData.currentConditions.waveHeightMeters;
+  const swell = region.weatherData.currentConditions.waveHeightMeters;
 
   // Determine ocean risk level
   let oceanRiskLevel: 'low' | 'moderate' | 'high' = 'low';
@@ -21,8 +22,8 @@ export const runOceanAgent = async (): Promise<OceanResult> => {
     oceanRiskLevel = 'moderate';
   }
 
-  // Favorable SST for pelagic aggregation in Western Indian waters is 26.5°C - 29.0°C
-  const favorableFishingConditions = sst >= 26.5 && sst <= 29.0 && chlorophyll >= 1.0;
+  // Favorable SST for pelagic aggregation
+  const favorableFishingConditions = sst >= 26.5 && sst <= 29.5 && chlorophyll >= 1.0;
 
   const data: OceanAnalysisOutput = {
     seaSurfaceTemperatureCelsius: sst,
@@ -38,6 +39,7 @@ export const runOceanAgent = async (): Promise<OceanResult> => {
   };
 
   const status = (metadata.status as DataStatus) || 'demo_snapshot';
+  const timestamp = metadata.updatedAt || metadata.timestamp || '2026-09-02 06:00 IST';
 
   return {
     agentId: 'ocean',
@@ -46,7 +48,7 @@ export const runOceanAgent = async (): Promise<OceanResult> => {
     status: 'completed',
     startedAt: '08:30:01 IST',
     completedAt: '08:30:02 IST',
-    summary: `SST ${sst}°C (Thermal gradient favorable) • Chlorophyll ${chlorophyll} mg/m³ • Current ${currentSpeed} kts ${parameters.currentDirection} • Marine State: ${oceanRiskLevel.toUpperCase()}.`,
+    summary: `SST ${sst}°C (${region.seaBody}) • Chlorophyll ${chlorophyll} mg/m³ • Current ${currentSpeed} kts ${parameters.currentDirection} • Marine State: ${oceanRiskLevel.toUpperCase()}.`,
     data,
     evidence: [
       {
@@ -56,30 +58,30 @@ export const runOceanAgent = async (): Promise<OceanResult> => {
         impact: favorableFishingConditions ? 'positive' : 'neutral',
         provenance: {
           source: metadata.source,
-          timestamp: metadata.updatedAt,
+          timestamp,
           status,
         },
       },
       {
         key: 'chlorophyll_concentration',
         label: 'Chlorophyll Concentration',
-        value: `${chlorophyll} mg/m³ (Strong productivity front)`,
+        value: `${chlorophyll} mg/m³ (${parameters.chlorophyllGradient || 'Frontal Gradient'})`,
         impact: 'positive',
         provenance: {
           source: metadata.source,
-          timestamp: metadata.updatedAt,
+          timestamp,
           status,
         },
       },
       {
         key: 'ocean_swell',
         label: 'Ocean Swell State',
-        value: `${swell}m (Moderate sea state)`,
+        value: `${swell}m (Moderate swell in ${region.seaBody})`,
         impact: swell >= 1.2 ? 'cautionary' : 'positive',
         provenance: {
-          source: weatherData.metadata.source,
-          timestamp: weatherData.metadata.updatedAt,
-          status: (weatherData.metadata.status as DataStatus) || 'demo_snapshot',
+          source: region.weatherData.metadata.source,
+          timestamp: region.weatherData.metadata.updatedAt || '2026-09-02 06:00 IST',
+          status: (region.weatherData.metadata.status as DataStatus) || 'demo_snapshot',
         },
       },
     ],

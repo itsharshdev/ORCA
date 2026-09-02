@@ -1,0 +1,40 @@
+{
+  "metadata": {
+    "source": "NAVAREA_VIII_COASTAL_WARNINGS",
+    "region": "Tamil Nadu Coastal Sector (Nagapattinam)",
+    "generatedAt": "2026-09-02T05:00:00Z",
+    "updatedAt": "2026-09-02 06:00 IST",
+    "validUntil": "2026-09-02 20:00 IST",
+    "status": "demo_snapshot",
+    "isLive": false,
+    "disclaimer": "Fictional/demo dataset for prototype demonstration only. Not for navigation or official advisory."
+  },
+  "alerts": [
+    {
+      "id": "HAZ-TN-01",
+      "title": "Palk Strait Shallow Sandbar Warning",
+      "hazardType": "navigational_shoal",
+      "severity": "moderate",
+      "areaDescription": "Shallow shifting sandbars near Kodiyakkarai Point with depth < 2.5m CD.",
+      "affectedCoordinates": [
+        [10.28, 79.90],
+        [10.32, 79.95]
+      ],
+      "advisoryAction": "Small craft advised to maintain minimum 1.5 km clearance from shoal crest.",
+      "isActive": true
+    },
+    {
+      "id": "HAZ-TN-02",
+      "title": "Afternoon Convective Squall Warning",
+      "hazardType": "squall_line",
+      "severity": "high",
+      "areaDescription": "Convective thunderstorm cells moving SW across outer shelf post-13:30 IST.",
+      "affectedCoordinates": [
+        [10.85, 80.25],
+        [10.45, 80.35]
+      ],
+      "advisoryAction": "Vessels must complete operations and return to harbor before 13:00 IST.",
+      "isActive": true
+    }
+  ]
+}

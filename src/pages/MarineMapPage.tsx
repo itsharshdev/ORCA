@@ -3,11 +3,14 @@ import { MarineMapCanvas } from '@/components/map/MarineMapCanvas';
 import { MapLayerControl } from '@/components/map/MapLayerControl';
 import { MapContextPanel } from '@/components/map/MapContextPanel';
 import { MapLegend } from '@/components/map/MapLegend';
-import { pfzData, hazardsData, boundariesData, vesselsData } from '@/data';
+import { useRegion } from '@/hooks/useRegion';
 import type { MapLayerVisibility, SelectedMapEntity } from '@/types/map';
 import { Fish, AlertTriangle, ShieldAlert, Anchor, Compass } from 'lucide-react';
 
 export const MarineMapPage: React.FC = () => {
+  const { activeRegion } = useRegion();
+  const { pfzData, hazardsData, boundariesData, vesselsData, mapCenter } = activeRegion;
+
   const [layers, setLayers] = useState<MapLayerVisibility>({
     userLocation: true,
     vessel: true,
@@ -20,35 +23,38 @@ export const MarineMapPage: React.FC = () => {
     riskAreas: true,
   });
 
-  const [selectedEntity, setSelectedEntity] = useState<SelectedMapEntity | null>({
-    id: pfzData.zones[0].id,
-    type: 'pfz',
-    title: pfzData.zones[0].zoneName,
-    subtitle: 'Optimal pelagic aggregation zone detected via EO Thermal/Chlorophyll Fronts',
-    status: pfzData.zones[0].potentialScore.toUpperCase(),
-    severity: 'favorable',
-    location: {
-      latitude: pfzData.zones[0].location.latitude,
-      longitude: pfzData.zones[0].location.longitude,
-    },
-    details: {
-      potentialScore: pfzData.zones[0].potentialScore.toUpperCase(),
-      distance: `${pfzData.zones[0].distanceKmFromPort} km`,
-      bearing: `${pfzData.zones[0].bearingDegrees}° WSW`,
-      waterDepth: `${pfzData.zones[0].location.depthMeters} m`,
-      sstGradient: pfzData.zones[0].sstIndicator,
-      chlorophyll: pfzData.zones[0].chlorophyllIndicator,
-    },
-    source: pfzData.metadata.source,
-    observedAt: pfzData.metadata.updatedAt,
-    validUntil: pfzData.metadata.validUntil,
-    recommendedFishTypes: pfzData.zones[0].recommendedFishTypes,
+  const topPfz = pfzData.zones[0];
+  const [selectedEntity, setSelectedEntity] = useState<SelectedMapEntity | null>(() => {
+    if (!topPfz) return null;
+    return {
+      id: topPfz.id,
+      type: 'pfz',
+      title: topPfz.zoneName,
+      subtitle: 'Optimal pelagic aggregation zone detected via EO Thermal/Chlorophyll Fronts',
+      status: topPfz.potentialScore.toUpperCase(),
+      severity: 'favorable',
+      location: {
+        latitude: topPfz.location.latitude,
+        longitude: topPfz.location.longitude,
+      },
+      details: {
+        potentialScore: topPfz.potentialScore.toUpperCase(),
+        distance: `${topPfz.distanceKmFromPort || 18.5} km`,
+        bearing: `${topPfz.bearingDegrees || 245}°`,
+        waterDepth: `${topPfz.location.depthMeters || 35} m`,
+        sstGradient: topPfz.sstIndicator,
+        chlorophyll: topPfz.chlorophyllIndicator,
+      },
+      source: pfzData.metadata.source,
+      observedAt: pfzData.metadata.updatedAt || '2026-09-02 06:00 IST',
+      validUntil: pfzData.metadata.validUntil,
+      recommendedFishTypes: topPfz.recommendedFishTypes,
+    };
   });
 
-  const [flyToCoords, setFlyToCoords] = useState<[number, number] | null>([
-    pfzData.zones[0].location.latitude,
-    pfzData.zones[0].location.longitude,
-  ]);
+  const [flyToCoords, setFlyToCoords] = useState<[number, number] | null>(() => {
+    return topPfz ? [topPfz.location.latitude, topPfz.location.longitude] : mapCenter;
+  });
 
   const handleFocusEntity = (entity: SelectedMapEntity) => {
     if (entity.location) {
@@ -56,7 +62,7 @@ export const MarineMapPage: React.FC = () => {
     }
   };
 
-  const selectZoneAlpha = () => {
+  const selectTopZone = () => {
     const z = pfzData.zones[0];
     const ent: SelectedMapEntity = {
       id: z.id,
@@ -68,14 +74,14 @@ export const MarineMapPage: React.FC = () => {
       location: { latitude: z.location.latitude, longitude: z.location.longitude },
       details: {
         potentialScore: z.potentialScore.toUpperCase(),
-        distance: `${z.distanceKmFromPort} km`,
-        bearing: `${z.bearingDegrees}° WSW`,
-        waterDepth: `${z.location.depthMeters} m`,
+        distance: `${z.distanceKmFromPort || 18.5} km`,
+        bearing: `${z.bearingDegrees || 245}°`,
+        waterDepth: `${z.location.depthMeters || 35} m`,
         sstGradient: z.sstIndicator,
         chlorophyll: z.chlorophyllIndicator,
       },
       source: pfzData.metadata.source,
-      observedAt: pfzData.metadata.updatedAt,
+      observedAt: pfzData.metadata.updatedAt || '2026-09-02 06:00 IST',
       validUntil: pfzData.metadata.validUntil,
       recommendedFishTypes: z.recommendedFishTypes,
     };
@@ -89,13 +95,13 @@ export const MarineMapPage: React.FC = () => {
       id: v.id,
       type: 'vessel',
       title: v.name,
-      subtitle: `${v.vesselType.replace('_', ' ').toUpperCase()} • Reg: ${v.registrationNo}`,
+      subtitle: `${v.vesselType.replace('_', ' ').toUpperCase()} • Reg: ${v.registrationNo || 'IND-REG'}`,
       status: 'Active Operations',
       severity: 'favorable',
       location: { latitude: v.currentLocation.latitude, longitude: v.currentLocation.longitude },
       details: {
         vesselLength: `${v.lengthMeters} m`,
-        enginePower: `${v.engineHp} HP`,
+        enginePower: `${v.engineHp || 30} HP`,
         cruisingSpeed: `${v.cruisingSpeedKnots} kts`,
         waveLimit: `${v.maxWaveToleranceMeters} m`,
         homePort: v.homePort.name,
@@ -114,16 +120,16 @@ export const MarineMapPage: React.FC = () => {
       type: 'hazard',
       title: h.title,
       subtitle: h.areaDescription,
-      status: h.severity.toUpperCase(),
+      status: String(h.severity).toUpperCase(),
       severity: h.severity as any,
       location: { latitude: h.affectedCoordinates[0][0], longitude: h.affectedCoordinates[0][1] },
       details: {
         hazardType: h.hazardType.toUpperCase(),
-        severity: h.severity.toUpperCase(),
+        severity: String(h.severity).toUpperCase(),
         activeState: h.isActive ? 'ACTIVE WARNING' : 'INACTIVE',
       },
       source: hazardsData.metadata.source,
-      observedAt: hazardsData.metadata.updatedAt,
+      observedAt: hazardsData.metadata.updatedAt || '2026-09-02 06:00 IST',
       validUntil: hazardsData.metadata.validUntil,
       actionRequired: h.advisoryAction,
     };
@@ -140,18 +146,18 @@ export const MarineMapPage: React.FC = () => {
       subtitle: b.properties.restrictionDescription,
       status: b.properties.zoneType.toUpperCase(),
       severity: b.properties.severityOnIncursion as any,
-      location: { latitude: 18.93, longitude: 72.85 },
+      location: { latitude: mapCenter[0] + 0.1, longitude: mapCenter[1] + 0.1 },
       details: {
         zoneType: b.properties.zoneType.toUpperCase(),
         bufferRequired: `${b.properties.bufferDistanceMeters || 500} m`,
         incursionSeverity: b.properties.severityOnIncursion.toUpperCase(),
       },
       source: boundariesData.metadata.source,
-      observedAt: boundariesData.metadata.updatedAt,
+      observedAt: boundariesData.metadata.updatedAt || '2026-09-02 06:00 IST',
       actionRequired: b.properties.restrictionDescription,
     };
     setSelectedEntity(ent);
-    setFlyToCoords([18.93, 72.85]);
+    setFlyToCoords([mapCenter[0] + 0.1, mapCenter[1] + 0.1]);
   };
 
   return (
@@ -167,7 +173,7 @@ export const MarineMapPage: React.FC = () => {
               INTERACTIVE MARINE MAP
             </span>
             <span className="hidden sm:inline text-[11px] font-telemetry text-slate-400 ml-2">
-              • ARABIAN SEA OPERATIONAL THEATER
+              • {activeRegion.name.toUpperCase()}
             </span>
           </div>
         </div>
@@ -189,15 +195,15 @@ export const MarineMapPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={selectZoneAlpha}
+            onClick={selectTopZone}
             className={`px-2.5 py-1 rounded-lg border text-[11px] font-label-caps flex items-center gap-1.5 transition-colors ${
-              selectedEntity?.id === pfzData.zones[0].id
+              selectedEntity?.type === 'pfz'
                 ? 'bg-emerald-500 text-slate-950 font-bold border-emerald-400'
                 : 'bg-slate-900/80 border-slate-800 text-emerald-400 hover:border-emerald-500/40'
             }`}
           >
             <Fish className="w-3 h-3" />
-            <span>PFZ Alpha</span>
+            <span>Candidate PFZ</span>
           </button>
 
           <button
@@ -210,7 +216,7 @@ export const MarineMapPage: React.FC = () => {
             }`}
           >
             <AlertTriangle className="w-3 h-3" />
-            <span>Squall Alert</span>
+            <span>Hazard Alert</span>
           </button>
 
           <button
@@ -223,7 +229,7 @@ export const MarineMapPage: React.FC = () => {
             }`}
           >
             <ShieldAlert className="w-3 h-3" />
-            <span>Naval Geofence</span>
+            <span>Restricted Zone</span>
           </button>
         </div>
       </div>

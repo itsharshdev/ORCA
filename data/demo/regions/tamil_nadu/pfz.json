@@ -1,0 +1,84 @@
+{
+  "metadata": {
+    "source": "INCOIS_PFZ_ADVISORY_SNAPSHOT",
+    "region": "Tamil Nadu Coastal Sector (Nagapattinam)",
+    "generatedAt": "2026-09-02T04:30:00Z",
+    "updatedAt": "2026-09-02 06:00 IST",
+    "validUntil": "2026-09-03 06:00 IST",
+    "status": "demo_snapshot",
+    "isLive": false,
+    "confidenceScore": 87,
+    "disclaimer": "Fictional/demo dataset for prototype demonstration only. Not for navigation or official advisory."
+  },
+  "zones": [
+    {
+      "id": "PFZ-TN-01",
+      "zoneName": "Nagai Deep Pelagic Front",
+      "location": {
+        "latitude": 10.65,
+        "longitude": 80.08,
+        "depthMeters": 68
+      },
+      "distanceKmFromPort": 28.4,
+      "bearingDegrees": 115,
+      "potentialScore": "high",
+      "sstIndicator": "28.4°C (Strong thermal gradient)",
+      "chlorophyllIndicator": "High (1.95 mg/m³)",
+      "recommendedFishTypes": [
+        "Yellowfin Tuna",
+        "Indian Mackerel",
+        "Carangids",
+        "Barracuda"
+      ],
+      "validityWindow": {
+        "start": "2026-09-02T00:00:00Z",
+        "end": "2026-09-03T06:00:00Z"
+      }
+    },
+    {
+      "id": "PFZ-TN-02",
+      "zoneName": "Poompuhar Shelf Bank",
+      "location": {
+        "latitude": 11.12,
+        "longitude": 80.02,
+        "depthMeters": 42
+      },
+      "distanceKmFromPort": 22.1,
+      "bearingDegrees": 35,
+      "potentialScore": "moderate",
+      "sstIndicator": "28.8°C (Moderate gradient)",
+      "chlorophyllIndicator": "Moderate (1.12 mg/m³)",
+      "recommendedFishTypes": [
+        "Seer Fish",
+        "Sardines",
+        "Ribbonfish"
+      ],
+      "validityWindow": {
+        "start": "2026-09-02T00:00:00Z",
+        "end": "2026-09-03T06:00:00Z"
+      }
+    },
+    {
+      "id": "PFZ-TN-03",
+      "zoneName": "Kodiyakkarai Outer Shoal",
+      "location": {
+        "latitude": 10.28,
+        "longitude": 79.92,
+        "depthMeters": 28
+      },
+      "distanceKmFromPort": 16.5,
+      "bearingDegrees": 195,
+      "potentialScore": "moderate",
+      "sstIndicator": "29.1°C (Diffused boundary)",
+      "chlorophyllIndicator": "Moderate (0.95 mg/m³)",
+      "recommendedFishTypes": [
+        "Anchovies",
+        "Silverbellies"
+      ],
+      "validityWindow": {
+        "start": "2026-09-02T00:00:00Z",
+        "end": "2026-09-03T06:00:00Z"
+      }
+    }
+  ]
+}

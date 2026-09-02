@@ -1,0 +1,24 @@
+{
+  "metadata": {
+    "source": "INCOIS_BAY_OF_BENGAL_SNAPSHOT",
+    "region": "Tamil Nadu Coastal Sector (Nagapattinam)",
+    "generatedAt": "2026-09-02T04:00:00Z",
+    "updatedAt": "2026-09-02 06:00 IST",
+    "validUntil": "2026-09-03 06:00 IST",
+    "status": "demo_snapshot",
+    "isLive": false,
+    "confidenceScore": 88,
+    "disclaimer": "Fictional/demo dataset for prototype demonstration only. Not for navigation or official advisory."
+  },
+  "parameters": {
+    "seaSurfaceTemperatureCelsius": 28.4,
+    "sstAnomalyCelsius": 0.8,
+    "chlorophyllConcentrationMgM3": 1.95,
+    "chlorophyllGradient": "High frontal gradient across 50m shelf break",
+    "surfaceCurrentKnots": 1.1,
+    "currentDirection": "Southward (East India Coastal Current)",
+    "salinityPsu": 32.8,
+    "mixedLayerDepthMeters": 32,
+    "upwellingIndex": "Moderate coastal divergence"
+  }
+}

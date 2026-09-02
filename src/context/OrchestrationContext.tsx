@@ -5,6 +5,7 @@ import type {
   AgentExecutionStatus, 
   BaseAgentResult 
 } from '@/types/agents';
+import type { RegionId } from '@/data';
 import { executeMultiAgentOrchestration } from '@/orchestration/agentOrchestrator';
 import { OrchestrationContext } from './orchestrationContextDef';
 
@@ -195,6 +196,39 @@ const initialOrchestration: OrchestrationPackage = {
     confidence: 94,
     sourceStatus: 'demo_snapshot',
   },
+  decision: {
+    verdict: 'CAUTION',
+    confidenceScore: 78.4,
+    primaryDriver: 'Departure is favorable, but return window approaches worsening midday sea state (> 2.0m swell post-12:00 IST).',
+    explanation: 'Trip feasible for early departure at 05:45 IST, but mission duration of 5h borders afternoon wave increase. Conclude operations before midday.',
+    recommendedDeparture: '05:45 IST',
+    recommendedReturn: '10:45 IST',
+    recommendedZone: {
+      id: 'PFZ-MUM-01',
+      name: 'Alibaug Outer Bank (PFZ-MUM-01)',
+      distanceKm: 18.5,
+      bearing: 245,
+      opportunity: 'high',
+    },
+    ruleEvaluations: [],
+    safetyOverridesTriggered: [],
+    positiveFactors: [
+      'Alibaug Outer Bank shows high pelagic aggregation potential based on SST thermal front and chlorophyll boundary.',
+      'Clear navigation corridor verified (4.2 km clearance from Naval Anchorage Security Geofence).',
+      'All required marine datasets verified (5/5 agent reports present).',
+    ],
+    riskFactors: [
+      'Departure at 05:45 IST is favorable, but return window (10:45 IST) approaches worsening midday sea state. Ensure return before 11:30 IST.',
+      'Moderate surface winds (12.5 kts, gusts 18.5 kts) and steady current (0.8 kts).',
+    ],
+    dataQuality: {
+      status: 'demo_snapshot',
+      completenessScore: 100,
+      evaluatedSourcesCount: 5,
+      totalRequiredSources: 5,
+    },
+    evaluatedAt: '2026-09-02T08:30:02Z',
+  },
 };
 
 export const OrchestrationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -210,7 +244,12 @@ export const OrchestrationProvider: React.FC<{ children: React.ReactNode }> = ({
     geoSafety: 'completed',
   });
 
-  const runOrchestration = useCallback(async (query: string): Promise<OrchestrationPackage> => {
+  const runOrchestration = useCallback(async (
+    query: string, 
+    regionId: RegionId = 'maharashtra',
+    durationOverride?: number,
+    departureOverride?: string
+  ): Promise<OrchestrationPackage> => {
     setIsOrchestrating(true);
     setAgentStatuses({
       planner: 'running',
@@ -221,12 +260,18 @@ export const OrchestrationProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     try {
-      const result = await executeMultiAgentOrchestration(query, (agentId, status) => {
-        setAgentStatuses((prev) => ({
-          ...prev,
-          [agentId]: status,
-        }));
-      });
+      const result = await executeMultiAgentOrchestration(
+        query, 
+        regionId, 
+        (agentId, status) => {
+          setAgentStatuses((prev) => ({
+            ...prev,
+            [agentId]: status,
+          }));
+        },
+        durationOverride,
+        departureOverride
+      );
 
       setOrchestration(result);
       return result;
