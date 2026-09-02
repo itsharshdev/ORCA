@@ -15,15 +15,15 @@ visual interface and a convincing live demo.
 
 ## Current Phase
 
-PHASE 2 --- COMPLETE (Command Center & Real Multi-Page Application)
+PHASE 3 --- COMPLETE (Interactive Marine Map Reasoning Surface)
 
 ## Current Priority
 
 1.  Phase 0 Foundation Setup (COMPLETED)
 2.  Phase 1 Design System (COMPLETED - Integrated from Stitch)
 3.  Phase 2 Command Center & Real Multi-Page App (COMPLETED)
-4.  Phase 3 Interactive Marine Map Reasoning (NEXT)
-5.  Phase 4 Agent Orchestration & Pipeline Trace
+4.  Phase 3 Interactive Marine Map Reasoning (COMPLETED)
+5.  Phase 4 Agent Orchestration & Pipeline Trace (NEXT)
 6.  Phase 5 Decision Engine & Safety Override Logic
 7.  Phase 6 Evidence & Explainability Panel
 8.  Phase 7 What-If Scenario Simulator
@@ -35,13 +35,12 @@ PHASE 2 --- COMPLETE (Command Center & Real Multi-Page Application)
 
 User asks: \> "Can I go fishing tomorrow morning for five hours?"
 
-Current flow established in Phase 2:
-- Command Center HUD (`/dashboard`) shows full interactive Leaflet map canvas with vessel and PFZ coordinates.
-- Mission Card (`/dashboard/mission`) allows configuring departure time, duration, and vessel constraints.
-- Decision Card (`/dashboard/decisions`) explains the CAUTION verdict with 78% confidence and cross-source evidence audit.
-- Marine Map Explorer (`/dashboard/map`) allows dedicated layer toggling and entity inspection.
-- Decision Replay History (`/dashboard/history`) provides audit trails of past decisions.
-- Real client-side navigation allows seamless multi-page transitions.
+Current flow established in Phase 3:
+- Interactive Marine Map (`/dashboard/map`) acts as a full operational reasoning surface.
+- 8 independent toggleable layers: User Location, Active Vessel, PFZ Fishing Zones, Weather Risk Overlays, Navigational Hazards, Geofences & Sanctuaries, Recommended Route Corridor, and Safe Navigation Corridors.
+- Clicking any map feature (or quick selector chip) triggers the Context Inspector Panel, showing SST, Chlorophyll gradient, depth, target pelagic species, restricted buffer requirements, mandatory hazard advisories, and data provenance (`DEMO SNAPSHOT`).
+- "Focus on Map" triggers smooth map flight (`flyTo`) centering on the selected entity coordinates.
+- "Plan Trip" navigates seamlessly to the Mission Planner with preset zone parameters.
 
 ## Prototype Data Policy
 
@@ -62,25 +61,23 @@ Scientific maritime intelligence center:
 
 ## Decisions Made
 
-- Implemented real client-side multi-page routing via `react-router-dom` across 6 distinct pages.
-- Built reusable AppShell with responsive TopBar, desktop Sidebar, and mobile bottom navigation.
-- Preserved Leaflet dark marine styling with custom glowing SVG markers for vessels, PFZs, geofences, and hazards.
-- Connected deterministic demo datasets cleanly through `@/data` without backend/API dependencies.
-- Zero fake live data claims; all provenance metadata is explicitly stamped.
+- Implemented 8 distinct, independently toggleable map layers with active state indicators and count badges.
+- Created reusable `MapContextPanel`, `MapLayerControl`, and `MapLegend` modular components.
+- Added smooth map flight animation using `useMap` controller hook when features are selected.
+- Highlighted safe navigation bathymetry corridors (20m - 50m depth envelope) and squall warning risk areas.
+- Maintained strict data honesty (`DEMO SNAPSHOT` stamps on all context panels).
 
 ## Last Completed Work
 
-PHASE 2 — COMMAND CENTER & REAL MULTI-PAGE APPLICATION
-- Installed `react-router-dom` and configured real client-side routing.
-- Built `/login` with serious maritime authentication design & one-click demo access.
-- Built `/dashboard` (Command Center) with HUD layout: full Leaflet marine map canvas, Mission Card, Decision Card, Agent Reasoning Trace, and Conversational Assistant.
-- Built `/dashboard/mission` (Trip Planner) with activity, vessel, timing, and constraint controls.
-- Built `/dashboard/map` (Geospatial Explorer) with full-screen map canvas and floating detail drawer.
-- Built `/dashboard/decisions` (Evidence & Explainability) with cross-source audit table.
-- Built `/dashboard/history` (Audit Log) with verdict filters and replay triggers.
-- Built `/dashboard/settings` (Configuration) with vessel specs, offline storage, and language selection.
-- Tested and verified: `npm run build` (Passed, 0 errors, 367ms) and `npx eslint src` (Passed, 0 errors).
+PHASE 3 — INTERACTIVE MARINE MAP
+- Created `src/types/map.ts` with `MapLayerVisibility` and `SelectedMapEntity` interfaces.
+- Created `src/components/map/MapLayerControl.tsx` with 8 layer toggles and batch all/none controls.
+- Created `src/components/map/MapLegend.tsx` with professional cartographic symbols.
+- Created `src/components/map/MapContextPanel.tsx` with detailed parameters, target fish species, hazard advisories, and provenance tags.
+- Enhanced `src/components/map/MarineMapCanvas.tsx` with smooth flight controller, user port marker, vessel heading marker, PFZ zones, weather risk overlays, geofence polygons, and recommended route corridor.
+- Updated `src/pages/MarineMapPage.tsx` into a master Marine Geospatial Explorer.
+- Tested and verified: `npm run build` (Passed, 0 errors, 355ms) and `npx eslint src` (Passed, 0 errors).
 
 ## Next Action
 
-Awaiting user direction to proceed to **PHASE 3 — INTERACTIVE MARINE MAP REASONING**.
+Awaiting user direction to proceed to **PHASE 4 — AGENT ORCHESTRATION & PIPELINE TRACE**.
