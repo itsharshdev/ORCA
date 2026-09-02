@@ -1,0 +1,40 @@
+{
+  "metadata": {
+    "source": "DEMO_COASTGUARD_INCOIS_ALERTS_SNAPSHOT",
+    "description": "Deterministic marine safety notices, weather alerts, and navigation restrictions",
+    "updatedAt": "2026-09-02T07:00:00Z",
+    "validUntil": "2026-09-03T18:00:00Z",
+    "status": "demo_snapshot",
+    "isLive": false,
+    "disclaimer": "Fictional safety alerts for prototype safety-engine demonstration."
+  },
+  "alerts": [
+    {
+      "id": "HAZ-2026-0902-01",
+      "title": "Squally Wind Warning for Afternoon Hours",
+      "severity": "moderate",
+      "hazardType": "weather",
+      "areaDescription": "Offshore Raigad and Ratnagiri beyond 25 nautical miles",
+      "affectedCoordinates": [
+        [18.5, 72.3],
+        [18.1, 72.4],
+        [17.8, 72.5]
+      ],
+      "advisoryAction": "Small craft advised to return to coastal harbor before 13:00 IST",
+      "isActive": true
+    },
+    {
+      "id": "HAZ-2026-0902-02",
+      "title": "Submerged Shoal / Shallow Sandbar Alert",
+      "severity": "high",
+      "hazardType": "shallow_water",
+      "areaDescription": "Dharamtal Creek Entrance Shoal Bank",
+      "affectedCoordinates": [
+        [18.82, 72.85],
+        [18.84, 72.87]
+      ],
+      "advisoryAction": "Maintain minimum 1.5 nm clearance from marked shoal during ebb tide",
+      "isActive": true
+    }
+  ]
+}

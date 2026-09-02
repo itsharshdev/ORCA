@@ -1,0 +1,60 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "source": "DEMO_GIS_GEOFENCE_SNAPSHOT",
+    "description": "Deterministic maritime restricted zones, marine sanctuaries, and security geofences",
+    "updatedAt": "2026-09-02T00:00:00Z",
+    "validUntil": "2026-12-31T23:59:59Z",
+    "status": "demo_snapshot",
+    "isLive": false,
+    "disclaimer": "Fictional geospatial boundaries for geofence engine demonstration."
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "GEO-RESTRICTED-01",
+      "properties": {
+        "name": "Naval / Port Anchorage Security Geofence",
+        "zoneType": "restricted",
+        "severityOnIncursion": "critical",
+        "restrictionDescription": "Entry strictly prohibited for non-authorized commercial and artisanal fishing crafts.",
+        "bufferDistanceMeters": 500
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.82, 18.96],
+            [72.88, 18.96],
+            [72.88, 18.91],
+            [72.82, 18.91],
+            [72.82, 18.96]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "GEO-SANCTUARY-02",
+      "properties": {
+        "name": "Demo Marine Protected Coastal Habitat",
+        "zoneType": "marine_protected",
+        "severityOnIncursion": "high",
+        "restrictionDescription": "Trawling and mechanized fishing restricted. Traditional sustainable artisanal craft only.",
+        "bufferDistanceMeters": 1000
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.68, 18.62],
+            [72.76, 18.62],
+            [72.76, 18.52],
+            [72.68, 18.52],
+            [72.68, 18.62]
+          ]
+        ]
+      }
+    }
+  ]
+}

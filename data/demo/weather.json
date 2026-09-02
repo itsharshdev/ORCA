@@ -1,0 +1,59 @@
+{
+  "metadata": {
+    "source": "DEMO_IMD_INCOIS_WEATHER_SNAPSHOT",
+    "description": "Deterministic coastal and offshore marine meteorological observations",
+    "updatedAt": "2026-09-02T06:30:00Z",
+    "validUntil": "2026-09-03T06:30:00Z",
+    "status": "demo_snapshot",
+    "isLive": false,
+    "disclaimer": "Fictional/demo dataset for prototype demonstration only."
+  },
+  "currentConditions": {
+    "location": {
+      "latitude": 18.922,
+      "longitude": 72.834,
+      "name": "Mumbai Port Waters"
+    },
+    "windSpeedKnots": 12.5,
+    "windGustKnots": 16.0,
+    "windDirection": "WSW",
+    "windDirectionDegrees": 240,
+    "waveHeightMeters": 1.4,
+    "wavePeriodSeconds": 6.8,
+    "visibilityKm": 9.5,
+    "airTemperatureCelsius": 29.4,
+    "weatherCondition": "Partly Cloudy with Coastal Breeze",
+    "lightningAlert": false,
+    "cycloneAlert": false
+  },
+  "forecastHourly": [
+    {
+      "time": "2026-09-03T05:00:00Z",
+      "windSpeedKnots": 10.0,
+      "waveHeightMeters": 1.1,
+      "riskAssessment": "favorable",
+      "weatherCondition": "Clear"
+    },
+    {
+      "time": "2026-09-03T08:00:00Z",
+      "windSpeedKnots": 12.0,
+      "waveHeightMeters": 1.3,
+      "riskAssessment": "favorable",
+      "weatherCondition": "Fair"
+    },
+    {
+      "time": "2026-09-03T11:00:00Z",
+      "windSpeedKnots": 18.5,
+      "waveHeightMeters": 2.1,
+      "riskAssessment": "cautionary",
+      "weatherCondition": "Breezy / Choppy Sea"
+    },
+    {
+      "time": "2026-09-03T14:00:00Z",
+      "windSpeedKnots": 22.0,
+      "waveHeightMeters": 2.6,
+      "riskAssessment": "adverse",
+      "weatherCondition": "Squally / High Waves"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "source": "DEMO_MOSDAC_INCOIS_OCEAN_SNAPSHOT",
+    "description": "Deterministic oceanographic parameters: SST, chlorophyll, currents, and salinity",
+    "updatedAt": "2026-09-02T05:00:00Z",
+    "validUntil": "2026-09-03T05:00:00Z",
+    "status": "demo_snapshot",
+    "isLive": false,
+    "disclaimer": "Fictional/demo ocean indicators for prototype evaluation."
+  },
+  "parameters": {
+    "seaSurfaceTemperatureCelsius": 27.8,
+    "sstAnomalyCelsius": -0.4,
+    "chlorophyllConcentrationMgM3": 1.84,
+    "chlorophyllGradient": "Strong Coastal Front",
+    "surfaceCurrentKnots": 0.8,
+    "currentDirection": "SSE (160°)",
+    "salinityPsu": 34.8,
+    "mixedLayerDepthMeters": 28,
+    "upwellingIndex": "Moderate Active Upwelling"
+  },
+  "tideForecast": {
+    "datum": "Chart Datum (CD)",
+    "highTideTime": "2026-09-03T07:15:00Z",
+    "highTideHeightMeters": 3.82,
+    "lowTideTime": "2026-09-03T13:40:00Z",
+    "lowTideHeightMeters": 1.15
+  }
+}

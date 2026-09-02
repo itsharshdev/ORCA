@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "source": "DEMO_INCOIS_PFZ_SNAPSHOT",
+    "description": "Deterministic Potential Fishing Zone demo dataset for coastal Maharashtra/Goa region",
+    "updatedAt": "2026-09-02T06:00:00Z",
+    "validUntil": "2026-09-03T06:00:00Z",
+    "status": "demo_snapshot",
+    "isLive": false,
+    "disclaimer": "Fictional/demo dataset for prototype demonstration only. Not for navigation or official advisory."
+  },
+  "zones": [
+    {
+      "id": "PFZ-MUM-01",
+      "zoneName": "Zone Alpha (Offshore Alibaug)",
+      "location": {
+        "latitude": 18.72,
+        "longitude": 72.65,
+        "depthMeters": 38,
+        "name": "Alibaug Outer Bank"
+      },
+      "potentialScore": "high",
+      "chlorophyllIndicator": "High (1.82 mg/m³)",
+      "sstIndicator": "Favorable (27.8°C)",
+      "recommendedFishTypes": ["Mackerel", "Sardines", "Pomfret"],
+      "distanceKmFromPort": 18.5,
+      "bearingDegrees": 245
+    },
+    {
+      "id": "PFZ-MUM-02",
+      "zoneName": "Zone Bravo (Murud Shelf)",
+      "location": {
+        "latitude": 18.35,
+        "longitude": 72.78,
+        "depthMeters": 46,
+        "name": "Murud Ridge"
+      },
+      "potentialScore": "high",
+      "chlorophyllIndicator": "Optimal (2.15 mg/m³)",
+      "sstIndicator": "Favorable Gradient (27.2°C)",
+      "recommendedFishTypes": ["Tuna", "Ribbonfish", "Seerfish"],
+      "distanceKmFromPort": 32.0,
+      "bearingDegrees": 200
+    },
+    {
+      "id": "PFZ-MUM-03",
+      "zoneName": "Zone Charlie (North High Deep)",
+      "location": {
+        "latitude": 19.12,
+        "longitude": 72.48,
+        "depthMeters": 62,
+        "name": "North Continental Slope"
+      },
+      "potentialScore": "moderate",
+      "chlorophyllIndicator": "Moderate (0.95 mg/m³)",
+      "sstIndicator": "Warm (29.1°C)",
+      "recommendedFishTypes": ["Anchovy", "Carangids"],
+      "distanceKmFromPort": 44.2,
+      "bearingDegrees": 285
+    }
+  ]
+}

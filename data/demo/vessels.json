@@ -1,0 +1,62 @@
+{
+  "metadata": {
+    "source": "DEMO_VESSEL_REGISTRY",
+    "description": "Standard fishing vessel profiles for mission-constraint and risk evaluation",
+    "updatedAt": "2026-09-02T00:00:00Z",
+    "status": "demo_snapshot"
+  },
+  "profiles": [
+    {
+      "id": "VESSEL-001",
+      "name": "Matsya Sagar 1",
+      "registrationNo": "IND-MH-02-MM-849",
+      "vesselType": "traditional_motorized",
+      "lengthMeters": 8.5,
+      "beamMeters": 2.2,
+      "draftMeters": 1.1,
+      "engineHp": 25,
+      "cruisingSpeedKnots": 6.5,
+      "maxWaveToleranceMeters": 1.8,
+      "maxWindToleranceKnots": 18.0,
+      "fuelCapacityHours": 10.0,
+      "crewSize": 3,
+      "homePort": {
+        "latitude": 18.915,
+        "longitude": 72.825,
+        "name": "Sassoon Docks, Mumbai"
+      },
+      "currentLocation": {
+        "latitude": 18.915,
+        "longitude": 72.825,
+        "name": "Harbor Berth"
+      },
+      "currentHeadingDegrees": 180
+    },
+    {
+      "id": "VESSEL-002",
+      "name": "Samudra Ratna",
+      "registrationNo": "IND-MH-01-MM-124",
+      "vesselType": "small_mechanized",
+      "lengthMeters": 14.0,
+      "beamMeters": 3.8,
+      "draftMeters": 1.8,
+      "engineHp": 90,
+      "cruisingSpeedKnots": 8.5,
+      "maxWaveToleranceMeters": 2.5,
+      "maxWindToleranceKnots": 24.0,
+      "fuelCapacityHours": 24.0,
+      "crewSize": 6,
+      "homePort": {
+        "latitude": 18.915,
+        "longitude": 72.825,
+        "name": "Sassoon Docks, Mumbai"
+      },
+      "currentLocation": {
+        "latitude": 18.915,
+        "longitude": 72.825,
+        "name": "Harbor Berth"
+      },
+      "currentHeadingDegrees": 180
+    }
+  ]
+}
