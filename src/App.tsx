@@ -1,42 +1,51 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { RegionProvider } from '@/context/RegionContext';
-import { OrchestrationProvider } from '@/context/OrchestrationContext';
-import { AppShell } from '@/components/layout/AppShell';
-import { LoginPage } from '@/pages/LoginPage';
-import { CommandCenterPage } from '@/pages/CommandCenterPage';
-import { MissionPlannerPage } from '@/pages/MissionPlannerPage';
-import { MarineMapPage } from '@/pages/MarineMapPage';
-import { DecisionsPage } from '@/pages/DecisionsPage';
-import { HistoryPage } from '@/pages/HistoryPage';
-import { SettingsPage } from '@/pages/SettingsPage';
-import { ROUTES } from '@/routes';
+import { OrcaProvider, useOrca } from './context/OrcaContext';
+import { Header } from './components/navigation/Header';
+import { BottomNav } from './components/navigation/BottomNav';
 
-export const App: React.FC = () => {
+import { HomeView } from './components/views/HomeView';
+import { AskOrcaView } from './components/views/AskOrcaView';
+import { MapView } from './components/views/MapView';
+import { UpdatesView } from './components/views/UpdatesView';
+import { AlertsView } from './components/views/AlertsView';
+import { TripPlannerView } from './components/views/TripPlannerView';
+
+import { WhatIfSimulatorModal } from './components/modals/WhatIfSimulatorModal';
+import { DecisionDetailsModal } from './components/modals/DecisionDetailsModal';
+import { VesselProfileModal } from './components/modals/VesselProfileModal';
+
+import './styles/index.css';
+
+const AppContent: React.FC = () => {
+  const { activeTab, isTripPlannerOpen } = useOrca();
+
   return (
-    <RegionProvider>
-      <OrchestrationProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+    <>
+      <Header />
 
-            {/* Authenticated Application Shell Routes */}
-            <Route element={<AppShell />}>
-              <Route path={ROUTES.DASHBOARD} element={<CommandCenterPage />} />
-              <Route path={ROUTES.MISSION} element={<MissionPlannerPage />} />
-              <Route path={ROUTES.MAP} element={<MarineMapPage />} />
-              <Route path={ROUTES.DECISIONS} element={<DecisionsPage />} />
-              <Route path={ROUTES.HISTORY} element={<HistoryPage />} />
-              <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
-            </Route>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {activeTab === 'home' && <HomeView />}
+        {activeTab === 'map' && <MapView />}
+        {activeTab === 'ask-orca' && <AskOrcaView />}
+        {activeTab === 'updates' && <UpdatesView />}
+        {activeTab === 'alerts' && <AlertsView />}
+      </main>
 
-            {/* Default & Fallback: Redirect to Command Center */}
-            <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
-          </Routes>
-        </BrowserRouter>
-      </OrchestrationProvider>
-    </RegionProvider>
+      <BottomNav />
+
+      {/* Modals & Overlays */}
+      {isTripPlannerOpen && <TripPlannerView />}
+      <WhatIfSimulatorModal />
+      <DecisionDetailsModal />
+      <VesselProfileModal />
+    </>
   );
 };
 
-export default App;
+export default function App() {
+  return (
+    <OrcaProvider>
+      <AppContent />
+    </OrcaProvider>
+  );
+}

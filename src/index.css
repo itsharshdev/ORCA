@@ -1,160 +1,111 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-@import "tailwindcss";
-
-@theme {
-  --color-background: #071424;
-  --color-surface: #071424;
-  --color-surface-dim: #071424;
-  --color-surface-bright: #2e3a4b;
-  --color-surface-container-lowest: #030f1e;
-  --color-surface-container-low: #101c2c;
-  --color-surface-container: #142031;
-  --color-surface-container-high: #1f2b3c;
-  --color-surface-container-highest: #2a3547;
-  --color-surface-glass: rgba(22, 33, 54, 0.75);
-
-  --color-primary: #b9c7e4;
-  --color-primary-container: #0a192f;
-  --color-secondary: #46eaed;
-  --color-secondary-container: #00cdd0;
-  --color-tertiary: #accae8;
-  
-  --color-on-surface: #d7e3fa;
-  --color-on-surface-variant: #94a3b8;
-  --color-outline: #8f9097;
-  --color-outline-variant: #44474d;
-
-  --color-status-go: #2ecc71;
-  --color-status-caution: #f1c40f;
-  --color-status-avoid: #e74c3c;
-  --color-map-accent: #14b8a6;
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #94a3b8;
-
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-}
-
 :root {
-  --bg-primary: #071424;
-  --bg-surface: #0a192f;
-  --bg-surface-glass: rgba(22, 33, 54, 0.85);
-  --accent-cyan: #46eaed;
-  --status-go: #2ecc71;
-  --status-caution: #f1c40f;
-  --status-avoid: #e74c3c;
+  --text: #6b6375;
+  --text-h: #08060d;
+  --bg: #fff;
+  --border: #e5e4e7;
+  --code-bg: #f4f3ec;
+  --accent: #aa3bff;
+  --accent-bg: rgba(170, 59, 255, 0.1);
+  --accent-border: rgba(170, 59, 255, 0.5);
+  --social-bg: rgba(244, 243, 236, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 18px/145% var(--sans);
+  letter-spacing: 0.18px;
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
 }
 
-* {
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #9ca3af;
+    --text-h: #f3f4f6;
+    --bg: #16171d;
+    --border: #2e303a;
+    --code-bg: #1f2028;
+    --accent: #c084fc;
+    --accent-bg: rgba(192, 132, 252, 0.15);
+    --accent-border: rgba(192, 132, 252, 0.5);
+    --social-bg: rgba(47, 48, 58, 0.5);
+    --shadow:
+      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  }
+
+  #social .button-icon {
+    filter: invert(1) brightness(2);
+  }
+}
+
+#root {
+  width: 1126px;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  border-inline: 1px solid var(--border);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
 }
 
-html,
 body {
   margin: 0;
-  padding: 0;
-  background-color: #071424;
-  color: #d7e3fa;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  min-height: 100vh;
-  width: 100%;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Typography Helpers matching Stitch Design Spec */
-.font-telemetry {
-  font-family: 'JetBrains Mono', monospace;
-  letter-spacing: -0.01em;
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
 }
 
-.font-label-caps {
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  font-size: 0.75rem;
-  line-height: 1rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+h1 {
+  font-size: 56px;
+  letter-spacing: -1.68px;
+  margin: 32px 0;
+  @media (max-width: 1024px) {
+    font-size: 36px;
+    margin: 20px 0;
+  }
+}
+h2 {
+  font-size: 24px;
+  line-height: 118%;
+  letter-spacing: -0.24px;
+  margin: 0 0 8px;
+  @media (max-width: 1024px) {
+    font-size: 20px;
+  }
+}
+p {
+  margin: 0;
 }
 
-.font-display-decision {
-  font-family: 'Inter', sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+code,
+.counter {
+  font-family: var(--mono);
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--text-h);
 }
 
-/* Glassmorphism Panel styles */
-.hud-glass {
-  background: rgba(14, 26, 45, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-}
-
-.hud-glass-borderless {
-  background: rgba(14, 26, 45, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* Leaflet Dark Marine Theme Overrides */
-.leaflet-container {
-  background: #071424 !important;
-  font-family: 'Inter', sans-serif !important;
-  width: 100%;
-  height: 100%;
-}
-
-.leaflet-tile-pane {
-  filter: brightness(0.8) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
-}
-
-.leaflet-control-zoom {
-  border: 1px solid rgba(148, 163, 184, 0.2) !important;
-  border-radius: 8px !important;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
-}
-
-.leaflet-control-zoom a {
-  background-color: #0e1a2d !important;
-  color: #46eaed !important;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2) !important;
-}
-
-.leaflet-control-zoom a:hover {
-  background-color: #1f2b3c !important;
-  color: #ffffff !important;
-}
-
-.leaflet-popup-content-wrapper {
-  background: #0e1a2d !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(70, 234, 237, 0.4) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
-}
-
-.leaflet-popup-tip {
-  background: #0e1a2d !important;
-  border: 1px solid rgba(70, 234, 237, 0.4) !important;
-}
-
-/* Custom Scrollbar for Intelligence Panels */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(7, 20, 36, 0.5);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(70, 234, 237, 0.5);
+code {
+  font-size: 15px;
+  line-height: 135%;
+  padding: 4px 8px;
+  background: var(--code-bg);
 }
