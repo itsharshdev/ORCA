@@ -1,98 +1,67 @@
-# ORCA --- AI Coding Rules
+# ORCA — ENGINEERING RULES
 
-## 1. Read First
+## Architecture
+1. ORCA is a decision-intelligence platform.
+2. Multiple dashboards consume one intelligence layer.
+3. Never duplicate critical decision logic per role.
+4. Frontend is presentation; backend owns decisions.
+5. External sources are adapters.
+6. Evidence is first-class data.
 
-Before making changes, read: 1. `ORCA_BRAIN_V1.md` 2. `ORCA_RULES.md` 3.
-`ORCA_SESSION_STATE.md` 4. `ORCA_TECHNICAL_APPROACH.md`
+## Safety
+7. GO / CAUTION / AVOID / INSUFFICIENT_DATA only.
+8. Severe hazards override opportunity.
+9. Geospatial safety is deterministic.
+10. Vessel constraints are deterministic.
+11. Freshness/conflict checks are deterministic.
+12. LLM cannot override safety rules.
 
-## 2. Project Goal
+## Data
+13. Never fabricate live data.
+14. Never call a demo fixture LIVE.
+15. Every important observation has provenance.
+16. Preserve source conflicts.
+17. Record timestamps.
+18. Record units.
+19. Record spatial and temporal relevance.
+20. Use official machine-readable sources where possible.
 
-Optimize for: **polished visual quality + working demo + credible marine
-reasoning + explainability.**
+## Security
+21. Never commit secrets.
+22. Never expose service-role keys to browser.
+23. Use RLS.
+24. Validate API input.
+25. Do not log credentials.
 
-## 3. Build Discipline
+## AI
+26. Inspect before editing.
+27. No invented APIs.
+28. No invented environment variables beyond documented placeholders.
+29. No large rewrite without explicit reason.
+30. Small commits.
+31. Run build/lint/tests.
+32. Report what was verified.
+33. Report what remains mocked.
+34. Stop and ask for missing credentials/schema instead of hallucinating.
 
--   Inspect existing code before editing.
--   Do not rewrite the entire app unless explicitly required.
--   Reuse existing components.
--   Keep components small and modular.
--   Prefer simple solutions that can be demonstrated.
--   Avoid unnecessary packages.
--   Do not introduce paid dependencies.
--   Do not expose API keys.
+## Product
+35. Do not add features solely for demo quantity.
+36. One complete vertical slice beats many fake pages.
+37. What-if reuses the real decision pipeline.
+38. Offline mode must be honest.
+39. Dashboard role changes context, not the underlying truth.
+40. The decision is the product; agents are the mechanism.
 
-## 4. Data Honesty
+## Demo
+41. Every claimed feature must be demonstrable.
+42. Every "live" claim must be reproducible.
+43. Every important recommendation must have evidence.
+44. Show failure/degraded behavior when useful.
+45. Never claim safety guarantees.
 
--   Never call mock/static data "live".
--   Every demo observation should have source/status metadata.
--   Show `Demo snapshot`, `Cached`, or `Live` clearly.
--   Do not invent official thresholds.
--   Do not fabricate official warnings.
--   Do not invent marine data.
-
-## 5. Safety
-
--   Critical hazards override fishing optimization.
--   Missing critical data should reduce confidence.
--   The LLM must not independently invent safety decisions.
--   Geofence calculations should be deterministic.
--   Recommendations are decision support, not guarantees.
-
-## 6. UI
-
--   Mobile-first responsive behavior.
--   No broken buttons.
--   No empty screens.
--   No excessive animations.
--   No generic AI-dashboard look.
--   Use consistent typography, spacing and iconography.
--   Map must remain readable.
--   Status colors must have semantic meaning.
-
-## 7. Agent Architecture
-
-Use meaningful domain agents: - Planner - Ocean - Weather -
-Fisheries/PFZ - Geo/Safety
-
-Do not create agents just to inflate the agent count.
-
-## 8. Demo Reliability
-
-The primary demo must work without external APIs.
-
-Use deterministic local demo data as fallback.
-
-The primary scenario must be reproducible: 1. ask fishing-safety
-question; 2. show agent activity; 3. show decision; 4. show map; 5. show
-evidence; 6. change scenario; 7. show updated decision.
-
-## 9. Performance
-
--   Lazy-load heavy map features if useful.
--   Avoid huge assets.
--   Avoid unnecessary dependencies.
--   Keep first load fast.
--   Test production build.
-
-## 10. Completion
-
-After a major change: - run build; - check console; - test main flow; -
-test mobile layout; - update `ORCA_SESSION_STATE.md`.
-
-## 11. Account Switching
-
-Never depend on chat history. Persistent project context belongs in
-Markdown files and repository code.
-
-## 12. Priority
-
-If time is limited:
-
-P0 = working demo\
-P1 = visual polish\
-P2 = map + decision + evidence\
-P3 = what-if\
-P4 = voice/multilingual\
-P5 = PWA/offline\
-P6 = backend\
-P7 = advanced real-data integration
+## Git
+46. Never work directly on main.
+47. Preserve leader's branch.
+48. Merge at integration checkpoints.
+49. Tag known-good builds.
+50. Keep docs in the repo.
