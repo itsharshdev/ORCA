@@ -1,16 +1,16 @@
 # ORCA SESSION STATE
 
 ## Current phase
-PHASE 6 — Data Adapter Framework (Completed)
+PHASE 7 — Demo Data Normalization & Ingestion Pipeline (Completed)
 
 ## Status
-PHASE 6 COMPLETE — READY FOR PHASE 7 (Demo Normalization & Ingestion Pipeline)
+PHASE 7 COMPLETE — READY FOR PHASE 8 (Live Oceanography & INCOIS Adapter)
 
 ## Baseline
 Observed stack:
-- Backend: Fastify (`^5.12.5`), `@supabase/supabase-js` (`^2.99.3`), Zod (`^4.6.5`), `@fastify/cors` (`^11.3.0`), `dotenv` (`^18.0.0`)
-- Database: Supabase PostgreSQL 17 (`hxhnerghnpdrijzyhmuw`), PostGIS 3.3.7, 15 domain tables with RLS enabled
-- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 50 passing tests across 5 suites
+- Backend: Fastify (`^5.12.5`), `@supabase/supabase-js` (`^2.116.0`), Zod (`^4.6.5`), `@fastify/cors` (`^11.3.0`), `dotenv` (`^18.0.0`)
+- Database: Supabase PostgreSQL 17 (`hxhnerghnpdrijzyhmuw`), PostGIS 3.3.7, 15 domain tables with RLS enabled, 17 persisted normalized observations across `OCEAN`, `WEATHER`, and `PFZ`
+- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 62 passing tests across 6 suites
 - Frontend: React 19 (`^19.2.8`), TypeScript 6 (`~6.0.2`), Vite 8 (`^8.2.2`), React Router 7 (`^7.18.3`), Tailwind CSS 4 (`^4.3.3`), Leaflet (`^1.9.4`), Turf.js (`^7.4.0`), vite-plugin-pwa (`^1.3.0`)
 
 Existing important systems:
@@ -21,12 +21,14 @@ Existing important systems:
 - Phase 4 Supabase Foundation: Version-controlled migrations in `supabase/migrations/` (`profiles`, `vessels`, `data_sources`, `missions`, `decisions`, `evidence`), PostGIS spatial indexes, strict Row-Level Security (RLS) policies, grants, Supabase Auth integration, and authenticated mission persistence vertical slice.
 - Phase 5 Domain Database Model: Expanded domain schema covering mission waypoints, regions, restricted zones, normalized multi-agency observations, operational alerts, connectivity telemetry events, deterministic decision rules & evaluations, and explainable replay timeline records (`supabase/migrations/20260920000003_phase5_domain_model.sql`).
 - Phase 6 Data Adapter Framework: Source-agnostic `DataAdapter<TQuery, TResult>` abstraction, `DemoDataAdapter` consuming local datasets, global `adapterRegistry`, timeout error boundary wrapper, and `/adapters` inspection endpoints.
+- Phase 6.9 Collaboration Handoff: [ORCA_PHASE_69_UI_HANDOFF.md](file:///d:/Projects/ORCA/ORCA_PHASE_69_UI_HANDOFF.md)
+- Phase 7 Ingestion Pipeline: `IngestionService` (`server/services/ingestionService.ts`), idempotent deduplication, `POST /api/v1/ingestion/demo`, `GET /api/v1/observations` with filtering & pagination, frontend `observationService` (`src/services/observationService.ts`), and live `PersistedObservationPanel` in Command Center.
 
 ## Current Branch
 `orca-core`
 
 ## Immediate Next Task
-Begin **PHASE 7 — Demo Normalization & Ingestion Pipeline** (Automated database ingestion pipeline transforming adapter outputs into persistent `observations` and `evidence` records for Decision Engine consumption).
+Begin **PHASE 8 — Live Oceanography & INCOIS Adapter** (Integrating live INCOIS OSF / Ocean State Forecast feeds, real SST and Wave Height ingestion into the adapter framework).
 
 ---
 
@@ -324,11 +326,68 @@ The adapter framework enforces a clean separation of concerns: data fetching, pa
 *How does ORCA ensure demo/simulated datasets are never falsely claimed as live satellite data?*
 The adapter contract explicitly mandates `isLive: false`, `status: "DEMO_SNAPSHOT"`, and clear simulation disclaimers in all response metadata. The `/adapters` inventory endpoint explicitly exposes the `isLive` boolean for full transparency.
 
-### 13. Why Phase 6 Does Not Yet Claim Live INCOIS
-Phase 6 establishes the core software architecture, types, error boundaries, and registry. Live agency integrations (INCOIS, IMD, MOSDAC) are scheduled for Phases 8–10 to ensure the underlying normalization and persistence pipeline is rock-solid first.
-
 ### 14. How Phase 8 Will Plug Into This Framework
 In Phase 8, `IncoisOsfAdapter` will implement `DataAdapter`, fetch live INCOIS REST/OPeNDAP endpoints, parse ocean wave grids, and register via `adapterRegistry.register(new IncoisOsfAdapter())` without altering any existing API routes or UI components.
+
+---
+
+## Developer Walkthrough — Phase 7: Demo Data Normalization & Ingestion Pipeline
+
+### 1. What Normalization Is
+Normalization is the process of converting unstructured, inconsistent, or agency-specific raw data payloads (e.g., INCOIS JSON, IMD radar formats, or local demo files) into uniform, strongly-typed `NormalizedObservationPayload` records with standard SI/marine units (`m`, `knots`, `degC`, `mg/m3`).
+
+### 2. What Ingestion Is
+Ingestion is the automated backend process that executes adapters, transforms raw payloads into normalized observations, validates their schema, looks up provenance IDs, and writes them into the PostgreSQL `observations` table with spatial geometry columns (`geometry(Point, 4326)`).
+
+### 3. Provenance and the `data_sources` Table
+Provenance answers: *"Where did this exact number come from?"*
+Every observation row in `observations` contains a foreign key `source_id` referencing `data_sources(id)` (e.g. `ORCA_DEMO` with `status: 'SIMULATED'`). This ensures every downstream decision is 100% traceable to an identifiable upstream feed.
+
+### 4. Observation vs Raw Data
+- **Raw Data:** The full, unparsed JSON payload returned by an external API or demo file (`weather.json`, `ocean.json`), stored inside adapter responses for debugging.
+- **Observation:** A single atomic, normalized environmental variable record (`significant_wave_height = 1.4 m`, `air_temperature = 29.4 °C`) stored as an individual row in PostgreSQL with spatial coordinates and timestamps.
+
+### 5. Source Metadata
+Source metadata (`raw_metadata` JSONB column) preserves domain-specific auxiliary context such as `sensorType: "BUOY_SIMULATION"`, `periodSeconds: 6.8`, `sstAnomaly: -0.4`, or `directionCompass: "WSW"` without polluting the core relational schema.
+
+### 6. Timestamps
+- `observed_at`: The timestamp when the physical reading was recorded or model generated.
+- `retrieved_at`: The timestamp when ORCA ingested the reading.
+- `valid_until`: The expiration timestamp after which the data must be treated as stale or expired.
+
+### 7. Idempotency & Deduplication
+If an ingestion pipeline runs repeatedly (e.g. cron schedule every 15 minutes or manual retry), it must never blindly insert duplicate rows.
+Phase 7 achieves deterministic idempotency through unique indexing:
+`uq_observations_dedup (dataset_identifier, category, variable_name, observed_at, dedup_key)`
+Running ingestion multiple times updates the existing record rather than creating duplicate rows.
+
+### 8. Database Persistence in Supabase PostGIS
+Observations are stored in the `public.observations` table. Geographic coordinates are converted to PostGIS points (`SRID=4326;POINT(lon lat)`) enabling high-speed spatial queries (`ST_DWithin`, `ST_Intersects`, bounding box filters) for vessel radius queries.
+
+### 9. The Read API (`GET /api/v1/observations`)
+The read API allows frontend dashboards, agent workers, and external consumers to query normalized observations with filters (`category`, `region`, `variableName`, `status`) and pagination (`limit`, `offset`) without ever having to parse raw vendor files.
+
+### 10. Frontend Service Layer
+Following `ORCA_PHASE_69_UI_HANDOFF.md`, UI components never call `fetch()` directly. They invoke `observationService.fetchObservations({ region: 'maharashtra' })`, keeping network endpoints, base URLs, and error handling decoupled from React presentation components.
+
+### 11. One Debugging Scenario
+*Scenario:* An observation displays `status: 'DEMO_SNAPSHOT'` on the Command Center UI, but the operator expects live telemetry.
+*Debugging Step:* Inspect the `observations.status` and `isLive` fields in Supabase. Because Phase 7 operates with the `ORCA_DEMO` adapter, the status is deliberately and honestly set to `DEMO_SNAPSHOT`. The UI's `PersistedObservationPanel` renders an amber warning pill, preventing any false live data claims.
+
+### 12. One Judge / Viva Question
+*Question:* "Why persist normalized observations into a PostgreSQL database rather than streaming them directly from the adapter to the React UI?"
+*Answer:* Persisting normalized observations enables:
+1. Historical time-series analysis and replay audits.
+2. Fast PostGIS geospatial indexing across thousands of buoy and satellite coordinates.
+3. Multi-agent correlation where multiple agents (Weather, Ocean, Navigation) query the same snapshot without redundant external API requests.
+4. Offline resilience and caching for low-bandwidth maritime users.
+
+### 13. Why Demo Data is Still Useful
+Demo data provides deterministic, repeatable test baselines for extreme weather events (cyclone alerts, gale winds, high wave swells) that cannot be triggered on demand in the real ocean. This allows full verification of the safety decision engine under critical failure modes.
+
+### 14. Why This Makes Live INCOIS Integration Easier in Phase 8
+Because the `IngestionService` and database schema operate against the abstract `DataAdapter` and `NormalizedObservationPayload` interfaces, Phase 8 only needs to write the `IncoisOsfAdapter`. The entire persistence, deduplication, PostGIS geometry creation, read API, and UI display pipeline already exist and will work without modifications!
+
 
 
 

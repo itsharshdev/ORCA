@@ -70,6 +70,7 @@ export class DemoDataAdapter implements DataAdapter<AdapterQuery, Record<string,
     const validUntil = weather.metadata?.validUntil || '2026-09-03T06:30:00Z';
 
     const normalizedObservations: NormalizedObservationPayload[] = [];
+    const regionName = region === 'tamil_nadu' ? 'Tamil Nadu Coast' : 'Maharashtra Coast';
 
     // 1. Weather: Wave Height
     if (typeof weather.currentConditions?.waveHeightMeters === 'number') {
@@ -87,7 +88,13 @@ export class DemoDataAdapter implements DataAdapter<AdapterQuery, Record<string,
         status: 'DEMO_SNAPSHOT',
         qualityLevel: 'HIGH',
         uncertaintyRange: { min: weather.currentConditions.waveHeightMeters - 0.2, max: weather.currentConditions.waveHeightMeters + 0.2 },
-        metadata: { sensorType: 'BUOY_SIMULATION', periodSeconds: weather.currentConditions.wavePeriodSeconds },
+        metadata: {
+          region,
+          regionName,
+          dedup_key: `${region}_significant_wave_height`,
+          sensorType: 'BUOY_SIMULATION',
+          periodSeconds: weather.currentConditions.wavePeriodSeconds,
+        },
       });
     }
 
@@ -107,6 +114,9 @@ export class DemoDataAdapter implements DataAdapter<AdapterQuery, Record<string,
         status: 'DEMO_SNAPSHOT',
         qualityLevel: 'HIGH',
         metadata: {
+          region,
+          regionName,
+          dedup_key: `${region}_sustained_wind_speed`,
           gustKnots: weather.currentConditions.windGustKnots,
           directionCompass: weather.currentConditions.windDirection,
           directionDegrees: weather.currentConditions.windDirectionDegrees,
@@ -114,37 +124,151 @@ export class DemoDataAdapter implements DataAdapter<AdapterQuery, Record<string,
       });
     }
 
-    // 3. Ocean: Sea Surface Temperature
+    // 3. Weather: Air Temperature
+    if (typeof weather.currentConditions?.airTemperatureCelsius === 'number') {
+      const cond = (weather.currentConditions as Record<string, unknown>)?.weatherCondition || (weather.currentConditions as Record<string, unknown>)?.seaState || 'Fair';
+      normalizedObservations.push({
+        category: 'WEATHER',
+        variableName: 'air_temperature',
+        numericValue: weather.currentConditions.airTemperatureCelsius,
+        unit: 'degC',
+        location: {
+          lat: weather.currentConditions.location.latitude,
+          lon: weather.currentConditions.location.longitude,
+        },
+        observedAt,
+        validUntil,
+        status: 'DEMO_SNAPSHOT',
+        qualityLevel: 'HIGH',
+        metadata: {
+          region,
+          regionName,
+          dedup_key: `${region}_air_temperature`,
+          condition: cond,
+        },
+      });
+    }
+
+    // 4. Weather: Visibility
+    if (typeof weather.currentConditions?.visibilityKm === 'number') {
+      normalizedObservations.push({
+        category: 'WEATHER',
+        variableName: 'visibility_distance',
+        numericValue: weather.currentConditions.visibilityKm,
+        unit: 'km',
+        location: {
+          lat: weather.currentConditions.location.latitude,
+          lon: weather.currentConditions.location.longitude,
+        },
+        observedAt,
+        validUntil,
+        status: 'DEMO_SNAPSHOT',
+        qualityLevel: 'HIGH',
+        metadata: {
+          region,
+          regionName,
+          dedup_key: `${region}_visibility_distance`,
+        },
+      });
+    }
+
+    // 5. Ocean: Sea Surface Temperature
     if (typeof ocean.parameters?.seaSurfaceTemperatureCelsius === 'number') {
       normalizedObservations.push({
         category: 'OCEAN',
         variableName: 'sea_surface_temperature',
         numericValue: ocean.parameters.seaSurfaceTemperatureCelsius,
         unit: 'degC',
+        location: {
+          lat: weather.currentConditions.location.latitude,
+          lon: weather.currentConditions.location.longitude,
+        },
         observedAt: ocean.metadata?.updatedAt || observedAt,
         validUntil: ocean.metadata?.validUntil || validUntil,
         status: 'DEMO_SNAPSHOT',
         qualityLevel: 'HIGH',
-        metadata: { sstAnomaly: ocean.parameters.sstAnomalyCelsius },
+        metadata: {
+          region,
+          regionName,
+          dedup_key: `${region}_sea_surface_temperature`,
+          sstAnomaly: ocean.parameters.sstAnomalyCelsius,
+        },
       });
     }
 
-    // 4. Ocean: Chlorophyll
+    // 6. Ocean: Chlorophyll Concentration
     if (typeof ocean.parameters?.chlorophyllConcentrationMgM3 === 'number') {
       normalizedObservations.push({
         category: 'PFZ',
         variableName: 'chlorophyll_concentration',
         numericValue: ocean.parameters.chlorophyllConcentrationMgM3,
         unit: 'mg/m3',
+        location: {
+          lat: weather.currentConditions.location.latitude,
+          lon: weather.currentConditions.location.longitude,
+        },
         observedAt: ocean.metadata?.updatedAt || observedAt,
         validUntil: ocean.metadata?.validUntil || validUntil,
         status: 'DEMO_SNAPSHOT',
         qualityLevel: 'HIGH',
-        metadata: { gradient: ocean.parameters.chlorophyllGradient },
+        metadata: {
+          region,
+          regionName,
+          dedup_key: `${region}_chlorophyll_concentration`,
+          gradient: ocean.parameters.chlorophyllGradient,
+        },
       });
     }
 
-    // 5. Weather: Cyclone Alert Flag
+    // 7. Ocean: Surface Currents
+    if (typeof ocean.parameters?.surfaceCurrentKnots === 'number') {
+      normalizedObservations.push({
+        category: 'OCEAN',
+        variableName: 'surface_current_velocity',
+        numericValue: ocean.parameters.surfaceCurrentKnots,
+        unit: 'knots',
+        location: {
+          lat: weather.currentConditions.location.latitude,
+          lon: weather.currentConditions.location.longitude,
+        },
+        observedAt: ocean.metadata?.updatedAt || observedAt,
+        validUntil: ocean.metadata?.validUntil || validUntil,
+        status: 'DEMO_SNAPSHOT',
+        qualityLevel: 'HIGH',
+        metadata: {
+          region,
+          regionName,
+          dedup_key: `${region}_surface_current_velocity`,
+          direction: ocean.parameters.currentDirection,
+          salinityPsu: ocean.parameters.salinityPsu,
+          mixedLayerDepthMeters: ocean.parameters.mixedLayerDepthMeters,
+        },
+      });
+    }
+
+    // 8. Ocean: Tidal Forecast (if present)
+    const tideForecast = (ocean as Record<string, unknown>).tideForecast as { datum?: string; highTideHeightMeters?: number } | undefined;
+    if (tideForecast) {
+      normalizedObservations.push({
+        category: 'OCEAN',
+        variableName: 'tidal_forecast',
+        numericValue: tideForecast.highTideHeightMeters ?? null,
+        unit: 'm',
+        structuredValue: tideForecast as Record<string, unknown>,
+        observedAt: ocean.metadata?.updatedAt || observedAt,
+        validUntil: ocean.metadata?.validUntil || validUntil,
+        status: 'DEMO_SNAPSHOT',
+        qualityLevel: 'HIGH',
+        metadata: {
+          region,
+          regionName,
+          dedup_key: `${region}_tidal_forecast`,
+          datum: tideForecast.datum,
+        },
+      });
+    }
+
+    // 9. Weather: Cyclone Alert Flag
     normalizedObservations.push({
       category: 'WEATHER',
       variableName: 'cyclone_alert_active',
@@ -158,8 +282,70 @@ export class DemoDataAdapter implements DataAdapter<AdapterQuery, Record<string,
       validUntil,
       status: 'DEMO_SNAPSHOT',
       qualityLevel: 'HIGH',
-      metadata: { agency: 'IMD_SIMULATED' },
+      metadata: {
+        region,
+        regionName,
+        dedup_key: `${region}_cyclone_alert_active`,
+        agency: 'IMD_SIMULATED',
+      },
     });
+
+    // 10. PFZ: Zones
+    if (Array.isArray(pfz.zones)) {
+      for (const zone of pfz.zones) {
+        normalizedObservations.push({
+          category: 'PFZ',
+          variableName: 'potential_fishing_zone',
+          numericValue: typeof zone.distanceKmFromPort === 'number' ? zone.distanceKmFromPort : null,
+          unit: 'km',
+          structuredValue: zone as Record<string, unknown>,
+          location: {
+            lat: zone.location.latitude,
+            lon: zone.location.longitude,
+          },
+          observedAt: pfz.metadata?.updatedAt || observedAt,
+          validUntil: pfz.metadata?.validUntil || validUntil,
+          status: 'DEMO_SNAPSHOT',
+          qualityLevel: 'HIGH',
+          metadata: {
+            region,
+            regionName,
+            dedup_key: `${region}_${zone.id}`,
+            zoneId: zone.id,
+            zoneName: zone.zoneName,
+            potentialScore: zone.potentialScore,
+            recommendedFishTypes: zone.recommendedFishTypes,
+          },
+        });
+      }
+    }
+
+    // 11. Hazards: Marine Alerts
+    if (Array.isArray(hazards.alerts)) {
+      for (const alert of hazards.alerts) {
+        normalizedObservations.push({
+          category: 'HAZARD',
+          variableName: 'coastal_hazard_alert',
+          numericValue: null,
+          unit: null,
+          structuredValue: alert as Record<string, unknown>,
+          observedAt: hazards.metadata?.updatedAt || observedAt,
+          validUntil: hazards.metadata?.validUntil || validUntil,
+          status: 'DEMO_SNAPSHOT',
+          qualityLevel: 'HIGH',
+          metadata: {
+            region,
+            regionName,
+            dedup_key: `${region}_${alert.id}`,
+            alertId: alert.id,
+            title: alert.title,
+            severity: alert.severity,
+            hazardType: alert.hazardType,
+            isActive: alert.isActive,
+          },
+        });
+      }
+    }
 
     const rawPayload = {
       region,

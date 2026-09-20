@@ -470,3 +470,47 @@ export interface ApiErrorEnvelope {
     timestamp: string;                  // ISO 8601 UTC
   };
 }
+
+// ============================================================================
+// 13. OBSERVATIONS & INGESTION CONTRACT (Phase 7)
+// ============================================================================
+
+export type ObservationCategory = 'OCEAN' | 'WEATHER' | 'PFZ' | 'GEO_SAFETY' | 'VESSEL_TRAFFIC' | 'HAZARD';
+
+export interface NormalizedObservationContract {
+  id: string;
+  source_id?: string | null;
+  dataset_identifier: string;
+  category: ObservationCategory;
+  variable_name: string;
+  numeric_value?: number | null;
+  unit?: string | null;
+  structured_value: Record<string, unknown>;
+  location?: unknown;
+  observed_at: string;
+  retrieved_at: string;
+  valid_until?: string | null;
+  status: DataStatus | 'VERIFIED';
+  quality_level: 'HIGH' | 'MEDIUM' | 'LOW' | 'DEGRADED';
+  uncertainty_range?: Record<string, unknown> | null;
+  raw_metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface ObservationsListResponse {
+  success: boolean;
+  count: number;
+  total: number;
+  limit: number;
+  offset: number;
+  filters: {
+    category: ObservationCategory | null;
+    dataset: string | null;
+    variableName: string | null;
+    region: string | null;
+    status: string | null;
+  };
+  observations: NormalizedObservationContract[];
+  timestamp: string;
+}
+

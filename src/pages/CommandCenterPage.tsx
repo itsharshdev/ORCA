@@ -2,6 +2,7 @@ import React from 'react';
 import { MarineMapCanvas } from '@/components/map/MarineMapCanvas';
 import { MissionCard } from '@/components/decision/MissionCard';
 import { DecisionCard } from '@/components/decision/DecisionCard';
+import { PersistedObservationPanel } from '@/components/decision/PersistedObservationPanel';
 import { ReasoningChain } from '@/components/agents/ReasoningChain';
 import { OrcaAssistant } from '@/components/agents/OrcaAssistant';
 import { AlertTriangle, MapPin, Compass } from 'lucide-react';
@@ -16,10 +17,11 @@ export const CommandCenterPage: React.FC = () => {
         <MarineMapCanvas className="w-full h-full" showOverlayControls={false} />
       </div>
 
-      {/* Desktop HUD Left Panel (Instrument Cluster: Mission + Decision) */}
+      {/* Desktop HUD Left Panel (Instrument Cluster: Mission + Decision + Persisted Observations) */}
       <aside className="hidden lg:flex relative z-20 w-80 xl:w-96 m-4 flex-col gap-4 overflow-y-auto max-h-[calc(100vh-6rem)] pointer-events-auto shrink-0">
         <MissionCard />
         <DecisionCard />
+        <PersistedObservationPanel />
 
         {/* Safety Alert Banner */}
         <div className="hud-glass rounded-xl p-3.5 border border-rose-500/30 flex flex-col gap-2 relative overflow-hidden shadow-lg">
@@ -68,6 +70,9 @@ export const CommandCenterPage: React.FC = () => {
 
         {/* Decision Hero */}
         <DecisionCard />
+
+        {/* Persisted Observations */}
+        <PersistedObservationPanel />
 
         {/* Mission Summary */}
         <MissionCard />
