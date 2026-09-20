@@ -1,16 +1,16 @@
 # ORCA SESSION STATE
 
 ## Current phase
-PHASE 5 — Domain Database Model (Completed)
+PHASE 6 — Data Adapter Framework (Completed)
 
 ## Status
-PHASE 5 COMPLETE — READY FOR PHASE 6 (Data Adapter Framework)
+PHASE 6 COMPLETE — READY FOR PHASE 7 (Demo Normalization & Ingestion Pipeline)
 
 ## Baseline
 Observed stack:
 - Backend: Fastify (`^5.12.5`), `@supabase/supabase-js` (`^2.99.3`), Zod (`^4.6.5`), `@fastify/cors` (`^11.3.0`), `dotenv` (`^18.0.0`)
 - Database: Supabase PostgreSQL 17 (`hxhnerghnpdrijzyhmuw`), PostGIS 3.3.7, 15 domain tables with RLS enabled
-- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 36 passing tests across 4 suites
+- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 50 passing tests across 5 suites
 - Frontend: React 19 (`^19.2.8`), TypeScript 6 (`~6.0.2`), Vite 8 (`^8.2.2`), React Router 7 (`^7.18.3`), Tailwind CSS 4 (`^4.3.3`), Leaflet (`^1.9.4`), Turf.js (`^7.4.0`), vite-plugin-pwa (`^1.3.0`)
 
 Existing important systems:
@@ -20,12 +20,13 @@ Existing important systems:
 - Phase 3 Backend Server: Fastify application in `server/`, typed routes (`/health`, `/me`, `/orca/query`, `/decisions/:id`), Zod request validation, predictable error envelopes.
 - Phase 4 Supabase Foundation: Version-controlled migrations in `supabase/migrations/` (`profiles`, `vessels`, `data_sources`, `missions`, `decisions`, `evidence`), PostGIS spatial indexes, strict Row-Level Security (RLS) policies, grants, Supabase Auth integration, and authenticated mission persistence vertical slice.
 - Phase 5 Domain Database Model: Expanded domain schema covering mission waypoints, regions, restricted zones, normalized multi-agency observations, operational alerts, connectivity telemetry events, deterministic decision rules & evaluations, and explainable replay timeline records (`supabase/migrations/20260920000003_phase5_domain_model.sql`).
+- Phase 6 Data Adapter Framework: Source-agnostic `DataAdapter<TQuery, TResult>` abstraction, `DemoDataAdapter` consuming local datasets, global `adapterRegistry`, timeout error boundary wrapper, and `/adapters` inspection endpoints.
 
 ## Current Branch
 `orca-core`
 
 ## Immediate Next Task
-Begin **PHASE 6 — Data Adapter Framework** (Unified ingestor interface, rate limiting, cache TTLs, error boundaries, and telemetry for INCOIS, IMD, and MOSDAC data pipelines).
+Begin **PHASE 7 — Demo Normalization & Ingestion Pipeline** (Automated database ingestion pipeline transforming adapter outputs into persistent `observations` and `evidence` records for Decision Engine consumption).
 
 ---
 
@@ -269,6 +270,66 @@ GiST (Generalized Search Tree) indexes on PostGIS geometry columns build 2D R-Tr
    Using PostGIS GiST spatial indexing on polygon boundaries, allowing sub-millisecond bounding box filtering before exact geometric intersection evaluation.
 5. *What role does `connectivity_events` play in ORCA's offline architecture?*
    It logs field bearer transitions (cellular vs NAVIC satellite), providing the data foundation for Phase 21 adaptive message delivery and offline sync.
+
+---
+
+## Developer Walkthrough — Phase 6
+
+### 1. What an Adapter Is
+An adapter is a structural design pattern that wraps an external or heterogeneous data source (such as INCOIS NetCDF, IMD weather feeds, or MOSDAC rasters), converting its specific formats, units, and protocols into a unified interface (`DataAdapter<TQuery, TResult>`).
+
+### 2. Why React Should Not Call External Marine APIs Directly
+- **Secret Protection:** Prevents exposing API tokens and service keys inside browser JavaScript bundles.
+- **Bandwidth Efficiency:** Coastal fishermen operate on weak 2G/4G connections; client-side fetching of raw multi-megabyte satellite grids causes severe latency and UI freezing.
+- **Caching & Rate Limiting:** Centralizes upstream requests through backend cache TTLs, avoiding rate-limit quota exhaustion.
+- **Safety Integrity:** Raw feeds must be validated and sanitized before reaching the safety decision engine.
+
+### 3. Why Normalization Matters
+External agencies use divergent naming conventions and units (e.g. wave height in meters vs feet, wind in km/h vs knots vs m/s). Normalization standardizes these into uniform ORCA observations (`category`, `variableName`, `numericValue`, standard SI/marine units) so downstream decision rules evaluate consistent data types.
+
+### 4. Raw vs Normalized Data
+- **Raw Data (`payload`):** Unmodified source response with native schema and agency-specific structures.
+- **Normalized Data (`normalizedObservations`):** Structured array of standardized observations adhering to the ORCA domain schema.
+
+### 5. Provenance
+Every adapter response includes strict provenance metadata: source agency name (`ORCA_DEMO`, `INCOIS_OSF`), dataset identifier, observed timestamp, retrieved timestamp, validity window, and verification status.
+
+### 6. Retrieval vs Observation Time
+- `observedAt`: When the physical ocean buoy, satellite, or radar recorded the environmental reading.
+- `retrievedAt`: When the ORCA backend adapter executed the fetch request.
+
+### 7. Validity (`validUntil`)
+The expiration timestamp after which the forecast or advisory data is scientifically stale and should trigger `INSUFFICIENT_DATA` or warning states.
+
+### 8. Adapter Failure States
+The framework defines explicit non-crashing failure states:
+- `READY`: Operating normally with valid data.
+- `DEGRADED`: Partial data or elevated latency.
+- `UNAVAILABLE`: Source unreachable or offline.
+- `INVALID_RESPONSE`: Upstream payload failed schema validation.
+- `TIMEOUT`: Fetch exceeded maximum execution duration.
+- `RATE_LIMITED`: Upstream API rejected request due to quota.
+
+### 9. Registry / Factory Concept
+The `adapterRegistry` acts as a centralized catalog mapping `(source, dataset)` keys to concrete adapter instances. Callers retrieve adapters via `adapterRegistry.get("ORCA_DEMO", "demo_marine_conditions")` without tight coupling to concrete implementation classes.
+
+### 10. One Debugging Example
+If an external agency feed is slow or unreachable, `withTimeout` intercepts the promise and returns a structured `AdapterResponse` with `status: "TIMEOUT"` and `error: { code: "ADAPTER_TIMEOUT" }`, allowing the server and Decision Engine to gracefully degrade rather than crashing with an unhandled 500 error.
+
+### 11. Judge / Viva Question — Adapters
+*Why use a Data Adapter Framework rather than fetching feeds inside the Decision Engine?*
+The adapter framework enforces a clean separation of concerns: data fetching, parsing, and error boundaries remain isolated from pure safety reasoning logic. This allows unit testing decision rules with deterministic mocks and swapping data providers without rewriting safety algorithms.
+
+### 12. Judge / Viva Question — Real vs Simulated Data
+*How does ORCA ensure demo/simulated datasets are never falsely claimed as live satellite data?*
+The adapter contract explicitly mandates `isLive: false`, `status: "DEMO_SNAPSHOT"`, and clear simulation disclaimers in all response metadata. The `/adapters` inventory endpoint explicitly exposes the `isLive` boolean for full transparency.
+
+### 13. Why Phase 6 Does Not Yet Claim Live INCOIS
+Phase 6 establishes the core software architecture, types, error boundaries, and registry. Live agency integrations (INCOIS, IMD, MOSDAC) are scheduled for Phases 8–10 to ensure the underlying normalization and persistence pipeline is rock-solid first.
+
+### 14. How Phase 8 Will Plug Into This Framework
+In Phase 8, `IncoisOsfAdapter` will implement `DataAdapter`, fetch live INCOIS REST/OPeNDAP endpoints, parse ocean wave grids, and register via `adapterRegistry.register(new IncoisOsfAdapter())` without altering any existing API routes or UI components.
+
 
 
 

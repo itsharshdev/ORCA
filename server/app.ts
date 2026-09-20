@@ -5,6 +5,7 @@ import { meRoutes } from './routes/me.js';
 import { orcaQueryRoutes } from './routes/orcaQuery.js';
 import { decisionRoutes } from './routes/decisions.js';
 import { missionRoutes } from './routes/missions.js';
+import { adapterRoutes } from './routes/adapters.js';
 import { config } from './config.js';
 import type { ApiErrorEnvelope } from './types.js';
 
@@ -64,6 +65,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(orcaQueryRoutes);
   await app.register(decisionRoutes);
   await app.register(missionRoutes);
+  await app.register(adapterRoutes);
 
   // Also support /api/v1 versioned prefix
   await app.register(
@@ -73,6 +75,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       await v1.register(orcaQueryRoutes);
       await v1.register(decisionRoutes);
       await v1.register(missionRoutes);
+      await v1.register(adapterRoutes);
     },
     { prefix: '/api/v1' }
   );
