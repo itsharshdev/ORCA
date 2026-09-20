@@ -1,11 +1,9 @@
+import { describe, it, expect } from 'vitest';
 import { evaluateMission } from './decisionEngine';
 import type { DecisionInput } from './decisionTypes';
 import { getRegionData } from '@/data';
 
-/**
- * Deterministic Test Suite verifying all 11 explicit Phase 5 test cases.
- */
-export const runDecisionEngineVerification = () => {
+describe('Deterministic Decision Engine Verification', () => {
   const mhData = getRegionData('maharashtra');
   const tnData = getRegionData('tamil_nadu');
 
@@ -125,149 +123,154 @@ export const runDecisionEngineVerification = () => {
     vessel: mhData.vesselsData.profiles[0],
   };
 
-  const results = [];
-
-  // TEST 1 & 2: Base mission (5h departure at 05:45) -> CAUTION (due to return window nearing midday)
-  const res1 = evaluateMission(baseInput);
-  results.push({ test: 'TEST 1 & 2 (Base 5h Maharashtra)', pass: res1.verdict === 'CAUTION' });
-
-  // TEST 3: Severe warning override -> AVOID
-  const severeInput: DecisionInput = {
-    ...baseInput,
-    weather: {
-      ...baseInput.weather,
-      data: {
-        ...baseInput.weather.data,
-        activeAdvisories: ['IMD Official Emergency: Severe Cyclone Alert Moving Inland'],
-      },
-    },
-  };
-  const res3 = evaluateMission(severeInput);
-  results.push({ test: 'TEST 3 (Severe Cyclone Warning Override)', pass: res3.verdict === 'AVOID' });
-
-  // TEST 4: Hard geofence conflict -> AVOID
-  const geofenceInput: DecisionInput = {
-    ...baseInput,
-    geoSafety: {
-      ...baseInput.geoSafety,
-      data: {
-        ...baseInput.geoSafety.data,
-        geofenceClearanceKm: 0.3,
-        incursionRisk: 'high',
-      },
-    },
-  };
-  const res4 = evaluateMission(geofenceInput);
-  results.push({ test: 'TEST 4 (Hard Geofence Conflict < 1.0 km)', pass: res4.verdict === 'AVOID' });
-
-  // TEST 5: Longer mission (8h) extending into worsening conditions -> AVOID
-  const longMissionInput: DecisionInput = {
-    ...baseInput,
-    mission: {
-      ...baseInput.mission,
-      durationHours: 8,
-    },
-  };
-  const res5 = evaluateMission(longMissionInput);
-  results.push({ test: 'TEST 5 (Long 8h Mission Overlapping Squall)', pass: res5.verdict === 'AVOID' });
-
-  // TEST 6: Shorter mission (3h) staying inside morning window -> GO
-  const shortMissionInput: DecisionInput = {
-    ...baseInput,
-    mission: {
-      ...baseInput.mission,
-      durationHours: 3,
-    },
-    weather: {
-      ...baseInput.weather,
-      data: {
-        ...baseInput.weather.data,
-        windSpeedKnots: 9.0,
-        windGustKnots: 12.0,
-        waveHeightMeters: 0.9,
-      },
-    },
-    ocean: {
-      ...baseInput.ocean,
-      data: {
-        ...baseInput.ocean.data,
-        waveSwellMeters: 0.9,
-        surfaceCurrentSpeedKnots: 0.5,
-      },
-    },
-  };
-  const res6 = evaluateMission(shortMissionInput);
-  results.push({ test: 'TEST 6 (Short 3h Mission in Favorable Sea)', pass: res6.verdict === 'GO' });
-
-  // TEST 7: High PFZ + High Swell (2.4m > 1.4m vessel limit) -> Safety wins (AVOID)
-  const highSwellInput: DecisionInput = {
-    ...baseInput,
-    weather: {
-      ...baseInput.weather,
-      data: {
-        ...baseInput.weather.data,
-        waveHeightMeters: 2.4,
-      },
-    },
-    ocean: {
-      ...baseInput.ocean,
-      data: {
-        ...baseInput.ocean.data,
-        waveSwellMeters: 2.4,
-      },
-    },
-  };
-  const res7 = evaluateMission(highSwellInput);
-  results.push({ test: 'TEST 7 (High PFZ Opportunity + High Swell 2.4m -> Safety Wins)', pass: res7.verdict === 'AVOID' });
-
-  // TEST 8: Missing critical data -> Degraded / AVOID
-  const missingDataInput: DecisionInput = {
-    ...baseInput,
-    weather: {
-      ...baseInput.weather,
-      status: 'failed',
-    },
-    ocean: {
-      ...baseInput.ocean,
-      status: 'failed',
-    },
-  };
-  const res8 = evaluateMission(missingDataInput);
-  results.push({ test: 'TEST 8 (Missing Critical Datasets -> Quality Gate)', pass: res8.verdict === 'AVOID' });
-
-  // TEST 9: Exact same input evaluated twice -> 100% Identical output
-  const res9a = evaluateMission(baseInput);
-  const res9b = evaluateMission(baseInput);
-  results.push({ 
-    test: 'TEST 9 (Deterministic Invariance)', 
-    pass: res9a.verdict === res9b.verdict && res9a.confidenceScore === res9b.confidenceScore 
+  it('TEST 1 & 2: Base mission (5h departure at 05:45) -> CAUTION', () => {
+    const res = evaluateMission(baseInput);
+    expect(res.verdict).toBe('CAUTION');
+    expect(res.confidenceScore).toBeGreaterThan(70);
   });
 
-  // TEST 10 & 11: Tamil Nadu Dataset
-  const tnInput: DecisionInput = {
-    ...baseInput,
-    mission: {
-      ...baseInput.mission,
-      regionId: 'tamil_nadu',
-    },
-    vessel: tnData.vesselsData.profiles[0],
-    pfz: {
-      ...baseInput.pfz,
-      data: {
-        topCandidateZoneId: 'PFZ-TN-01',
-        topCandidateZoneName: 'Nagai Deep Pelagic Front',
-        opportunityLevel: 'high',
-        distanceKm: 28.4,
-        bearingDegrees: 115,
-        targetFishTypes: ['Yellowfin Tuna', 'Indian Mackerel'],
-        chlorophyllIndicator: '1.95 mg/m³',
-        sstIndicator: '28.4°C',
-        totalZonesEvaluated: 3,
+  it('TEST 3: Severe warning override -> AVOID', () => {
+    const severeInput: DecisionInput = {
+      ...baseInput,
+      weather: {
+        ...baseInput.weather,
+        data: {
+          ...baseInput.weather.data,
+          activeAdvisories: ['IMD Official Emergency: Severe Cyclone Alert Moving Inland'],
+        },
       },
-    },
-  };
-  const res11 = evaluateMission(tnInput);
-  results.push({ test: 'TEST 11 (Tamil Nadu Nagapattinam Evaluation)', pass: res11.verdict === 'CAUTION' });
+    };
+    const res = evaluateMission(severeInput);
+    expect(res.verdict).toBe('AVOID');
+  });
 
-  return results;
-};
+  it('TEST 4: Hard geofence conflict < 1.0 km -> AVOID', () => {
+    const geofenceInput: DecisionInput = {
+      ...baseInput,
+      geoSafety: {
+        ...baseInput.geoSafety,
+        data: {
+          ...baseInput.geoSafety.data,
+          geofenceClearanceKm: 0.3,
+          incursionRisk: 'high',
+        },
+      },
+    };
+    const res = evaluateMission(geofenceInput);
+    expect(res.verdict).toBe('AVOID');
+  });
+
+  it('TEST 5: Longer mission (8h) extending into worsening conditions -> AVOID', () => {
+    const longMissionInput: DecisionInput = {
+      ...baseInput,
+      mission: {
+        ...baseInput.mission,
+        durationHours: 8,
+      },
+    };
+    const res = evaluateMission(longMissionInput);
+    expect(res.verdict).toBe('AVOID');
+  });
+
+  it('TEST 6: Shorter mission (3h) staying inside morning window -> GO', () => {
+    const shortMissionInput: DecisionInput = {
+      ...baseInput,
+      mission: {
+        ...baseInput.mission,
+        durationHours: 3,
+      },
+      weather: {
+        ...baseInput.weather,
+        data: {
+          ...baseInput.weather.data,
+          windSpeedKnots: 9.0,
+          windGustKnots: 12.0,
+          waveHeightMeters: 0.9,
+        },
+      },
+      ocean: {
+        ...baseInput.ocean,
+        data: {
+          ...baseInput.ocean.data,
+          waveSwellMeters: 0.9,
+          surfaceCurrentSpeedKnots: 0.5,
+        },
+      },
+    };
+    const res = evaluateMission(shortMissionInput);
+    expect(res.verdict).toBe('GO');
+  });
+
+  it('TEST 7: High PFZ + High Swell (2.4m > 1.4m vessel limit) -> Safety wins (AVOID)', () => {
+    const highSwellInput: DecisionInput = {
+      ...baseInput,
+      weather: {
+        ...baseInput.weather,
+        data: {
+          ...baseInput.weather.data,
+          waveHeightMeters: 2.4,
+        },
+      },
+      ocean: {
+        ...baseInput.ocean,
+        data: {
+          ...baseInput.ocean.data,
+          waveSwellMeters: 2.4,
+        },
+      },
+    };
+    const res = evaluateMission(highSwellInput);
+    expect(res.verdict).toBe('AVOID');
+  });
+
+  it('TEST 8: Missing critical data -> Quality gate failure (AVOID)', () => {
+    const missingDataInput: DecisionInput = {
+      ...baseInput,
+      weather: {
+        ...baseInput.weather,
+        status: 'failed',
+      },
+      ocean: {
+        ...baseInput.ocean,
+        status: 'failed',
+      },
+    };
+    const res = evaluateMission(missingDataInput);
+    expect(res.verdict).toBe('AVOID');
+  });
+
+  it('TEST 9: Exact same input evaluated twice -> 100% Identical deterministic output', () => {
+    const resA = evaluateMission(baseInput);
+    const resB = evaluateMission(baseInput);
+    expect(resA.verdict).toBe(resB.verdict);
+    expect(resA.confidenceScore).toBe(resB.confidenceScore);
+    expect(resA.explanation).toBe(resB.explanation);
+  });
+
+  it('TEST 10 & 11: Tamil Nadu Nagapattinam evaluation', () => {
+    const tnInput: DecisionInput = {
+      ...baseInput,
+      mission: {
+        ...baseInput.mission,
+        regionId: 'tamil_nadu',
+      },
+      vessel: tnData.vesselsData.profiles[0],
+      pfz: {
+        ...baseInput.pfz,
+        data: {
+          topCandidateZoneId: 'PFZ-TN-01',
+          topCandidateZoneName: 'Nagai Deep Pelagic Front',
+          opportunityLevel: 'high',
+          distanceKm: 28.4,
+          bearingDegrees: 115,
+          targetFishTypes: ['Yellowfin Tuna', 'Indian Mackerel'],
+          chlorophyllIndicator: '1.95 mg/m³',
+          sstIndicator: '28.4°C',
+          totalZonesEvaluated: 3,
+        },
+      },
+    };
+    const res = evaluateMission(tnInput);
+    expect(res.verdict).toBe('CAUTION');
+  });
+});
