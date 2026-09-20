@@ -1,16 +1,16 @@
 # ORCA SESSION STATE
 
 ## Current phase
-PHASE 7 — Demo Data Normalization & Ingestion Pipeline (Completed)
+PHASE 8 — Official Oceanography Data Integration (INCOIS) (Completed)
 
 ## Status
-PHASE 7 COMPLETE — READY FOR PHASE 8 (Live Oceanography & INCOIS Adapter)
+PHASE 8 COMPLETE — READY FOR PHASE 9 (Weather & Meteorology Adapter)
 
 ## Baseline
 Observed stack:
 - Backend: Fastify (`^5.12.5`), `@supabase/supabase-js` (`^2.116.0`), Zod (`^4.6.5`), `@fastify/cors` (`^11.3.0`), `dotenv` (`^18.0.0`)
-- Database: Supabase PostgreSQL 17 (`hxhnerghnpdrijzyhmuw`), PostGIS 3.3.7, 15 domain tables with RLS enabled, 17 persisted normalized observations across `OCEAN`, `WEATHER`, and `PFZ`
-- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 62 passing tests across 6 suites
+- Database: Supabase PostgreSQL 17 (`hxhnerghnpdrijzyhmuw`), PostGIS 3.3.7, 15 domain tables with RLS enabled, 29 persisted normalized observations in `public.observations` (17 `ORCA_DEMO` + 12 `INCOIS_OSF` records with PostGIS geometry points)
+- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 72 passing tests across 7 suites
 - Frontend: React 19 (`^19.2.8`), TypeScript 6 (`~6.0.2`), Vite 8 (`^8.2.2`), React Router 7 (`^7.18.3`), Tailwind CSS 4 (`^4.3.3`), Leaflet (`^1.9.4`), Turf.js (`^7.4.0`), vite-plugin-pwa (`^1.3.0`)
 
 Existing important systems:
@@ -22,13 +22,14 @@ Existing important systems:
 - Phase 5 Domain Database Model: Expanded domain schema covering mission waypoints, regions, restricted zones, normalized multi-agency observations, operational alerts, connectivity telemetry events, deterministic decision rules & evaluations, and explainable replay timeline records (`supabase/migrations/20260920000003_phase5_domain_model.sql`).
 - Phase 6 Data Adapter Framework: Source-agnostic `DataAdapter<TQuery, TResult>` abstraction, `DemoDataAdapter` consuming local datasets, global `adapterRegistry`, timeout error boundary wrapper, and `/adapters` inspection endpoints.
 - Phase 6.9 Collaboration Handoff: [ORCA_PHASE_69_UI_HANDOFF.md](file:///d:/Projects/ORCA/ORCA_PHASE_69_UI_HANDOFF.md)
-- Phase 7 Ingestion Pipeline: `IngestionService` (`server/services/ingestionService.ts`), idempotent deduplication, `POST /api/v1/ingestion/demo`, `GET /api/v1/observations` with filtering & pagination, frontend `observationService` (`src/services/observationService.ts`), and live `PersistedObservationPanel` in Command Center.
+- Phase 7 Ingestion Pipeline: `IngestionService` (`server/services/ingestionService.ts`), idempotent deduplication, `POST /api/v1/ingestion/demo`, `GET /api/v1/observations` with filtering & pagination.
+- Phase 8 INCOIS OSF Integration: `IncoisOsfAdapter` (`server/adapters/incoisOsfAdapter.ts`), ERDDAP REST TableDAP parser, `POST /api/v1/ingestion/incois`, unit conversions, live/demo status integrity, and upgraded `PersistedObservationPanel` HUD.
 
 ## Current Branch
 `orca-core`
 
 ## Immediate Next Task
-Begin **PHASE 8 — Live Oceanography & INCOIS Adapter** (Integrating live INCOIS OSF / Ocean State Forecast feeds, real SST and Wave Height ingestion into the adapter framework).
+Begin **PHASE 9 — Weather & Meteorology Adapter** (Integrating IMD weather radar, high-resolution wind, gust, squall warnings, and cyclone advisory feeds).
 
 ---
 
@@ -387,6 +388,75 @@ Demo data provides deterministic, repeatable test baselines for extreme weather 
 
 ### 14. Why This Makes Live INCOIS Integration Easier in Phase 8
 Because the `IngestionService` and database schema operate against the abstract `DataAdapter` and `NormalizedObservationPayload` interfaces, Phase 8 only needs to write the `IncoisOsfAdapter`. The entire persistence, deduplication, PostGIS geometry creation, read API, and UI display pipeline already exist and will work without modifications!
+
+---
+
+## Developer Walkthrough — Phase 8: Official Oceanography Data Integration (INCOIS)
+
+### 1. What an External API / Data Source Is
+An external data source (e.g. INCOIS ERDDAP, IMD Weather, MOSDAC Satellite) is a remote server hosted by an official government or scientific institution that provides oceanographic and meteorological observation feeds via REST HTTP endpoints or OpenDAP protocols.
+
+### 2. Why an Adapter Abstraction Is Useful
+The `DataAdapter` abstraction decouples the messy reality of external APIs (unstable networks, varying JSON keys, differing unit systems) from the core ORCA backend and decision engine. If INCOIS changes their ERDDAP URL structure or response keys tomorrow, only `IncoisOsfAdapter.ts` needs an update; all downstream database tables, API routes, and React components remain untouched.
+
+### 3. HTTP Request / Response Lifecycle
+```
+Client / Scheduler
+  ↓ POST /api/v1/ingestion/incois
+Fastify Route
+  ↓ IngestionService.ingestIncoisData()
+IncoisOsfAdapter.fetch()
+  ↓ HTTP GET https://erddap.incois.gov.in/erddap/tabledap/incois_osf_coastal.json?...
+INCOIS ERDDAP Server
+  ↓ HTTP 200 JSON TableDAP
+Zod Schema Validation & Unit Conversion (m/s -> knots)
+  ↓ NormalizedObservationPayload[]
+Supabase PostGIS public.observations (Idempotent Upsert)
+  ↓ HTTP 200 Success Response
+React UI updates via GET /api/v1/observations
+```
+
+### 4. JSON Validation with Zod
+Before raw external data is processed, it passes through strict Zod schemas (`incoisErddapTableSchema`). If INCOIS returns an HTML error page, 500 stack trace, or altered column structure, Zod catches it immediately and emits `status: 'INVALID_RESPONSE'`, protecting the database from malformed data.
+
+### 5. Normalization
+Raw INCOIS fields like `significant_wave_height = 1.45` and `surface_current_speed = 0.5 m/s` are normalized into standard SI/marine units (`1.45 m` for wave height, `0.97 knots` for current velocity) with standard enum categories (`OCEAN`, `WEATHER`).
+
+### 6. Provenance
+Every observation record permanently retains:
+- `source`: `INCOIS_OSF`
+- `dataset_identifier`: `ocean_state_forecast`
+- `agency`: `INCOIS`
+- `model`: `INCOIS_WAVEWATCH_III`
+- Spatial grid coordinates: `sourceGrid: { lat: 18.9, lon: 72.8 }`
+
+### 7. `observedAt` vs `retrievedAt` vs `validUntil`
+- `observedAt`: When the INCOIS numerical model forecast was issued (e.g. `2026-09-20T06:00:00Z`).
+- `retrievedAt`: When ORCA's adapter executed the network fetch (e.g. `2026-09-20T06:15:22Z`).
+- `validUntil`: When the forecast window expires (typically 24 hours after issuance).
+
+### 8. Timeout & Error Handling
+External government servers can be slow or offline. The `withTimeout` wrapper enforces a 6000ms deadline. If exceeded, it returns `status: 'TIMEOUT'` with `isLive: false` without crashing the Node.js Fastify process.
+
+### 9. LIVE vs DEMO Integrity
+- When real HTTP communication with INCOIS succeeds: `status = 'LIVE'`, `isLive = true`, rendered with a pulsing green pill in the UI.
+- When INCOIS is unreachable: `status = 'DEMO_SNAPSHOT'`, `isLive = false`, rendered with an amber pill.
+- **Strict Rule:** Never pretend demo data is live telemetry.
+
+### 10. Ingestion into PostgreSQL PostGIS
+Ingested coordinates are transformed to PostGIS geometry points (`SRID=4326;POINT(lon lat)`), indexed with spatial GIST indexes, and deduplicated using the `uq_observations_dedup` unique constraint.
+
+### 11. Why Frontend Should NOT Call INCOIS Directly
+1. **CORS Restrictions:** INCOIS servers do not permit arbitrary browser CORS requests.
+2. **Network Bandwidth:** Gridded payloads are heavy; backend transforms them into minimal lightweight records.
+3. **Database Caching:** Persisting once allows hundreds of coastal fishermen and coastal authorities to query the same snapshot without hammering the INCOIS servers.
+
+### 12. How to Debug an External Data Pipeline
+1. Check `GET /api/v1/adapters` to inspect adapter health and latency.
+2. Trigger `POST /api/v1/ingestion/incois` with curl/Postman to view the raw ingestion response and error array.
+3. Query `SELECT count(*), dataset_identifier, status FROM public.observations GROUP BY dataset_identifier, status;` to confirm database writes.
+4. Check browser Network tab for `GET /api/v1/observations?category=OCEAN`.
+
 
 
 

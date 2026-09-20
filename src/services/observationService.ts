@@ -127,4 +127,59 @@ export const observationService = {
       };
     }
   },
+
+  async triggerIncoisIngestion(params: {
+    latitude?: number;
+    longitude?: number;
+    region?: string;
+    allowFallback?: boolean;
+  } = {}): Promise<{
+    success: boolean;
+    source?: string;
+    dataset?: string;
+    isLive?: boolean;
+    fallbackUsed?: boolean;
+    totalReceived?: number;
+    inserted?: number;
+    updated?: number;
+    error?: string;
+  }> {
+    const baseUrl = getApiBaseUrl();
+    const url = `${baseUrl}/ingestion/incois`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(params),
+      });
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `HTTP ${response.status}`,
+        };
+      }
+
+      const result = await response.json();
+      return {
+        success: result.success,
+        source: result.source,
+        dataset: result.dataset,
+        isLive: result.isLive,
+        fallbackUsed: result.fallbackUsed,
+        totalReceived: result.summary?.totalReceived,
+        inserted: result.summary?.inserted,
+        updated: result.summary?.updated,
+      };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to trigger INCOIS ingestion',
+      };
+    }
+  },
 };

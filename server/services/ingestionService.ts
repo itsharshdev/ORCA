@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from '../supabase.js';
 import type { DataAdapter, AdapterQuery, NormalizedObservationPayload } from '../adapters/types.js';
 import { DemoDataAdapter } from '../adapters/demoAdapter.js';
+import { IncoisOsfAdapter } from '../adapters/incoisOsfAdapter.js';
 import type { ObservationRecord, ObservationCategory } from '../types.js';
 
 export interface IngestionResult {
@@ -259,6 +260,64 @@ export class IngestionService {
 
     summary.durationMs = Date.now() - startTime;
     return summary;
+  }
+
+  /**
+   * Ingests real INCOIS Ocean State Forecast (OSF) data into Supabase.
+   * If INCOIS service is unreachable and fallback is allowed, falls back to demo snapshot.
+   */
+  async ingestIncoisData(options: {
+    latitude?: number;
+    longitude?: number;
+    region?: string;
+    allowFallback?: boolean;
+    adapter?: IncoisOsfAdapter;
+  } = {}): Promise<{
+    success: boolean;
+    isLive: boolean;
+    result: IngestionResult;
+    fallbackUsed: boolean;
+    source: string;
+    dataset: string;
+    errors: string[];
+  }> {
+    const adapter = options.adapter || new IncoisOsfAdapter();
+    const region = options.region || (options.latitude && options.latitude < 14 ? 'tamil_nadu' : 'maharashtra');
+
+    const result = await this.ingestAdapter(adapter, {
+      latitude: options.latitude,
+      longitude: options.longitude,
+      regionId: region,
+    });
+
+    const hasErrors = result.errors.length > 0;
+    const isLive = result.totalReceived > 0 && !hasErrors;
+
+    if (!isLive && options.allowFallback) {
+      // Fallback to Demo snapshot
+      const demoAdapter = new DemoDataAdapter('demo_marine_conditions');
+      const fallbackResult = await this.ingestAdapter(demoAdapter, { regionId: region });
+
+      return {
+        success: fallbackResult.totalReceived > 0,
+        isLive: false,
+        result: fallbackResult,
+        fallbackUsed: true,
+        source: 'ORCA_DEMO',
+        dataset: 'demo_marine_conditions',
+        errors: [`INCOIS unavailable (${result.errors.join('; ')}). Demo fallback engaged.`],
+      };
+    }
+
+    return {
+      success: !hasErrors && result.totalReceived > 0,
+      isLive,
+      result,
+      fallbackUsed: false,
+      source: adapter.source,
+      dataset: adapter.dataset,
+      errors: result.errors,
+    };
   }
 
   /**

@@ -40,7 +40,12 @@ describe('ORCA Phase 6 — Data Adapter Framework Tests', () => {
     it('should list all registered adapters with honest live status', () => {
       const list = adapterRegistry.list();
       expect(list.length).toBeGreaterThanOrEqual(2);
-      expect(list.every((a) => a.isLive === false)).toBe(true); // Demo adapters are not live
+      const demoAdapters = list.filter((a) => a.sourceType === 'DEMO');
+      expect(demoAdapters.every((a) => a.isLive === false)).toBe(true);
+      const incoisAdapter = list.find((a) => a.source === 'INCOIS_OSF');
+      if (incoisAdapter) {
+        expect(incoisAdapter.isLive).toBe(true);
+      }
     });
   });
 
