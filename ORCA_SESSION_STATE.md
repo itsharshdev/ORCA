@@ -1,16 +1,16 @@
 # ORCA SESSION STATE
 
 ## Current phase
-PHASE 4 — Supabase / Security Foundation (Completed)
+PHASE 5 — Domain Database Model (Completed)
 
 ## Status
-PHASE 4 COMPLETE — READY FOR PHASE 5 (Multi-Agency Data Pipeline & Ingestion)
+PHASE 5 COMPLETE — READY FOR PHASE 6 (Data Adapter Framework)
 
 ## Baseline
 Observed stack:
 - Backend: Fastify (`^5.12.5`), `@supabase/supabase-js` (`^2.99.3`), Zod (`^4.6.5`), `@fastify/cors` (`^11.3.0`), `dotenv` (`^18.0.0`)
-- Database: Supabase PostgreSQL 17 (`hxhnerghnpdrijzyhmuw`), PostGIS 3.3.7, RLS enabled on all tables
-- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 28 passing tests across 3 suites
+- Database: Supabase PostgreSQL 17 (`hxhnerghnpdrijzyhmuw`), PostGIS 3.3.7, 15 domain tables with RLS enabled
+- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 36 passing tests across 4 suites
 - Frontend: React 19 (`^19.2.8`), TypeScript 6 (`~6.0.2`), Vite 8 (`^8.2.2`), React Router 7 (`^7.18.3`), Tailwind CSS 4 (`^4.3.3`), Leaflet (`^1.9.4`), Turf.js (`^7.4.0`), vite-plugin-pwa (`^1.3.0`)
 
 Existing important systems:
@@ -18,13 +18,14 @@ Existing important systems:
 - Phase 2 Canonical API Contract: [ORCA_API_CONTRACT.md](file:///d:/Projects/ORCA/ORCA_API_CONTRACT.md)
 - Phase 2 Shared Domain Types: [src/types/contract.ts](file:///d:/Projects/ORCA/src/types/contract.ts)
 - Phase 3 Backend Server: Fastify application in `server/`, typed routes (`/health`, `/me`, `/orca/query`, `/decisions/:id`), Zod request validation, predictable error envelopes.
-- Phase 4 Supabase Foundation: Version-controlled migrations in `supabase/migrations/` (`profiles`, `vessels`, `data_sources`, `missions`, `decisions`, `evidence`), PostGIS spatial indexes, strict Row-Level Security (RLS) policies, grants, Supabase Auth integration, and authenticated mission persistence vertical slice (`POST/GET/DELETE /missions`).
+- Phase 4 Supabase Foundation: Version-controlled migrations in `supabase/migrations/` (`profiles`, `vessels`, `data_sources`, `missions`, `decisions`, `evidence`), PostGIS spatial indexes, strict Row-Level Security (RLS) policies, grants, Supabase Auth integration, and authenticated mission persistence vertical slice.
+- Phase 5 Domain Database Model: Expanded domain schema covering mission waypoints, regions, restricted zones, normalized multi-agency observations, operational alerts, connectivity telemetry events, deterministic decision rules & evaluations, and explainable replay timeline records (`supabase/migrations/20260920000003_phase5_domain_model.sql`).
 
 ## Current Branch
 `orca-core`
 
 ## Immediate Next Task
-Begin **PHASE 5 — Multi-Agency Data Pipeline & Ingestion** (Data adapters for INCOIS Ocean State Forecast, IMD weather feeds, INCOIS PFZ alerts, and GeoSafety maritime boundary datasets).
+Begin **PHASE 6 — Data Adapter Framework** (Unified ingestor interface, rate limiting, cache TTLs, error boundaries, and telemetry for INCOIS, IMD, and MOSDAC data pipelines).
 
 ---
 
@@ -199,5 +200,75 @@ When User B attempts `GET /api/v1/missions/:id` for User A's mission, the query 
    Secrets are strictly loaded on the Node.js server via `process.env` and never prefixed with `VITE_` or included in frontend client bundles (verified by build artifact auditing).
 5. *Why is `public.profiles` decoupled from `auth.users`?*
    `auth.users` is managed internally by the GoTrue auth engine and should not contain application-specific relational schema; `public.profiles` enables custom roles, foreign keys, and application-specific metadata while maintaining strict referential integrity.
+
+---
+
+## Developer Walkthrough — Phase 5
+
+### 1. Relational Domain Modeling
+Relational domain modeling structures data into dedicated, normalized tables with foreign keys and check constraints. In ORCA, this accurately models the end-to-end maritime operational lifecycle (missions, waypoints, observations, alerts, rules, and replays) while enforcing ACID data integrity and preventing data anomalies.
+
+### 2. Why `mission_waypoints` is Separate from `missions`
+A mission consists of an ordered sequence of geographic navigation vertices (`ORIGIN`, `TRANSIT`, `FISHING_SPOT`, `DESTINATION`). Storing waypoints in a child table with `(mission_id, sequence_order)` unique constraints enables individual vertex spatial indexing, granular ETA/ETD tracking, and dynamic waypoint manipulation without mutating parent mission metadata.
+
+### 3. Why `observations` are Separate from `decisions`
+Observations represent continuous environmental feeds (wave heights, wind vectors, SST gradients) ingested over time from satellite and radar sources independently of user queries. Decisions are point-in-time analytical outputs evaluated specifically for a single user mission.
+
+### 4. Observation vs Evidence
+- **Observation:** Ambient, source-agnostic environmental reading ingested from an agency (e.g. INCOIS OSF wave height: 1.8m).
+- **Evidence:** An observation specifically selected, evaluated, and attached to a decision run to substantiate a safety verdict with provenance metadata.
+
+### 5. Region vs Restricted Zone
+- **Region:** A broad administrative or operational marine area (e.g. Maharashtra Coastal Sector, Tamil Nadu Fishing Zone).
+- **Restricted Zone:** A legally enforced spatial boundary carrying safety/regulatory prohibitions (e.g. Marine Protected Area, Navy defence corridor, offshore platform buffer) with a severity level (`FORBIDDEN`, `WARNING`) that triggers avoidance rules.
+
+### 6. Alert Lifecycle
+Alerts track operational hazards across lifecycle states: `ACTIVE` -> `ACKNOWLEDGED` (by operator or fisherman) -> `RESOLVED` or `EXPIRED`. They can be broadcast across a whole geographic sector or targeted to a specific mission.
+
+### 7. Connectivity Events
+The `connectivity_events` table logs telemetry state transitions (`CONNECTED`, `DEGRADED`, `OFFLINE`, `SAFETY_MESSAGE_RECEIVED`) and network bearers (`CELLULAR_4G_5G`, `NAVIC_RECEIVER`, `SATELLITE_MSG`). This allows ORCA to track when a vessel enters deep sea and transitions from 4G to satellite-only broadcast mode.
+
+### 8. Decision Rules vs Rule Evaluations
+- **`decision_rules`:** The catalog of deterministic constraint definitions (e.g., cyclone override, craft wave limit, wind gust limit) with priority order and versioning.
+- **`decision_rule_evaluations`:** The execution audit record storing the exact result (`PASSED`, `FAILED`, `WARNING`), input values, and rationale for each rule evaluated during a decision run.
+
+### 9. Why Replay Records Matter
+Replay records store immutable snapshots of query inputs, agent outputs, and decision states. They provide full explainability and post-incident reconstruction, allowing coast guards or investigators to see what information ORCA had when an advisory was issued.
+
+### 10. PostGIS Geometry Basics
+PostGIS stores spatial geometries on the WGS 84 ellipsoid (`SRID=4326`). Spatial primitives (`Point`, `Polygon`, `MultiPolygon`) enable precise spatial calculations without flat-plane distortion.
+
+### 11. Foreign Keys
+Foreign keys establish referential integrity between tables:
+- `ON DELETE CASCADE`: Used on child records (`mission_waypoints`, `connectivity_events`, `replay_records`) so deleting a mission cleanly cleans up its dependencies.
+- `ON DELETE SET NULL`: Used on reference links (`source_id` on observations/alerts) to preserve historical data even if a data source record is archived.
+
+### 12. Indexes
+B-Tree indexes on high-frequency filter columns (`mission_id`, `category`, `status`, `observed_at`) transform expensive linear table scans into logarithmic O(log N) searches.
+
+### 13. Spatial Indexes
+GiST (Generalized Search Tree) indexes on PostGIS geometry columns build 2D R-Tree bounding box indexes, accelerating geographic searches (`ST_DWithin`, `ST_Intersects`, `ST_Contains`) across coastal datasets.
+
+### 14. Row Level Security (RLS) for Phase 5 Tables
+- **Private User Data (`mission_waypoints`, `connectivity_events`, `replay_records`, `rule_evaluations`):** Gated by mission/profile ownership (`auth.uid() = owner_id`).
+- **Public / Reference Data (`regions`, `restricted_zones`, `observations`, `decision_rules`):** Read-only for authenticated and anonymous users; write operations restricted to backend service roles.
+
+### 15. Three Realistic Debugging Scenarios
+1. **Duplicate Sequence Violation on Waypoints:** Inserting two waypoints with the same `sequence_order` on a mission triggers `uq_mission_waypoint_seq`. Debug by calculating sequence numbers sequentially.
+2. **Missing Waypoints in API Query:** Querying waypoints without the parent mission owner's JWT token returns an empty set due to RLS policy filtering.
+3. **Spatial Query Failure on Invalid Coordinates:** Inserting latitudes outside `[-90, 90]` or longitudes outside `[-180, 180]` is caught by database `CHECK` constraints.
+
+### 16. Five Judge/Viva Questions with Concise Answers
+1. *Why normalize multi-agency observations into a single `observations` table rather than separate tables for ocean, weather, and PFZ?*
+   A unified schema with indexed `category` and `variable_name` columns enables source-agnostic data adapters, uniform time-window filtering, and streamlined querying across diverse marine feeds.
+2. *How does the database prevent orphaned waypoints when a mission is deleted?*
+   The `FOREIGN KEY (mission_id) REFERENCES missions(id) ON DELETE CASCADE` constraint automatically purges all child waypoints upon parent mission deletion.
+3. *Why store decision rules in the database instead of hardcoding them in code?*
+   Database-driven rules enable versioning, auditability, dynamic regional threshold adjustments, and priority-order re-ranking without requiring server redeployment.
+4. *How does ORCA handle spatial containment queries on restricted marine zones?*
+   Using PostGIS GiST spatial indexing on polygon boundaries, allowing sub-millisecond bounding box filtering before exact geometric intersection evaluation.
+5. *What role does `connectivity_events` play in ORCA's offline architecture?*
+   It logs field bearer transitions (cellular vs NAVIC satellite), providing the data foundation for Phase 21 adaptive message delivery and offline sync.
+
 
 
