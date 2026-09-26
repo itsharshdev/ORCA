@@ -2,6 +2,8 @@ import { getSupabaseAdmin } from '../supabase.js';
 import type { DataAdapter, AdapterQuery, NormalizedObservationPayload } from '../adapters/types.js';
 import { DemoDataAdapter } from '../adapters/demoAdapter.js';
 import { IncoisOsfAdapter } from '../adapters/incoisOsfAdapter.js';
+import { ImdWeatherAdapter } from '../adapters/imdWeatherAdapter.js';
+import { IncoisPfzAdapter } from '../adapters/incoisPfzAdapter.js';
 import type { ObservationRecord, ObservationCategory } from '../types.js';
 
 export interface IngestionResult {
@@ -306,6 +308,126 @@ export class IngestionService {
         source: 'ORCA_DEMO',
         dataset: 'demo_marine_conditions',
         errors: [`INCOIS unavailable (${result.errors.join('; ')}). Demo fallback engaged.`],
+      };
+    }
+
+    return {
+      success: !hasErrors && result.totalReceived > 0,
+      isLive,
+      result,
+      fallbackUsed: false,
+      source: adapter.source,
+      dataset: adapter.dataset,
+      errors: result.errors,
+    };
+  }
+
+  /**
+   * Ingests official IMD Weather & Marine Warning data into Supabase.
+   * If IMD service is unreachable and fallback is allowed, falls back to demo snapshot.
+   */
+  async ingestImdData(options: {
+    latitude?: number;
+    longitude?: number;
+    region?: string;
+    stationCode?: string;
+    allowFallback?: boolean;
+    adapter?: ImdWeatherAdapter;
+  } = {}): Promise<{
+    success: boolean;
+    isLive: boolean;
+    result: IngestionResult;
+    fallbackUsed: boolean;
+    source: string;
+    dataset: string;
+    errors: string[];
+  }> {
+    const adapter = options.adapter || new ImdWeatherAdapter();
+    const region = options.region || (options.latitude && options.latitude < 14 ? 'tamil_nadu' : 'maharashtra');
+
+    const result = await this.ingestAdapter(adapter, {
+      latitude: options.latitude,
+      longitude: options.longitude,
+      regionId: region,
+      stationCode: options.stationCode,
+    } as AdapterQuery & { stationCode?: string });
+
+    const hasErrors = result.errors.length > 0;
+    const isLive = result.totalReceived > 0 && !hasErrors;
+
+    if (!isLive && options.allowFallback) {
+      // Fallback to Demo snapshot for weather
+      const demoAdapter = new DemoDataAdapter('demo_marine_conditions');
+      const fallbackResult = await this.ingestAdapter(demoAdapter, { regionId: region });
+
+      return {
+        success: fallbackResult.totalReceived > 0,
+        isLive: false,
+        result: fallbackResult,
+        fallbackUsed: true,
+        source: 'ORCA_DEMO',
+        dataset: 'demo_marine_conditions',
+        errors: [`IMD weather service unreachable (${result.errors.join('; ')}). Demo snapshot fallback engaged.`],
+      };
+    }
+
+    return {
+      success: !hasErrors && result.totalReceived > 0,
+      isLive,
+      result,
+      fallbackUsed: false,
+      source: adapter.source,
+      dataset: adapter.dataset,
+      errors: result.errors,
+    };
+  }
+
+  /**
+   * Ingests official INCOIS Potential Fishing Zone (PFZ) intelligence into Supabase.
+   * If INCOIS PFZ service is unreachable and fallback is allowed, falls back to demo snapshot.
+   */
+  async ingestPfzData(options: {
+    latitude?: number;
+    longitude?: number;
+    region?: string;
+    state?: string;
+    allowFallback?: boolean;
+    adapter?: IncoisPfzAdapter;
+  } = {}): Promise<{
+    success: boolean;
+    isLive: boolean;
+    result: IngestionResult;
+    fallbackUsed: boolean;
+    source: string;
+    dataset: string;
+    errors: string[];
+  }> {
+    const adapter = options.adapter || new IncoisPfzAdapter();
+    const region = options.region || (options.latitude && options.latitude < 14 ? 'tamil_nadu' : 'maharashtra');
+
+    const result = await this.ingestAdapter(adapter, {
+      latitude: options.latitude,
+      longitude: options.longitude,
+      regionId: region,
+      state: options.state,
+    } as AdapterQuery & { state?: string });
+
+    const hasErrors = result.errors.length > 0;
+    const isLive = result.totalReceived > 0 && !hasErrors;
+
+    if (!isLive && options.allowFallback) {
+      // Fallback to Demo snapshot for PFZ
+      const demoAdapter = new DemoDataAdapter('demo_pfz_advisories');
+      const fallbackResult = await this.ingestAdapter(demoAdapter, { regionId: region });
+
+      return {
+        success: fallbackResult.totalReceived > 0,
+        isLive: false,
+        result: fallbackResult,
+        fallbackUsed: true,
+        source: 'ORCA_DEMO',
+        dataset: 'demo_pfz_advisories',
+        errors: [`INCOIS PFZ WFS unreachable (${result.errors.join('; ')}). Demo snapshot fallback engaged.`],
       };
     }
 

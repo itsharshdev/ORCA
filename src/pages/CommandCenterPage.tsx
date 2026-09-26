@@ -3,6 +3,7 @@ import { MarineMapCanvas } from '@/components/map/MarineMapCanvas';
 import { MissionCard } from '@/components/decision/MissionCard';
 import { DecisionCard } from '@/components/decision/DecisionCard';
 import { PersistedObservationPanel } from '@/components/decision/PersistedObservationPanel';
+import { PfzOpportunityPanel } from '@/components/fisheries/PfzOpportunityPanel';
 import { ReasoningChain } from '@/components/agents/ReasoningChain';
 import { OrcaAssistant } from '@/components/agents/OrcaAssistant';
 import { AlertTriangle, MapPin, Compass } from 'lucide-react';
@@ -17,10 +18,11 @@ export const CommandCenterPage: React.FC = () => {
         <MarineMapCanvas className="w-full h-full" showOverlayControls={false} />
       </div>
 
-      {/* Desktop HUD Left Panel (Instrument Cluster: Mission + Decision + Persisted Observations) */}
+      {/* Desktop HUD Left Panel (Instrument Cluster: Mission + Decision + PFZ + Observations) */}
       <aside className="hidden lg:flex relative z-20 w-80 xl:w-96 m-4 flex-col gap-4 overflow-y-auto max-h-[calc(100vh-6rem)] pointer-events-auto shrink-0">
         <MissionCard />
         <DecisionCard />
+        <PfzOpportunityPanel />
         <PersistedObservationPanel />
 
         {/* Safety Alert Banner */}
@@ -70,6 +72,9 @@ export const CommandCenterPage: React.FC = () => {
 
         {/* Decision Hero */}
         <DecisionCard />
+
+        {/* Live PFZ Fishing Opportunities */}
+        <PfzOpportunityPanel />
 
         {/* Persisted Observations */}
         <PersistedObservationPanel />

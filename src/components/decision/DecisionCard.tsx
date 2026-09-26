@@ -10,7 +10,6 @@ export const DecisionCard: React.FC = () => {
   const decision = orchestration?.decision;
 
   const verdict = decision?.verdict || 'CAUTION';
-  const confidence = decision?.confidenceScore || 78.4;
   const summary = decision?.explanation || 'Conditions are generally favorable for morning departure, but rising wave swell post-12:00 and moderate safety watch affect the planned return corridor.';
   const topZoneName = decision?.recommendedZone?.name || 'Alibaug Outer Bank (PFZ-MUM-01)';
 
@@ -58,8 +57,11 @@ export const DecisionCard: React.FC = () => {
             ? 'bg-[#f1c40f]/10 border-[#f1c40f]/30 text-[#f1c40f]' 
             : 'bg-[#e74c3c]/10 border-[#e74c3c]/30 text-[#e74c3c]'
         }`}>
-          <span className="font-telemetry text-xs font-semibold">
-            {confidence}% CONFIDENCE
+          <span className="font-telemetry text-[11px] font-semibold tracking-tight block">
+            EVIDENCE: 5/5
+          </span>
+          <span className="text-[8px] font-telemetry text-slate-400 block uppercase">
+            Deterministic V1
           </span>
         </div>
       </div>

@@ -1,16 +1,17 @@
 # ORCA SESSION STATE
 
 ## Current phase
-PHASE 8 — Official Oceanography Data Integration (INCOIS) (Completed)
+PHASE 10 — Live INCOIS PFZ / Fisheries Intelligence (Completed)
 
 ## Status
-PHASE 8 COMPLETE — READY FOR PHASE 9 (Weather & Meteorology Adapter)
+PHASE 10 LIVE INCOIS PFZ INTEGRATION COMPLETED & VERIFIED.
+Note: Phase 9.2 remains OPEN pending IMD institutional credentials. Stopped for review before Phase 11.
 
 ## Baseline
 Observed stack:
 - Backend: Fastify (`^5.12.5`), `@supabase/supabase-js` (`^2.116.0`), Zod (`^4.6.5`), `@fastify/cors` (`^11.3.0`), `dotenv` (`^18.0.0`)
-- Database: Supabase PostgreSQL 17 (`hxhnerghnpdrijzyhmuw`), PostGIS 3.3.7, 15 domain tables with RLS enabled, 29 persisted normalized observations in `public.observations` (17 `ORCA_DEMO` + 12 `INCOIS_OSF` records with PostGIS geometry points)
-- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 72 passing tests across 7 suites
+- Database: Supabase PostgreSQL 17 (`hxhnerghnpdrijzyhmuw`), PostGIS 3.3.7, 15 domain tables with RLS enabled, persisted multi-agency observations in `public.observations` (`INCOIS_OSF`, `IMD_WEATHER`, `INCOIS_PFZ`, `ORCA_DEMO` with PostGIS geometry points)
+- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 99 passing tests across 9 suites
 - Frontend: React 19 (`^19.2.8`), TypeScript 6 (`~6.0.2`), Vite 8 (`^8.2.2`), React Router 7 (`^7.18.3`), Tailwind CSS 4 (`^4.3.3`), Leaflet (`^1.9.4`), Turf.js (`^7.4.0`), vite-plugin-pwa (`^1.3.0`)
 
 Existing important systems:
@@ -24,12 +25,17 @@ Existing important systems:
 - Phase 6.9 Collaboration Handoff: [ORCA_PHASE_69_UI_HANDOFF.md](file:///d:/Projects/ORCA/ORCA_PHASE_69_UI_HANDOFF.md)
 - Phase 7 Ingestion Pipeline: `IngestionService` (`server/services/ingestionService.ts`), idempotent deduplication, `POST /api/v1/ingestion/demo`, `GET /api/v1/observations` with filtering & pagination.
 - Phase 8 INCOIS OSF Integration: `IncoisOsfAdapter` (`server/adapters/incoisOsfAdapter.ts`), ERDDAP REST TableDAP parser, `POST /api/v1/ingestion/incois`, unit conversions, live/demo status integrity, and upgraded `PersistedObservationPanel` HUD.
+- Phase 9 & 9.1 IMD Weather & Marine Warnings: `ImdWeatherAdapter` (`server/adapters/imdWeatherAdapter.ts`) aligned with official IMD endpoints (`/api/v1/coastalbulletin`, `/api/v1/current_wx`), API key header support (`IMD_API_KEY`), Zod validation for direct array and composite payloads, `POST /api/v1/ingestion/imd`, warning validity handling (STALE/DEGRADED for expired alerts), and truthful UI metrics.
+- Phase 9.2 IMD Live Access Verification (OPEN): Audited official IMD API reference portal (`https://api.imd.gov.in/public/api_reference.html`), verified dual-header API gateway authentication (`X-Api-Key` + `Authorization: Bearer <JWT>`), tested live upstream responses, confirmed zero false live claims and graceful fallback behavior. Remains open pending provision of institutional credentials.
+- Phase 10 Live INCOIS PFZ / Fisheries Intelligence: Discovered and integrated official INCOIS GeoServer WFS endpoints (`PFZ_Automation:pfzlines`, `PFZ_LandingCentres:LandingCenters_29Apr2024`), implemented `IncoisPfzAdapter`, normalized multi-line geometries, calculated mission-aware distance/bearing/direction/relevance, added `GET /api/v1/pfz` & `POST /api/v1/ingestion/pfz`, enforced strict safety separation, built `PfzOpportunityPanel` HUD, and verified live 27-feature response & persistence.
 
 ## Current Branch
 `orca-core`
 
 ## Immediate Next Task
-Begin **PHASE 9 — Weather & Meteorology Adapter** (Integrating IMD weather radar, high-resolution wind, gust, squall warnings, and cyclone advisory feeds).
+Phase 10 complete and verified. Await user review before starting Phase 11. (Phase 9.2 remains OPEN for IMD credentials).
+
+
 
 ---
 
@@ -456,6 +462,144 @@ Ingested coordinates are transformed to PostGIS geometry points (`SRID=4326;POIN
 2. Trigger `POST /api/v1/ingestion/incois` with curl/Postman to view the raw ingestion response and error array.
 3. Query `SELECT count(*), dataset_identifier, status FROM public.observations GROUP BY dataset_identifier, status;` to confirm database writes.
 4. Check browser Network tab for `GET /api/v1/observations?category=OCEAN`.
+
+---
+
+## Developer Walkthrough — Phase 9: Weather & Marine Warning Integration (IMD)
+
+### 1. What Official Weather APIs Are
+Official weather APIs (e.g. India Meteorological Department, WMO Global Telecommunication System) are national and international networks providing standardized surface observations, radar nowcasts, and severe weather warning bulletins.
+
+### 2. HTTP Request / Response Lifecycle for IMD Integration
+```
+Client / Scheduler
+  ↓ POST /api/v1/ingestion/imd
+Fastify Route
+  ↓ IngestionService.ingestImdData()
+ImdWeatherAdapter.fetch()
+  ↓ HTTP GET https://api.imd.gov.in/api/v1/coastalbulletin (or /api/v1/current_wx?id=...)
+IMD API Management Portal
+  ↓ HTTP 200 JSON Payload (or 401/403/Network Error gracefully caught)
+Zod Schema Validation (imdWeatherPayloadSchema)
+  ↓ Unit Normalization (km/h -> knots, rainfall mm, temp °C)
+  ↓ Warning Validity Calculation (isWarningActive, isExpired)
+Supabase PostGIS public.observations (Idempotent Upsert)
+  ↓ HTTP 200 Success Response
+React UI updates via GET /api/v1/observations
+```
+
+### 3. JSON Validation with Zod
+External payloads are strictly validated against `imdStationWeatherSchema` and `imdMarineWarningSchema`. If an unexpected payload arrives, Zod detects schema mismatches and safely returns `INVALID_RESPONSE` with detailed diagnostic paths, preventing corrupted data from entering Supabase.
+
+### 4. Normalization
+- **Wind Speed:** Converted from raw km/h or m/s to maritime standard knots (`1 km/h = 0.539957 knots`).
+- **Temperature:** Stored in `degC`.
+- **Humidity:** Stored in `%`.
+- **Visibility:** Stored in `km`.
+- **Rainfall:** Stored in `mm`.
+- **Marine Warnings:** Structured with severity enum (`GREEN`, `YELLOW`, `ORANGE`, `RED`).
+
+### 5. Observation vs Forecast vs Warning vs Bulletin
+- **Observation:** Ground-truth measurement recorded at an automated coastal weather station (AWS) or coastal observatory at a specific timestamp (`observedAt`).
+- **Forecast:** Numerical weather prediction covering future hours.
+- **Warning:** A threshold-triggered hazard alert (e.g., squall alert with wind > 35 knots, cyclone alert, rough sea warning).
+- **Bulletin:** Official narrative advisory containing sea condition descriptions and explicit instructions for fishermen and port authorities.
+
+### 6. Timestamps: `observedAt` vs `issuedAt` vs `retrievedAt` vs `validFrom` vs `validUntil`
+- `observedAt`: When the physical atmosphere reading was sampled.
+- `issuedAt`: When IMD meteorologists officially signed and published the bulletin.
+- `retrievedAt`: When ORCA's backend retrieved the data.
+- `validFrom`: When the advisory or warning condition begins.
+- `validUntil`: When the warning condition expires.
+
+### 7. Warning Expiration & Status Integrity
+An expired warning must NEVER be treated as active.
+The adapter compares `validUntil` with current time:
+- If `validUntil < now`: `isExpired = true`, `isWarningActive = false`, `status = 'STALE'`, and `qualityLevel = 'DEGRADED'`.
+- If `validUntil >= now` and `warningLevel != 'GREEN'`: `isWarningActive = true`, `status = 'LIVE'`.
+
+### 8. Provenance
+Every observation record retains:
+- `source`: `IMD_WEATHER`
+- `dataset_identifier`: `coastal_marine_weather`
+- `agency`: `IMD`
+- `stationName` / `bulletinId`
+- Spatial coordinates of coastal station
+
+### 9. Timeout & Error Handling
+An enforced timeout (default 6000ms) with `AbortController` ensures network stalls or DNS resolution failures on external endpoints gracefully return `status: 'TIMEOUT'` or `'UNAVAILABLE'` without crashing the Fastify process.
+
+### 10. Fallback Mechanics: LIVE vs DEMO Honesty
+If IMD endpoints are offline or firewalled, the system:
+1. Marks `isLive: false`
+2. Engages verified demo snapshot fallback if `allowFallback: true`
+3. Returns explicit notice in `errors` array
+4. Renders amber `DEMO SNAPSHOT` pill on the UI rather than falsely claiming live connectivity.
+
+### 11. Why Server-Side Execution Is Mandatory
+1. **API Keys & Credentials:** IMD API keys or server tokens must never be exposed in client bundles.
+2. **CORS:** Official government portals do not enable browser Cross-Origin Resource Sharing.
+3. **Bandwidth Optimization:** Minimizes mobile network consumption for fishermen.
+
+### 12. How to Debug an External Meteorological Pipeline
+1. Check adapter health: `GET /api/v1/adapters`.
+2. Trigger manual ingestion: `curl -X POST http://localhost:3000/api/v1/ingestion/imd -H "Content-Type: application/json" -d '{"region":"maharashtra","allowFallback":true}'`.
+3. Inspect database: `SELECT * FROM observations WHERE category = 'WEATHER' OR category = 'HAZARD' ORDER BY observed_at DESC LIMIT 10;`.
+4. Open `/dashboard` and verify `PersistedObservationPanel` displays both INCOIS oceanography and IMD weather observations.
+
+---
+
+## Developer Learning Notes — Phase 10: Live INCOIS PFZ & Fisheries Intelligence
+
+### 1. What Potential Fishing Zones (PFZ) Are
+PFZ advisories are operational marine forecasts generated by INCOIS based on satellite-derived **Sea Surface Temperature (SST)** gradients (NOAA-AVHRR, MODIS) and **Ocean Colour / Chlorophyll-a** concentrations (OCEANSAT). Oceanographic thermal fronts, meandering currents, rings, and upwelling zones concentrate phytoplankton and baitfish, producing pelagic fish aggregation boundaries.
+
+### 2. Live INCOIS PFZ Architecture & Endpoints
+Through deep inspection of the official INCOIS Geoportal (`https://incois.gov.in/geoportal/MFASPFZ/index.html`) and GeoServer network requests, the official live machine-readable endpoints were discovered:
+- **PFZ Lines WFS Service:**
+  `GET https://incois.gov.in/geoserver/PFZ_Automation/ows?service=WFS&version=1.1.0&request=GetFeature&typeName=PFZ_Automation:pfzlines&outputFormat=application/json`
+  - Returns `FeatureCollection` of `MultiLineString` vectors across all coastal sectors.
+  - Properties contain: `State_Name`, `Julian_day`, `Year`, `UID`, `Length`.
+- **Landing Centres WFS Service:**
+  `GET https://incois.gov.in/geoserver/PFZ_LandingCentres/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=PFZ_LandingCentres:LandingCenters_29Apr2024&outputFormat=application/json`
+- **Sectors WFS Service:**
+  `GET https://incois.gov.in/geoserver/PFZ_Sectors/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=PFZ_Sectors:sector_new&outputFormat=application/json`
+
+### 3. Julian Day to Calendar Date Normalization
+INCOIS transmits the advisory date as an integer year (e.g. `2026`) and string Julian day of the year (e.g. `"268"`).
+The adapter deterministically maps this:
+```typescript
+function julianDayToIsoDate(year: number, dayOfYear: number): string {
+  const date = new Date(Date.UTC(year, 0, 1));
+  date.setUTCDate(dayOfYear);
+  return date.toISOString().split('T')[0];
+}
+// Day 268 of 2026 = 2026-09-25
+```
+
+### 4. Mission-Aware Calculations
+Given a vessel departure or operational waypoint `(lat, lon)`:
+1. **Haversine Distance:** Calculates exact distance in kilometers and nautical miles to the midpoint of the PFZ front.
+2. **Initial Bearing & Heading:** Determines the compass bearing (0–360°) and 8-point cardinal direction (`N`, `NE`, `E`, `SE`, `S`, `SW`, `W`, `NW`).
+3. **Spatial Relevance Index:** Computes a normalized 0–100 proximity score (`Math.max(10, Math.min(100, Math.round(100 - distanceKm * 0.5)))`).
+
+### 5. Strict Safety Separation Guarantee
+PFZ intelligence is **pure opportunity data**, NOT safety clearance.
+- **Rule:** A high PFZ score or close aggregation front must NEVER independently emit `GO` or `SAFE`.
+- The UI and API contract explicitly enforce `isSafetyClearance: false` and include a mandatory prompt to verify IMD Marine Warnings and wave conditions.
+
+### 6. Verification Commands
+```bash
+# Test full suite including Phase 10
+npm test -- --run
+
+# Test PFZ API endpoint
+curl http://localhost:3000/api/v1/pfz?latitude=18.92&longitude=72.83&region=maharashtra
+
+# Test PFZ Ingestion endpoint
+curl -X POST http://localhost:3000/api/v1/ingestion/pfz -H "Content-Type: application/json" -d '{"region":"maharashtra","allowFallback":true}'
+```
+
 
 
 

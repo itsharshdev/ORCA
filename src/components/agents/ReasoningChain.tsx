@@ -107,7 +107,7 @@ export const ReasoningChain: React.FC = () => {
             ) : (
               <>
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                <span>5 AGENTS SYNCED</span>
+                <span>5 SPECIALISTS EVALUATED</span>
               </>
             )}
           </span>

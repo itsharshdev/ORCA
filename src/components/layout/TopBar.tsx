@@ -47,10 +47,10 @@ export const TopBar: React.FC = () => {
           <span className="hidden lg:inline text-slate-500">• {activeRegion.seaBody}</span>
         </div>
 
-        {/* Live Regional Telemetry Status */}
+        {/* Regional Telemetry & Spatial Datum Status */}
         <div className="hidden xl:flex items-center gap-2 text-[11px] font-telemetry text-slate-400 bg-slate-900/60 px-2.5 py-1 rounded border border-slate-800">
           <Radio className="w-3 h-3 text-cyan-400 animate-pulse" />
-          <span>DATUM: WGS84 • INCOIS TELEMETRY ACTIVE</span>
+          <span>DATUM: WGS84 • INCOIS OSF + IMD WEATHER</span>
         </div>
       </div>
 

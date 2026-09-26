@@ -1,6 +1,8 @@
 import type { DataAdapter, AdapterSourceType, AdapterStatus } from './types.js';
 import { DemoDataAdapter } from './demoAdapter.js';
 import { IncoisOsfAdapter } from './incoisOsfAdapter.js';
+import { ImdWeatherAdapter } from './imdWeatherAdapter.js';
+import { IncoisPfzAdapter } from './incoisPfzAdapter.js';
 
 export class AdapterRegistry {
   private adapters: Map<string, DataAdapter> = new Map();
@@ -70,8 +72,11 @@ export class AdapterRegistry {
 // Global registry instance
 export const adapterRegistry = new AdapterRegistry();
 
-// Register default Phase 6 & Phase 8 adapters
+// Register default Phase 6, Phase 8, Phase 9 & Phase 10 adapters
 adapterRegistry.register(new DemoDataAdapter('demo_marine_conditions'));
 adapterRegistry.register(new DemoDataAdapter('demo_pfz_advisories'));
 adapterRegistry.register(new IncoisOsfAdapter());
+adapterRegistry.register(new ImdWeatherAdapter());
+adapterRegistry.register(new IncoisPfzAdapter());
+
 
