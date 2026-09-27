@@ -1,3 +1,4 @@
+import type { AuditedEvidenceItem, DeterministicRuleEvaluation } from '../src/types/contract.js';
 export * from '../src/types/contract.js';
 
 // ============================================================================
@@ -80,26 +81,113 @@ export interface ObservationRecord {
   created_at: string;
 }
 
+export type AlertCategory = 'WEATHER_MARINE' | 'GIS_SAFETY' | 'MISSION' | 'CONNECTIVITY';
+
 export type AlertType = 
+  // Weather / Marine
+  | 'SEVERE_WEATHER_WARNING'
+  | 'HIGH_WAVE_CONDITION'
+  | 'HIGH_WIND_CONDITION'
+  | 'CYCLONE_COASTAL_WARNING'
+  // GIS / Safety
+  | 'RESTRICTED_ZONE_INCURSION'
+  | 'ROUTE_INTERSECTION'
+  | 'VESSEL_LIMIT_BREACH'
+  // Mission
+  | 'RETURN_WINDOW_RISK'
+  | 'STALE_CRITICAL_DATA'
+  | 'DEGRADED_DATA_COVERAGE'
+  | 'MISSION_CONFLICT'
+  // Connectivity
+  | 'DEGRADED_CONNECTIVITY'
+  | 'OFFLINE_STATE'
+  | 'SAFETY_MESSAGE_RECEIVED'
+  // Legacy / DB backwards compatibility
   | 'CYCLONE_WARNING'
   | 'HIGH_WAVE_SWELL'
   | 'GALE_WIND'
   | 'BORDER_PROXIMITY'
   | 'RESTRICTED_ZONE_BREACH'
-  | 'PFZ_OPPORTUNITY'
   | 'COMMUNICATION_DROPOUT';
 
-export type AlertSeverity = 'INFO' | 'ADVISORY' | 'WARNING' | 'CRITICAL' | 'EMERGENCY';
+export type AlertSeverity = 'INFO' | 'ADVISORY' | 'WARNING' | 'CRITICAL';
+
+export type AlertStatus = 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED' | 'EXPIRED' | 'SUPPRESSED';
+
+export interface AlertArea {
+  name: string;
+  coordinates?: [number, number][]; // Polygon [[lng, lat], ...]
+  center?: [number, number]; // [lng, lat]
+  radiusKm?: number;
+  bufferMeters?: number;
+}
+
+export interface AlertAcknowledgement {
+  acknowledgedAt: string;
+  acknowledgedBy: string;
+  role?: string;
+  note?: string;
+}
+
+export interface AlertResolution {
+  resolvedAt: string;
+  resolvedBy: string;
+  role?: string;
+  note?: string;
+}
+
+export interface AlertProvenance {
+  isLive: boolean;
+  status: 'LIVE' | 'DEMO' | 'ACCESS_PENDING' | 'CACHED' | 'STALE' | 'VERIFIED';
+  sourceReliability: 'OFFICIAL_TELEMETRY' | 'SATELLITE_MODEL' | 'INSTITUTIONAL_FALLBACK' | 'GEOSPATIAL_ENGINE';
+  sourceName: string;
+}
+
+export interface AlertConfidence {
+  level: 'HIGH' | 'MEDIUM' | 'LOW';
+  score: number;
+  explanation: string;
+}
+
+export interface AlertItem {
+  id: string;
+  fingerprint: string;
+  alertType: AlertType;
+  category: AlertCategory;
+  severity: AlertSeverity;
+  title: string;
+  message: string;
+  actionRecommendation: string;
+  source: string;
+  dataset: string;
+  evidenceIds: string[];
+  ruleIds: string[];
+  affectedArea: AlertArea;
+  affectedMissionIds: string[];
+  affectedVesselIds: string[];
+  issuedAt: string;
+  validFrom: string;
+  validUntil: string | null;
+  status: AlertStatus;
+  acknowledgement?: AlertAcknowledgement | null;
+  resolution?: AlertResolution | null;
+  createdAt: string;
+  updatedAt: string;
+  provenance: AlertProvenance;
+  confidence: AlertConfidence;
+  whyExplanation: string;
+  metadata?: Record<string, unknown>;
+}
 
 export interface AlertRecord {
   id: string;
   source_id?: string | null;
   mission_id?: string | null;
-  alert_type: AlertType;
-  severity: AlertSeverity;
+  alert_type: string;
+  severity: string;
   title: string;
   description: string;
-  status: 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED' | 'EXPIRED';
+  status: AlertStatus;
   valid_from: string;
   valid_until?: string | null;
   acknowledged_at?: string | null;
@@ -107,6 +195,42 @@ export interface AlertRecord {
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+}
+
+export interface AlertDetailResponse {
+  alert: AlertItem;
+  evidence: AuditedEvidenceItem[];
+  ruleEvaluations: DeterministicRuleEvaluation[];
+}
+
+export interface AlertEvaluationInput {
+  regionId?: string;
+  missionId?: string;
+  vesselId?: string;
+  routeCoordinates?: [number, number][];
+  environmentalContext?: {
+    waveHeightMeters?: number;
+    windSpeedKnots?: number;
+    windGustKnots?: number;
+    visibilityKm?: number;
+    observedAt?: string;
+    validUntil?: string | null;
+    isLive?: boolean;
+    activeWarnings?: Array<{
+      alertId: string;
+      severity: string;
+      warningType: string;
+      description: string;
+      validFrom?: string;
+      validUntil?: string;
+      source?: string;
+    }>;
+  };
+  connectivityEvent?: {
+    state: ConnectivityState;
+    bearer?: NetworkBearer;
+    message?: string;
+  };
 }
 
 export type ConnectivityState = 'CONNECTED' | 'DEGRADED' | 'OFFLINE' | 'SAFETY_MESSAGE_RECEIVED';

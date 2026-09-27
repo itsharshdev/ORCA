@@ -1,11 +1,37 @@
 # ORCA SESSION STATE
 
 ## Current phase
-PHASE 18 — WHAT-IF / SCENARIO INTELLIGENCE (Completed & Verified)
+PHASE 19 — ALERTS + DISASTER INTELLIGENCE (Completed & Verified)
 
 ## Status
-PHASE 18 COMPLETED & SYSTEMATICALLY VERIFIED.
-- **Previous Phases Audited (Phases 0–17)**: Audited against live repository source code, automated test suites, database migrations, and runtime verification. Phase 17 End-to-End Query Intelligence verified.
+PHASE 19 COMPLETED & SYSTEMATICALLY VERIFIED.
+- **Previous Phases Audited (Phases 0–18)**: Audited against live repository source code, automated test suites, database migrations, and runtime verification. Phase 18 What-If Scenario Intelligence verified.
+- **Phase 19 Alerts + Disaster Intelligence**:
+  - Implemented typed, deterministic alert intelligence architecture tied strictly to:
+    `OBSERVATION → EVIDENCE → RULE → DECISION/IMPACT → ALERT → ACKNOWLEDGEMENT → HISTORY`.
+  - Core service `AlertService` (`server/services/alertService.ts`):
+    - Deterministic evaluation engine consuming live multi-agency feeds (`INCOIS OSF`, `INCOIS PFZ`, `IMD WEATHER`, `ORCA GIS SAFETY ENGINE`, `VESSEL CAPABILITY`).
+    - Deterministic fingerprinting (`source|alertType|affectedArea|ruleId|windowTag`) enabling automated refresh of active alerts on update instead of duplicate spam.
+    - Deterministic severity assignment (`CRITICAL`, `WARNING`, `ADVISORY`, `INFO`) driven strictly by evaluated rules (e.g. DG Shipping wave limits, PostGIS security buffers), with LLMs completely prohibited from assigning severity or fabricating hazards.
+    - Full lifecycle management: `ACTIVE` → `ACKNOWLEDGED` → `RESOLVED` / `EXPIRED` / `SUPPRESSED`.
+    - Expiry evaluation honoring `validFrom` and `validUntil`.
+    - Safety separation: `INCOIS PFZ` remains an ecological opportunity and is strictly forbidden from triggering safety hazard alerts.
+    - IMD integration honesty: IMD weather remains truthfully tagged `ACCESS_PENDING / DEMO` with zero false claims.
+  - REST API Endpoints (`server/routes/alerts.ts`):
+    - `GET /api/v1/alerts`: Filter by status, severity, category, alertType, vesselId, missionId.
+    - `GET /api/v1/alerts/:id`: 4-level progressive disclosure audit payload (Alert + Audited Evidence + Rule Evaluations + Workflow History).
+    - `POST /api/v1/alerts/:id/acknowledge`: Operator acknowledgement with role-based validation.
+    - `POST /api/v1/alerts/:id/resolve`: Incident resolution with required operator justification note.
+    - `POST /api/v1/alerts/evaluate`: Internal deterministic alert re-evaluation engine.
+  - Supabase Persistence & RLS (`supabase/migrations/20260927000002_phase19_alerts.sql`):
+    - Added columns: `fingerprint`, `category`, `affected_area`, `affected_vessel_ids`, `affected_mission_ids`, `evidence_ids`, `rule_ids`, `dataset`, `resolved_at`, `resolved_by`, `resolution_note`, `provenance`, and `confidence`.
+    - RLS policies enforcing public/operator read access and role-restricted acknowledgment and resolution mutations.
+  - Role-Specific Frontend Experiences:
+    - **Fisherman View** (`src/pages/AlertsPage.tsx`, `AlertCard.tsx`): Plain-language, prioritized, action-oriented directives with clear validity windows and no raw code clutter.
+    - **Coastal Authority View** (`src/pages/authority/AuthorityDashboardPage.tsx`): Tactical boundary tracking, affected vessel IDs, multi-category filters, and 4-level audit traces.
+    - **Disaster Management Workspace** (`src/pages/disaster/DisasterManagementPage.tsx`): Structured workspace (`ACTIVE HAZARDS → TACTICAL MAP → AFFECTED ASSETS → DETAIL → EVIDENCE → ACKNOWLEDGE/RESOLVE`).
+    - **Progressive Disclosure Modal** (`src/components/alerts/AlertDetailModal.tsx`): Level 1 (What/Where/Severity/Validity/Action), Level 2 (Why/Driver/Provenance), Level 3 (Audited Evidence), Level 4 (Deterministic Rule Trace).
+  - Quality Gates: Vitest 270/270 passed across 18 suites; Server typecheck passed (0 errors); Client typecheck passed (0 errors); ESLint passed (0 errors, 0 warnings); Production build passed; Real Chrome CDP verification passed (all 22 interactions, desktop + mobile 375x812, 0 console errors); Honesty audit passed.
 - **Phase 18 What-If / Scenario Intelligence**:
   - Implemented real deterministic scenario re-evaluation pipeline via `ScenarioService` (`server/services/scenarioService.ts`):
     `BASELINE &rarr; Immutable Baseline Capture &rarr; Structured Scenario Delta &rarr; Specialist Re-evaluation (GIS, Vessel Limits, Oceanography, Meteorology, Assumptions) &rarr; Deterministic Decision Engine &rarr; Audited Evidence Aggregation &rarr; Structured Rule & Evidence Delta &rarr; Grounded Natural Language Difference Explanation &rarr; Actionable Scenario Advice`.
@@ -1119,5 +1145,117 @@ The frontend `ScenarioComparisonCard` organizes scenario insights hierarchically
 - **Opportunity Subordination**: High PFZ opportunity cannot turn an `AVOID` into a `GO`.
 - **Hypothetical Isolation**: Hypothetical assumptions are marked `isHypotheticalAssumption: true` and cannot be persisted into the real observation ledger.
 - **Truthful Feed Attribution**: IMD bulletins remain `ACCESS_PENDING / DEMO` until verified production keys are supplied.
+
+---
+
+## Developer Learning Notes — Phase 19: Alerts + Disaster Intelligence (Undergraduate Walkthrough)
+
+### 1. The Core Philosophy: Alerts as Deterministic Legal & Safety Records
+In typical commercial web software, notifications and "alerts" are ephemeral messages published to a queue whenever an event occurs. In a maritime and coastal disaster decision-support system, an alert is a **legally defensible, safety-critical instrument**. It dictates whether an artisanal fisherman departs into life-threatening ocean swell, whether a port captain halts harbour traffic, or whether a disaster manager mobilises evacuation teams.
+
+Therefore, ORCA alerts follow an unbroken, auditable chain of custody:
+
+```
+  [MULTI-AGENCY SENSOR / MODEL TELEMETRY]
+        (INCOIS OSF, PostGIS Polygons, Vessel Limits, IMD)
+                       ↓
+         [AUDITED EVIDENCE NORMALISATION]
+       (Quality, Spatial Distance, Freshness)
+                       ↓
+         [DETERMINISTIC RULE EVALUATION]
+       (DG Shipping Envelopes, Buffer Zones)
+                       ↓
+           [DECISION ENGINE VERDICT]
+           (AVOID, CAUTION, GO, BLOCKED)
+                       ↓
+        [DETERMINISTIC ALERT GENERATION]
+     (Severity: CRITICAL, WARNING, ADVISORY)
+                       ↓
+      [OPERATOR ACKNOWLEDGEMENT / WORKFLOW]
+  (Audited Operator ID, Timestamp, Role, Note)
+                       ↓
+     [INCIDENT RESOLUTION / AUDIT ARCHIVE]
+```
+
+### 2. The Golden Safety Rule: Why LLMs Must Never Fabricate or Classify Alerts
+A critical failure mode in "AI for Disaster Management" systems is prompting an LLM with free-form weather text and asking: *"Is there an alert? What severity should it be?"*
+
+In ORCA, this is strictly forbidden:
+- **LLMs never assign severity**: Severity (`CRITICAL`, `WARNING`, `ADVISORY`, `INFO`) is computed exclusively by deterministic rules comparing verified numbers (e.g. `waveHeight >= 2.0m` or `distanceToGeofence <= 1000m`).
+- **LLMs never fabricate hazards**: An alert cannot exist without backing `evidenceIds` referencing persisted observations and `ruleIds` referencing deterministic code.
+- **Opportunity separation**: High potential fishing zones (`INCOIS PFZ`) represent economic opportunities. They are strictly prohibited from generating safety alerts.
+- **Role of LLM**: The LLM may only summarize already verified, deterministic alert contracts in conversational natural language.
+
+### 3. Alert Deduplication & Fingerprinting
+Sensor feeds arrive continuously (e.g. hourly OSF runs, periodic radar sweeps). Without deduplication, operators experience alert fatigue and system spam.
+ORCA generates a deterministic fingerprint:
+
+$$\text{Fingerprint} = \text{Hash}\Big(\text{source} \,\|\, \text{alertType} \,\|\, \text{affectedArea} \,\|\, \text{ruleId} \,\|\, \text{windowTag}\Big)$$
+
+When a new hazard observation arrives:
+1. If an existing `ACTIVE` alert shares the fingerprint, ORCA **refreshes** the validity window, observed values, and timestamps *in place* rather than generating duplicate alert records.
+2. If the condition clears, the alert transitions to `RESOLVED` or `EXPIRED`.
+
+### 4. 4-Level Progressive Disclosure Architecture
+Operators under acute operational pressure require instant clarity, while accident investigators require mathematical audit trails. The UI implements 4 levels of disclosure:
+
+- **Level 1 (What & Action)**:
+  - *What happened*: Plain headline and hazard category.
+  - *Where*: Affected geographical sector and radial/buffer perimeter.
+  - *Deterministic Severity*: High-contrast badge (`CRITICAL`, `WARNING`, `ADVISORY`, `INFO`).
+  - *Validity Window*: Exact `validFrom` and `validUntil` timestamps.
+  - *Mandatory Action*: Non-autonomous, actionable directive (*"Artisanal motorized crafts hold departure"*).
+- **Level 2 (Why & Provenance)**:
+  - *Operational Rationale*: Deterministic impact analysis explaining the physics or boundary breach.
+  - *Deterministic Confidence*: Percentage score, confidence level, and mathematical explanation.
+  - *Source Provenance*: Sponsoring agency (e.g., INCOIS, DG Shipping, PostGIS) and data reliability model.
+- **Level 3 (Audited Evidence)**:
+  - Multi-agency evidence items linked to the alert.
+  - Observed variables, numerical values, measurement units, observation timestamps, and freshness tags (`FRESH`, `ACCESS_PENDING`, `DEMO`).
+- **Level 4 (Deterministic Rule Trace)**:
+  - Evaluated rule IDs (`RULE_01_CYCLONE_WIND_GALE`, `RULE_02_GEO_PROXIMITY_BUFFER`, `RULE_03_VESSEL_WAVE_LIMIT`).
+  - Rule evaluation results (`FAIL`, `CAUTION`, `PASS`).
+  - Threshold values and institutional threshold authorities (e.g., DG Shipping Class IV, IMD Standard Beaufort Scale).
+
+### 5. Institutional Role Workspaces
+1. **Fisherman Perspective (`/alerts`)**:
+   - High visual clarity, uncluttered by institutional jargon or raw code errors.
+   - Immediate answer to: *"Can I safely navigate right now, and when must I return?"*
+2. **Coastal Authority Perspective (`/authority`)**:
+   - Institutional oversight across fleets.
+   - Displays affected vessel IDs, maritime safety zone incursion perimeter violations, and single-click operator acknowledgement.
+3. **Disaster Management Perspective (`/disaster`)**:
+   - Structured tactical workspace for NDRF / SDMA coordinators:
+     `ACTIVE HAZARDS → SPATIAL MAP PERIMETER → EXPOSED CRAFTS IN SECTOR → AUDIT DESK → ACKNOWLEDGE / RESOLVE`.
+   - Real-time tally of active hazards and exposed crafts in exclusion zones.
+
+### 6. Fastify REST Endpoints & Supabase RLS
+- `GET /api/v1/alerts`: Returns alerts filtered by `status`, `severity`, `category`, `alertType`, `vesselId`, `missionId`.
+- `GET /api/v1/alerts/:id`: Returns comprehensive 4-level progressive disclosure payload.
+- `POST /api/v1/alerts/:id/acknowledge`: Records operator ID, role, and timestamp; transitions state to `ACKNOWLEDGED`.
+- `POST /api/v1/alerts/:id/resolve`: Records resolution note and operator credentials; transitions state to `RESOLVED`.
+- `POST /api/v1/alerts/evaluate`: Internal deterministic alert generation engine.
+- **Row-Level Security (RLS)**: Enforces public/operator read isolation on `public.alerts`, restricting update and delete mutations to authorized operator roles.
+
+### 7. IMD Integration Honesty Invariant
+Official IMD API gateway credentials remain pending administrative clearance. In strict accordance with the honesty directive:
+- IMD radar and warning items are explicitly tagged `ACCESS_PENDING / DEMO`.
+- Zero fake cyclone alerts or fabricated real-time weather warnings are presented.
+- Live alerts rely strictly on verified `INCOIS OSF`, `INCOIS PFZ`, and deterministic `PostGIS` GIS boundaries.
+
+### 8. Quality Gates & Verification Summary
+- **Unit & Integration Tests**: 270/270 tests passed across 18 test files (including 20 dedicated Phase 19 tests in `server/__tests__/phase19_alerts.test.ts`).
+- **Real Browser CDP Automation**: Real Chrome headless browser verified 22 mandatory interactions:
+  - Active alert rendering and severity badges
+  - 4-level progressive disclosure modal navigation
+  - Acknowledge workflow mutation & Fastify persistence
+  - Resolve workflow mutation with operator justification note & Fastify persistence
+  - Filter empty state handling
+  - Disaster Management tactical map and exposed asset tables
+  - Role-specific Fisherman vs Authority presentation
+  - Mobile viewport (375 × 812) verification with zero horizontal overflow
+  - Intercepted network metrics (24 GET `/alerts`, 2 POST `/acknowledge`, 2 POST `/resolve`) and 0 console errors
+- **Honesty Audit**: Zero instances of prohibited claims (`"guaranteed safe"`, `"100% accurate"`, `"zero hallucinations"`, `"autonomous emergency response"`).
+
 
 

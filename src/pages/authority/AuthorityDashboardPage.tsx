@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MarineMapCanvas } from '@/components/map/MarineMapCanvas';
 import { 
   ShieldAlert, 
@@ -9,10 +9,32 @@ import {
   Search
 } from 'lucide-react';
 import { useRegion } from '@/hooks/useRegion';
+import { alertService } from '@/services/alertService';
+import { AlertDetailModal } from '@/components/alerts/AlertDetailModal';
+import type { AlertItem } from '@/types/contract';
 
 export const AuthorityDashboardPage: React.FC = () => {
   const { activeRegion } = useRegion();
   const [searchTerm, setSearchTerm] = useState('');
+  const [incursionAlerts, setIncursionAlerts] = useState<AlertItem[]>([]);
+  const [selectedAlert, setSelectedAlert] = useState<AlertItem | null>(null);
+
+  useEffect(() => {
+    alertService
+      .getAlerts({ category: 'GIS_SAFETY', role: 'COASTAL_AUTHORITY' })
+      .then((items) => setIncursionAlerts(items))
+      .catch(() => {});
+  }, []);
+
+  const handleAcknowledge = async (id: string) => {
+    try {
+      const updated = await alertService.acknowledgeAlert(id, 'AUTH-OFFICER-01', 'COASTAL_AUTHORITY');
+      setIncursionAlerts((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+      if (selectedAlert?.id === updated.id) setSelectedAlert(updated);
+    } catch {
+      // error handling
+    }
+  };
 
   const fleetVessels = [
     {
@@ -53,25 +75,6 @@ export const AuthorityDashboardPage: React.FC = () => {
       speed: '8.2 kts',
       corridorStatus: 'Approaching 2.5 km caution perimeter',
       incursionRisk: 'MEDIUM',
-    },
-  ];
-
-  const incursionAlerts = [
-    {
-      id: 'INC-2026-0926-01',
-      zone: 'Naval & Port Anchorage Security Geofence',
-      severity: 'WARNING',
-      time: '10:15 IST',
-      description: 'Vessel IND-MH-04-AL-551 detected within 2.8 km of restricted security perimeter.',
-      status: 'MONITORING',
-    },
-    {
-      id: 'INC-2026-0925-03',
-      zone: 'Malvan Marine Sanctuary Buffer',
-      severity: 'RESOLVED',
-      time: 'Yesterday 16:40 IST',
-      description: 'Craft successfully diverted outside 1.0 km biological sanctuary boundary.',
-      status: 'CLEARED',
     },
   ];
 
@@ -204,23 +207,64 @@ export const AuthorityDashboardPage: React.FC = () => {
               <span className="text-[10px] text-[#5A7C99]">PostGIS Geofence</span>
             </div>
 
-            <div className="flex flex-col gap-2">
-              {incursionAlerts.map((inc) => (
-                <div
-                  key={inc.id}
-                  className="p-3 rounded-xl bg-[#F9FCFE] border border-[#D8E5EC] flex flex-col gap-1 text-xs"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#123B5D]">{inc.zone}</span>
-                    <span className="text-[10px] text-[#5A7C99] font-mono">{inc.time}</span>
+            <div className="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1">
+              {incursionAlerts.length === 0 ? (
+                <div className="text-xs text-[#7E93A3] text-center py-4">No active boundary incursion alerts.</div>
+              ) : (
+                incursionAlerts.map((inc) => (
+                  <div
+                    key={inc.id}
+                    className="p-3 rounded-xl bg-[#F9FCFE] border border-[#D8E5EC] flex flex-col gap-1.5 text-xs hover:border-[#147FB3] transition"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[#123B5D]">{inc.affectedArea.name}</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-black text-white ${
+                        inc.severity === 'CRITICAL' ? 'bg-rose-600' : 'bg-amber-500'
+                      }`}>
+                        {inc.severity}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#5A7C99] leading-relaxed">{inc.message}</p>
+                    <div className="flex items-center justify-between pt-1 border-t border-[#E2EDF4] text-[10px]">
+                      <span className="text-[#7E93A3]">Status: <strong>{inc.status}</strong></span>
+                      <div className="flex items-center gap-1.5">
+                        {inc.status === 'ACTIVE' && (
+                          <button
+                            type="button"
+                            onClick={() => handleAcknowledge(inc.id)}
+                            className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-bold hover:bg-blue-100"
+                          >
+                            Ack
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAlert(inc)}
+                          className="px-2 py-0.5 rounded bg-[#147FB3] text-white font-bold hover:bg-[#0E5B82]"
+                        >
+                          Audit
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-[#5A7C99] leading-relaxed">{inc.description}</p>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {selectedAlert && (
+        <AlertDetailModal
+          alert={selectedAlert}
+          userRole="COASTAL_AUTHORITY"
+          onClose={() => setSelectedAlert(null)}
+          onStatusUpdated={(updated) => {
+            setIncursionAlerts((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+            setSelectedAlert(updated);
+          }}
+        />
+      )}
     </div>
   );
 };

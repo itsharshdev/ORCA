@@ -1317,4 +1317,121 @@ export interface ScenarioEvaluationResponse {
   evaluatedAt: string;
 }
 
+// ============================================================================
+// 19. PHASE 19 — ALERTS & DISASTER INTELLIGENCE DOMAIN MODEL
+// ============================================================================
+
+export type AlertCategory = 'WEATHER_MARINE' | 'GIS_SAFETY' | 'MISSION' | 'CONNECTIVITY';
+
+export type AlertType =
+  // WEATHER / MARINE
+  | 'SEVERE_WEATHER_WARNING'
+  | 'HIGH_WAVE_CONDITION'
+  | 'HIGH_WIND_CONDITION'
+  | 'CYCLONE_COASTAL_WARNING'
+  // GIS / SAFETY
+  | 'RESTRICTED_ZONE_INCURSION'
+  | 'ROUTE_INTERSECTION'
+  | 'VESSEL_LIMIT_BREACH'
+  // MISSION
+  | 'RETURN_WINDOW_RISK'
+  | 'STALE_CRITICAL_DATA'
+  | 'DEGRADED_DATA_COVERAGE'
+  | 'MISSION_CONFLICT'
+  // CONNECTIVITY
+  | 'DEGRADED_CONNECTIVITY'
+  | 'OFFLINE_STATE'
+  | 'SAFETY_MESSAGE_RECEIVED'
+  // Backwards compatibility legacy aliases
+  | 'CYCLONE_WARNING'
+  | 'HIGH_WAVE_SWELL'
+  | 'GALE_WIND'
+  | 'BORDER_PROXIMITY'
+  | 'RESTRICTED_ZONE_BREACH'
+  | 'COMMUNICATION_DROPOUT';
+
+export type AlertSeverity = 'INFO' | 'ADVISORY' | 'WARNING' | 'CRITICAL';
+export type AlertStatus = 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED' | 'EXPIRED' | 'SUPPRESSED';
+
+export interface AlertArea {
+  name: string;
+  coordinates?: [number, number][]; // Polygon [[lng, lat], ...]
+  center?: [number, number]; // [lng, lat]
+  radiusKm?: number;
+  bufferMeters?: number;
+}
+
+export interface AlertAcknowledgement {
+  acknowledgedAt: string;
+  acknowledgedBy: string;
+  role?: string;
+  note?: string;
+}
+
+export interface AlertResolution {
+  resolvedAt: string;
+  resolvedBy: string;
+  role?: string;
+  note?: string;
+}
+
+export interface AlertProvenance {
+  isLive: boolean;
+  status: 'LIVE' | 'DEMO' | 'ACCESS_PENDING' | 'CACHED' | 'STALE' | 'VERIFIED';
+  sourceReliability: 'OFFICIAL_TELEMETRY' | 'SATELLITE_MODEL' | 'INSTITUTIONAL_FALLBACK' | 'GEOSPATIAL_ENGINE';
+  sourceName: string;
+}
+
+export interface AlertConfidence {
+  level: 'HIGH' | 'MEDIUM' | 'LOW';
+  score: number;
+  explanation: string;
+}
+
+export interface AlertItem {
+  id: string;
+  fingerprint: string;
+  alertType: AlertType;
+  category: AlertCategory;
+  severity: AlertSeverity;
+  title: string;
+  message: string;
+  actionRecommendation: string;
+  source: string;
+  dataset: string;
+  evidenceIds: string[];
+  ruleIds: string[];
+  affectedArea: AlertArea;
+  affectedMissionIds: string[];
+  affectedVesselIds: string[];
+  issuedAt: string;
+  validFrom: string;
+  validUntil: string | null;
+  status: AlertStatus;
+  acknowledgement?: AlertAcknowledgement | null;
+  resolution?: AlertResolution | null;
+  createdAt: string;
+  updatedAt: string;
+  provenance: AlertProvenance;
+  confidence: AlertConfidence;
+  whyExplanation: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface AlertDetailResponse {
+  alert: AlertItem;
+  evidence: AuditedEvidenceItem[];
+  ruleEvaluations: DeterministicRuleEvaluation[];
+}
+
+export interface AlertFilterOptions {
+  status?: AlertStatus | 'ALL';
+  severity?: AlertSeverity;
+  alertType?: AlertType;
+  category?: AlertCategory;
+  missionId?: string;
+  vesselId?: string;
+  role?: UserRole | string;
+}
+
 
