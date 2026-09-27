@@ -1,34 +1,36 @@
 # ORCA SESSION STATE
 
 ## Current phase
-PHASE 14 — EVIDENCE + CONFIDENCE SYSTEM (Completed & Verified)
+PHASE 18 — WHAT-IF / SCENARIO INTELLIGENCE (Completed & Verified)
 
 ## Status
-PHASE 14 COMPLETED & SYSTEMATICALLY VERIFIED.
-- **Previous Phases Audited (Phases 0–13)**: Audited against live repository source code, automated test suites, database migrations, and runtime verification. Phase 11 GIS safety engine, Phase 12 Vessel Capability model, and Phase 13 Deterministic Decision Engine V2 verified.
-- **Phase 14 Evidence & Explainable Confidence Model**:
-  - Authoritative evidence logging implemented across all 7 operational categories: `SAFETY`, `GIS`, `VESSEL`, `OCEAN`, `WEATHER`, `MISSION`, `OPPORTUNITY`.
-  - Canonical `AuditedEvidenceItem` model: `evidenceId`, `category`, `source`, `dataset`, `variable`, `value`, `unit`, `geometry`, `observedAt`, `issuedAt`, `validUntil`, `retrievedAt`, `spatialRelevance` (`HIGH | MEDIUM | LOW | NOT_APPLICABLE`), `temporalRelevance` (`CURRENT | VALID_FOR_MISSION | PARTIALLY_VALID | EXPIRED | UNKNOWN`), `quality` (`GOOD | DEGRADED | POOR | UNKNOWN`), `status` (`FRESH | AGING | STALE | EXPIRED | UNAVAILABLE | DEMO | ACCESS_PENDING`), `transformation`, `ruleIds`, `decisionImpact` (`POSITIVE | NEUTRAL | CAUTION | CRITICAL_BLOCKER`).
-  - Strict **Explainable Decision Confidence** (`HIGH | MODERATE | LOW`):
-    - Completely eliminated fake probabilistic percentages (no "87% safe").
-    - Confidence is strictly evidence-based: derived from missing required streams, data staleness beyond TTL, demo status, and active source conflicts.
-  - **Source Conflict Handling**: Typed `SourceConflictRecord` (`variable`, `sourceA`, `sourceB`, `discrepancyDescription`, `resolutionPolicy`, `resolvedValue`, `unresolved`). Unresolved conflicts immediately downgrade decision confidence to MODERATE/LOW with human-readable rationale.
-  - **Bidirectional Rule &harr; Evidence Linkage**: Every evaluated rule references a valid `evidenceRef` matching an `evidenceId`. Every evidence item records `ruleIds` documenting which deterministic safety rules consumed it.
-  - **Truthful IMD Data Tagging**: IMD coastal observations truthfully labeled `status: 'ACCESS_PENDING'` or `status: 'DEMO'`, preventing false live data assertions.
-- **Backend Endpoints & API Integration**:
-  - `POST /api/v1/decisions/evaluate`: Returns full structured `confidence`, `evidence`, `evidenceSummary`, and `conflicts`.
-  - `GET /api/v1/decisions/:id`: Populates `fullEvidenceLog` mapped from audited evidence records.
-  - `POST /api/v1/orca/query`: Retains full evidence and explainable confidence trace.
-- **Comprehensive Test Suite**:
-  - `server/__tests__/evidence_confidence.test.ts`: 25 mandatory test matrix scenarios covering fresh evidence, missing data, stale/expired records, demo snapshots, IMD access-pending provenance, deterministic spatial/temporal relevance calculations, conflict records & policies, rule &harr; evidence linkage, explainable confidence degradation, PFZ opportunity separation, extreme wave blocker tagging, unique keying, and multi-category summary aggregation.
-- **Quality Gates**:
-  - Vitest: **183 / 183 passing tests** across 13 test suites (0 failures).
-  - TypeScript Server Check: `npm run server:typecheck` &rarr; 0 errors.
-  - ESLint: `npm run lint` &rarr; 0 errors.
-  - Production Build: `npm run build` &rarr; Clean build with PWA service worker precache (`sw.js`, `manifest.webmanifest`).
-  - Live HTTP Runtime Verification: Tested `POST /api/v1/decisions/evaluate` and `GET /api/v1/decisions/:id` returning 14 audited evidence items and 7 verified evidence groups.
+PHASE 18 COMPLETED & SYSTEMATICALLY VERIFIED.
+- **Previous Phases Audited (Phases 0–17)**: Audited against live repository source code, automated test suites, database migrations, and runtime verification. Phase 17 End-to-End Query Intelligence verified.
+- **Phase 18 What-If / Scenario Intelligence**:
+  - Implemented real deterministic scenario re-evaluation pipeline via `ScenarioService` (`server/services/scenarioService.ts`):
+    `BASELINE &rarr; Immutable Baseline Capture &rarr; Structured Scenario Delta &rarr; Specialist Re-evaluation (GIS, Vessel Limits, Oceanography, Meteorology, Assumptions) &rarr; Deterministic Decision Engine &rarr; Audited Evidence Aggregation &rarr; Structured Rule & Evidence Delta &rarr; Grounded Natural Language Difference Explanation &rarr; Actionable Scenario Advice`.
+  - Strongly typed What-If domain contract (`src/types/contract.ts`, `server/schemas/apiSchemas.ts`):
+    - `POST /api/v1/scenarios/evaluate` supporting natural-language scenario strings (*"What if I leave at 2 PM?"*, *"What if the trip is only 3 hours?"*, *"What if I use VESSEL-002?"*, *"What if I avoid this restricted area?"*, *"What if wave height increases to 2.5 metres?"*) or structured overrides.
+    - Classifies scenarios into: `TIME_CHANGE`, `DURATION_CHANGE`, `VESSEL_CHANGE`, `ROUTE_CHANGE`, `ENVIRONMENTAL_ASSUMPTION`, `COMBINED_CHANGE`, and `CUSTOM`.
+    - Returns structured delta badges, rule comparison (`newlyTriggeredRules`, `noLongerTriggeredRules`, `persistingRules`), evidence differences, and grounded rationale.
+  - **Mandatory Safety Invariants Enforced**:
+    - The LLM translates/explains scenario differences but **NEVER directly decides whether a scenario is safe**.
+    - The deterministic `DecisionEngineService` remains the sole, unbypassable safety authority.
+    - Opportunity (INCOIS PFZ) never overrides safety `AVOID`.
+    - Hypothetical condition assumptions (e.g. wave = 2.5m) are strictly labeled `HYPOTHETICAL ASSUMPTION` with alert styling and isolated from verified observations.
+    - Official IMD weather remains truthfully `ACCESS_PENDING / DEMO` with zero false live claims.
+  - **Frontend Tidal Light What-If Experience**:
+    - Added interactive `ScenarioComparisonCard` (`src/components/decision/ScenarioComparisonCard.tsx`) to Ask ORCA (`src/pages/AskOrcaPage.tsx`).
+    - Side-by-side visual comparison: `CURRENT DECISION (BASELINE)` vs `WHAT-IF SCENARIO RESULT` with transition indicators (`GO &rarr; CAUTION`).
+    - What Changed delta chips, grounded operational rationale for delta, progressive disclosure tabs for deterministic rule comparisons and audited evidence deltas.
+- **Quality Gates & Automated Testing**:
+  - Vitest: **250 / 250 passing tests** across 17 test files (including 20 dedicated Phase 18 scenario tests in `server/__tests__/phase18_scenarios.test.ts`).
+  - Server Typecheck: `npm run server:typecheck` &rarr; 0 errors.
+  - ESLint: `npm run lint` &rarr; 0 errors, 0 warnings.
+  - Production Build: `npm run build` &rarr; Clean production build with PWA service worker precache.
+  - Real Chrome CDP Browser Verification: Real Chrome browser automation verified `/ask`, baseline submission, 3 interactive scenarios (departure time shift, vessel change, hypothetical wave assumption), side-by-side card rendering, delta badges, progressive disclosure tabs, mobile 375x812 viewport (0px overflow, 30 active buttons), network request interception (`POST /scenarios/evaluate`), and 0 console errors.
 - **Phase 9.2 External Blocker**:
-  - Official IMD API key and bearer token institutional credentials remain pending. Truthfully tagged in evidence as `ACCESS_PENDING / DEMO`. Zero fabricated live weather claims.
+  - Official IMD API institutional credentials remain pending. Truthfully tagged in evidence and UI as `ACCESS_PENDING / DEMO`. Zero fabricated live weather claims.
 
 
 ## Baseline
@@ -889,19 +891,233 @@ To avoid overwhelming operators while maintaining complete auditability, evidenc
 7. **Opportunity**: INCOIS PFZ Thermal-Chlorophyll Fronts (Favorable fishing corridors).
 
 ### 5. Multi-Level Progressive Disclosure
-- **Level 1 (Fisherman Glance)**: Verdict (`GO`, `CAUTION`, `AVOID`, `INSUFFICIENT_DATA`), recommended action, and confidence badge (`HIGH`, `MODERATE`, `LOW`).
-- **Level 2 (Operational Why)**: Plain-language operational rationale and primary decision driver.
-- **Level 3 (Evidence Explorer)**: Categorized evidence cards with freshness badges and source attribution.
-- **Level 4 (Authority & Audit Deep Dive)**: Full provenance records, exact timestamps, Turf.js transformations, rule IDs, and conflict logs.
 
+---
 
+## Developer Learning Notes — Phase 15: Real Agentic Orchestration & Specialist Coordination
 
+### 1. What "Agentic Orchestration" Means in ORCA
+In mission-critical maritime systems, "agents" are not conversational chatbots that hallucinate safety advice. Instead, they are typed, server-authoritative specialist task executors that:
+1. Normalize operator intent and contextual voyage constraints.
+2. Formulate explicit data queries against specialized domain models.
+3. Coordinate parallel background execution across distinct hydrological and meteorological data streams.
+4. Transform domain observations into normalized evidence records.
+5. Hand off normalized evidence to a deterministic safety engine that has absolute authority over the decision.
 
+### 2. The 6 Logical Specialists
+1. **Mission Planner (`MISSION_PLANNER`)**: Parses natural language requests (e.g. "Can I go fishing tomorrow at 6 AM for 5 hours?"), maps vessel identification, waypoints, activity type, departure window, and daylight constraints.
+2. **Oceanography (`OCEANOGRAPHY`)**: Fetches INCOIS OSF wave heights, swell periods, surface currents, and sea surface temperature (SST).
+3. **Meteorology (`METEOROLOGY`)**: Fetches IMD coastal weather bulletins, wind speed, gust factors, and visibility.
+4. **PFZ / Fisheries Opportunity (`PFZ_FISHERIES`)**: Integrates official INCOIS PFZ WFS lines and landing centers. Strictly provides **economic/operational opportunity** and cannot override safety barriers.
+5. **Geo / Safety (`GEO_SAFETY`)**: Audits route vectors against PostGIS hydrographic restricted zones, naval security perimeters, and marine protected areas.
+6. **Vessel Capability (`VESSEL_CAPABILITY`)**: Audits environmental wave and wind parameters against registered builder thresholds for the active craft.
 
+### 3. Explicit Task Dependency Graph & Parallelism
+To minimize response latency without compromising safety, ORCA uses an explicit dependency graph:
+```
+           [Mission Context Normalized]
+                         ↓
+    ┌────────────┬───────────────┬────────────┐
+    ↓            ↓               ↓            ↓
+[Oceanography] [Meteorology]   [PFZ]     [Geo / Safety]  (Stage 1: Parallel Execution)
+    └────────────┬───────────────┘
+                 ↓
+       [Vessel Capability]                               (Stage 2: Dependent on Wave & Wind)
+                 ↓
+      [Audited Evidence Aggregated]
+                 ↓
+  [Deterministic Decision Engine V2]                     (Stage 3: Authoritative Verdict)
+                 ↓
+     [Orchestrated Decision Result]
+```
 
+### 4. Specialist Failure Isolation Policy
+- If an opportunity feed (e.g. INCOIS PFZ) or non-critical feed (e.g. IMD pending credentials) fails or degrades, the orchestrator tags the specialist as `DEGRADED` or `UNAVAILABLE`, records the degradation in the trace, and allows the deterministic engine to evaluate safety on the remaining streams.
+- If a **critical safety stream** is missing (e.g. wave height when exceeding coastal limits), the Decision Engine returns `INSUFFICIENT_DATA`, ensuring safety is never compromised.
 
+---
 
+## Developer Learning Notes — Phase 16: LLM Intelligence + Natural Language Reasoning Layer
 
+### 1. Architectural Philosophy: The Separation of Intelligence and Safety Authority
+In ORCA, the Large Language Model (LLM) is treated as an **untrusted, high-capability natural language translation and synthesis engine**.
+It operates strictly on the outer perimeter of the system:
+1. **Inbound Translation**: The LLM translates unstructured, conversational human language (*"Can I take my small boat out near Mumbai tomorrow afternoon?"*) into a strictly typed, Zod-validated `LlmStructuredIntent`.
+2. **Deterministic Processing**: The structured intent is executed by the server-authoritative `OrchestrationService`, coordinating the 6 specialist modules and gathering verified evidence evaluated by the immutable `DecisionEngineService`.
+3. **Outbound Synthesis**: The LLM consumes the deterministic verdict (`GO`, `CAUTION`, `AVOID`, `INSUFFICIENT_DATA`) and structured `AuditedEvidenceItem` records to synthesize a conversational, grounded explanation tailored to the operator's role (Fisherman, Port Authority, Maritime Operator).
 
+```
+ USER
+  ↓ (Natural Language Input)
+ [LLM Provider / NLP Parser] (Intent Extraction)
+  ↓ (Zod-Validated LlmStructuredIntent)
+ [OrchestrationService] (Task Coordinator)
+  ↓ (Parallel Specialist Execution)
+ [6 Logical Specialists + Data Adapters]
+  ↓ (Audited Evidence Items)
+ [DecisionEngineService] (Deterministic Safety Authority)
+  ↓ (Immutable Final Decision: GO / CAUTION / AVOID)
+ [LLM Provider / Explanation Synthesizer] (Grounding on Evidence)
+  ↓ (Grounded Natural Language Summary & Advisories)
+ USER
+```
+
+### 2. The Clean LLM Provider Abstraction
+To avoid vendor lock-in and ensure the system operates reliably offline or without API keys, ORCA defines an `LLMProvider` interface (`server/llm/llmProvider.ts`):
+- `generateStructuredIntent(input)`: Parses unstructured natural language into typed `LlmStructuredIntent`.
+- `generateExplanation(input)`: Transforms deterministic decision records and evidence items into human-readable narratives.
+- `generateClarification(input)`: Identifies missing voyage parameters and produces concise clarification questions with quick-select options.
+
+Three providers are implemented:
+1. `GeminiLlmProvider`: Native Google Gemini Flash driver with structured JSON output constraints.
+2. `OpenAiLlmProvider`: OpenAI / compatible API driver with strict response format schemas.
+3. `FallbackLlmProvider`: A deterministic, zero-credential NLP parser and explanation synthesizer using regex entity extraction and rule-grounded templating.
+
+### 3. Strict Zod-Validated Structured Intent
+User queries are normalized through `structuredIntentZodSchema` (`server/llm/llmTypes.ts`):
+- `activity`: `FISHING` | `SURVEY` | `PATROL` | `TRANSIT` | `UNKNOWN`
+- `questionType`: `FEASIBILITY` | `SAFETY` | `OPPORTUNITY` | `EXPLANATION` | `ROUTE` | `CONDITIONS` | `ALERT` | `WHAT_IF` | `GENERAL_INFORMATION` | `UNKNOWN`
+- `departureWindow`: ISO string or temporal descriptor (`"today"`, `"tomorrow"`, `"morning"`, `"afternoon"`).
+- `durationHours`: Voyage duration number.
+- `vesselType` & `vesselName`: Active vessel identification.
+- `location`: Extracted geographic coordinates and named location.
+- `constraints`: Max wave height, max wind speed, night navigation limitations.
+
+### 4. Server-Authoritative Conversational Memory
+Follow-up questions in natural language frequently omit previously stated parameters (e.g., Turn 1: *"Can I fish tomorrow morning near Mumbai?"* &rarr; Turn 2: *"What about the afternoon?"*).
+- ORCA maintains an in-memory, LRU-managed `ServerConversationContext` cache with a 24-hour TTL keyed by `conversationId`.
+- In Turn 2, `LlmService.resolveContext()` merges the prior turn's location, vessel, activity, and duration with the new departure window (`afternoon`), returning explicit `inheritedContext` metadata to the client.
+
+### 5. Controlled Tool Boundary
+The LLM is strictly isolated from raw SQL, database credentials, and service-role keys. When LLM reasoning requires domain information, it interacts solely through allowlisted server methods:
+- `getOceanConditions(location, time)`
+- `getWeatherConditions(location, time)`
+- `getPFZOpportunity(location, maxDistanceKm)`
+- `evaluateGISSafety(routeOrPoint)`
+- `evaluateVesselCapability(vesselId, waveHeight, windSpeed)`
+- `evaluateDecision(missionContext)`
+
+### 6. Zero-Tolerance Safety Rules for LLM Output
+1. **Deterministic Precedence**: The LLM **cannot** alter `verdict`, `ruleResults`, `thresholds`, `sources`, or `timestamps`.
+2. **No Hallucinated Citations**: Every fact in the natural language summary must map to an existing `AuditedEvidenceItem`.
+3. **No Safety Override**: If deterministic rules return `AVOID` due to a naval restricted zone or excessive wave height, the LLM explanation is constrained to highlight the blocker and cannot suggest proceeding.
+4. **Honest Credential Reporting**: If IMD credentials remain pending, the LLM must honestly report weather data status as `ACCESS_PENDING / DEMO` rather than fabricating live observations.
+
+---
+
+## Developer Learning Notes — Phase 17: End-to-End ORCA Query Intelligence + Production Integration
+
+### 1. The Production Intelligence Pipeline Architecture
+In Phase 17, `POST /api/v1/orca/query` is elevated into a complete production-grade query pipeline that connects every subsystem in ORCA without bypassing safety:
+```
+ USER QUESTION ("Can I fish near Mumbai tomorrow for 5 hours?")
+  ↓
+ [LLM / Fallback Intent Extraction]
+  ↓ (Extracts Activity: FISHING, Region: maharashtra, Duration: 5h, Time: 06:00 IST)
+ [Structured Mission Context]
+  ↓
+ [OrchestrationService Dispatch]
+  ↓ (Parallel Specialist Execution)
+ ┌───────────────┬────────────────┬──────────────┬───────────────┐
+ │ Oceanography  │  Meteorology   │ PFZ Fisheries│  GIS Safety   │
+ │ (INCOIS OSF)  │ (IMD Weather)  │ (INCOIS WFS) │ (PostGIS 3.3) │
+ └───────┬───────┴────────┬───────┴──────┬───────┴───────┬───────┘
+         │                │              │               │
+         └────────┬───────┘              │               │
+                  ↓                      │               │
+         [Vessel Capability Engine]      │               │
+                  ↓                      ↓               ↓
+         [Audited Evidence Collection: 7 Domain Streams]
+                  ↓
+         [Deterministic Decision Engine V2] (8-Stage Precedence)
+                  ↓
+         [Immutable Final Verdict: GO / CAUTION / AVOID / INSUFFICIENT_DATA]
+                  ↓
+         [Grounded Explanation Synthesizer (Citing Audited Evidence IDs)]
+                  ↓
+         [Actionable User Response (Tidal Light UI & API Contract)]
+```
+
+### 2. Handling the 8 Canonical Query Types
+The pipeline recognizes and answers 8 distinct query classes:
+1. **`FEASIBILITY`** (*"Can I go fishing today near Mumbai?"*): Evaluates whole-mission executable feasibility with clear departure/return windows.
+2. **`SAFETY`** (*"Is this route safe?"*): Direct audit of hydrographic geofences, naval security boundaries, and wave height builder envelopes.
+3. **`CONDITIONS`** (*"What are the sea conditions?"*): Summarizes wave height ($H_s$), swell periods, sea surface temperature, current velocities, and wind speed.
+4. **`OPPORTUNITY`** (*"Is there a fishing opportunity near Mumbai?"*): Surfaces nearest high-density PFZ zones with bearing and distance while strictly evaluating whether route safety allows reaching them.
+5. **`EXPLANATION`** (*"Why should I avoid this route?"*): Provides a multi-factor explanation of the primary decisive rule driver.
+6. **`ALERT`** (*"Are there any warnings affecting my trip?"*): Checks coastal weather bulletins, squall advisories, and naval exercise closures.
+7. **`GENERAL_INFORMATION`** (*"What is ORCA and marine status?"*): Explains system capabilities and current operational state.
+8. **`UNKNOWN / AMBIGUOUS`** (*"hello"*, empty or missing parameters): Asks structured clarification questions with one-click options rather than guessing.
+
+### 3. Absolute Safety Precedence Invariants
+- **PFZ Opportunity Invariant**: High fish concentration (`INCOIS PFZ`) can NEVER convert a safety `AVOID` (e.g., naval anchorage buffer breach or 2.8m wave height) into a `GO`. Safety strictly blocks opportunity.
+- **Vessel Seaworthiness Invariant**: If wave or wind forecasts exceed registered builder tolerances for a motorized fiberglass boat (e.g., > 1.8m wave), the verdict is `AVOID`, regardless of user phrasing.
+- **Missing Critical Data Invariant**: If critical ocean state forecast feeds are missing or unverified, the engine outputs `INSUFFICIENT_DATA` rather than guessing a clearance.
+
+### 4. Consolidated Production Response Contract
+The endpoint returns `Phase17OrcaQueryResponse` providing a unified contract:
+- `queryId`, `conversationId`, `turnId`
+- `shortAnswer`, `primaryDriver`, `actionableAdvice`
+- `intelligenceMode` (`DETERMINISTIC_FALLBACK` | `GEMINI` | `OPENAI`)
+- `sourceStatus` (OSF: `LIVE`, PFZ: `LIVE`, GIS: `DETERMINISTIC`, IMD: `ACCESS_PENDING / DEMO`)
+- `decision` (Immutable verdict, rule evaluations, confidence score, departure/return cutoffs)
+- `evidence` (Audited, traceable observations with variable, unit, quality, and rule links)
+- `orchestrationResult` (Specialist traces, dependency graph, execution timings)
+
+---
+
+## Developer Learning Notes — Phase 18: What-If / Scenario Intelligence
+
+### 1. The What-If Architecture: Re-evaluation vs Simulation
+A common mistake in AI assistants is having the LLM "simulate" what happens in a scenario (*e.g.*, hallucinating whether a 2 PM departure is safe). In ORCA:
+- **The LLM does NOT decide safety.**
+- The LLM's only role in What-If is extracting structured modifications (*e.g.*, `departureTime: '14:00'`, `vesselId: 'VESSEL-002'`, `assumptions: { waveHeightMeters: 2.5 }`).
+- The modified hypothetical mission is passed directly into `DecisionEngineService` and specialist engines (GIS rerouting, vessel capability curves, oceanography envelopes).
+- The baseline decision and scenario decision are compared mathematically down to the individual rule and evidence records.
+
+```
+ BASELINE MISSION & DECISION (Immutable Snapshot)
+                 ↓
+ [What-If Natural Language / Structured Inputs]
+                 ↓
+ [Structured Scenario Delta Formulation]
+                 ↓
+ [Specialist Re-Evaluation & GIS / Vessel / Weather Dispatch]
+                 ↓
+ [Deterministic Decision Engine Re-Evaluation]
+                 ↓
+ [Audited Evidence & Rule Delta Computation]
+   • newlyTriggeredRules
+   • noLongerTriggeredRules
+   • persistingRules
+   • changedEvidence & newEvidence
+                 ↓
+ [Grounded Verdict Change Reason & Actionable Advice]
+                 ↓
+ [Tidal Light Side-by-Side Comparison UI & API Envelope]
+```
+
+### 2. Supported Scenario Categories
+1. **Time Shift (`TIME_CHANGE`)**: *"What if I leave at 2 PM instead of 6 AM?"* &rarr; Re-evaluates afternoon wave chop and sunset return limits.
+2. **Duration Modification (`DURATION_CHANGE`)**: *"What if the trip is only 3 hours?"* &rarr; Re-evaluates reduced exposure window.
+3. **Vessel Substitution (`VESSEL_CHANGE`)**: *"What if I use VESSEL-002 (Samudra Sevak trawler)?"* &rarr; Re-evaluates engine power, wave tolerance (2.5m vs 1.8m), and range.
+4. **Route / Corridor Modification (`ROUTE_CHANGE`)**: *"What if I avoid this restricted area?"* &rarr; Re-evaluates waypoint corridors to bypass naval exclusion polygons.
+5. **Hypothetical Condition Assumption (`ENVIRONMENTAL_ASSUMPTION`)**: *"What if wave height increases to 2.5 metres?"* &rarr; Evaluates hypothetical condition change, strictly tagging evidence items with `HYPOTHETICAL ASSUMPTION` to ensure prototype assumptions are never confused with live observed sensor telemetry.
+6. **Combined Scenarios (`COMBINED_CHANGE`)**: *"What if I leave at 2 PM and use VESSEL-002?"* &rarr; Evaluates multi-parameter interactions.
+
+### 3. Progressive Disclosure UI Pattern
+The frontend `ScenarioComparisonCard` organizes scenario insights hierarchically:
+- **Top Level**: Side-by-side verdict cards (`CURRENT DECISION` vs `WHAT-IF SCENARIO`) with transition indicators.
+- **Delta Badges**: Visual chips highlighting each modified parameter (*e.g.*, `Departure: 05:45 IST → 14:00 IST`).
+- **Grounded Reason & Advice**: Deterministic explanation of why the verdict shifted and concrete action steps.
+- **Deep Technical Audit (Tabs)**:
+  - *Rule Comparison Tab*: Newly triggered rules, resolved rules, and persisting invariant rules.
+  - *Evidence Delta Tab*: Modified evidence values with status indicators (`LIVE`, `DEMO`, `ACCESS_PENDING`, `HYPOTHETICAL`).
+
+### 4. Zero-Leakage Data & Safety Invariants
+- **No Direct LLM Safety Override**: LLM explanations are constrained to explain deterministic rule outputs.
+- **Opportunity Subordination**: High PFZ opportunity cannot turn an `AVOID` into a `GO`.
+- **Hypothetical Isolation**: Hypothetical assumptions are marked `isHypotheticalAssumption: true` and cannot be persisted into the real observation ledger.
+- **Truthful Feed Attribution**: IMD bulletins remain `ACCESS_PENDING / DEMO` until verified production keys are supplied.
 
 

@@ -236,6 +236,8 @@ export const OrchestrationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [orchestration, setOrchestration] = useState<OrchestrationPackage | null>(initialOrchestration);
   const [isOrchestrating, setIsOrchestrating] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<BaseAgentResult | null>(null);
+  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
+  const conversationIdRef = React.useRef<string | undefined>(undefined);
 
   const [agentStatuses, setAgentStatuses] = useState<Record<AgentId, AgentExecutionStatus>>({
     planner: 'completed',
@@ -261,21 +263,34 @@ export const OrchestrationProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     try {
+      const activeConvId = conversationIdRef.current || conversationId;
       // Step 1: Try backend /orca/query endpoint
       const res = await orcaQueryService.queryOrca({
         queryText: query,
         regionId,
-        structuredMission: {
+        conversationId: activeConvId,
+        structuredMission: (departureOverride || durationOverride) ? {
           activity: 'FISHING',
           departureTime: departureOverride || '05:45 IST',
           durationHours: durationOverride || 5,
           sectorId: regionId,
-        },
+        } : undefined,
       });
+
+      if (res.conversationId) {
+        conversationIdRef.current = res.conversationId;
+        setConversationId(res.conversationId);
+      }
 
       // Step 2: Map backend OrcaQueryResponse to frontend OrchestrationPackage
       const mappedPackage: OrchestrationPackage = {
         orchestrationId: res.queryId,
+        conversationId: res.conversationId,
+        turnId: res.turnId,
+        llmIntent: res.llmIntent,
+        llmExplanation: res.llmExplanation,
+        clarifications: res.clarifications,
+        inheritedContext: res.inheritedContext,
         requestedQuery: query,
         timestamp: new Date(res.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         executionTimeMs: res.executionTimeMs,
@@ -429,6 +444,7 @@ export const OrchestrationProvider: React.FC<{ children: React.ReactNode }> = ({
           },
           evaluatedAt: res.decision.evaluatedAt,
         },
+        orchestrationResult: (res as any).orchestrationResult,
       };
 
       setOrchestration(mappedPackage);
@@ -460,7 +476,7 @@ export const OrchestrationProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setIsOrchestrating(false);
     }
-  }, []);
+  }, [conversationId]);
 
   const selectAgentForInspection = (agentId: AgentId) => {
     if (!orchestration) return;

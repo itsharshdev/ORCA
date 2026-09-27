@@ -351,6 +351,9 @@ export class VesselCapabilityService {
 
     if (req.vesselId) {
       vessel = await this.getCapability(req.vesselId);
+      if (!vessel && !req.vesselOverrides) {
+        throw new Error(`Vessel profile '${req.vesselId}' was not found in registry.`);
+      }
     }
 
     // Apply overrides or fallback to default baseline

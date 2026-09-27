@@ -412,6 +412,7 @@ export interface OrcaQueryResponse {
     durationHours: number;
     locationContext: string;
     vesselId: string;
+    regionId?: string;
   };
   agentTrace: {
     planner: BaseAgentResponse;
@@ -992,5 +993,328 @@ export interface DecisionEvaluationResponse {
   };
 }
 
+// ============================================================================
+// PHASE 15: AGENTIC ORCHESTRATION & SPECIALIST COORDINATION
+// ============================================================================
+
+export type SpecialistType =
+  | 'MISSION_PLANNER'
+  | 'OCEANOGRAPHY'
+  | 'METEOROLOGY'
+  | 'PFZ_FISHERIES'
+  | 'GEO_SAFETY'
+  | 'VESSEL_CAPABILITY';
+
+export type SpecialistStatus =
+  | 'READY'
+  | 'RUNNING'
+  | 'COMPLETED'
+  | 'DEGRADED'
+  | 'FAILED'
+  | 'UNAVAILABLE'
+  | 'SKIPPED';
+
+export interface SpecialistTaskResult<T = Record<string, unknown>> {
+  taskId: string;
+  specialist: SpecialistType;
+  displayName: string;
+  role: string;
+  status: SpecialistStatus;
+  startedAt: string;
+  completedAt: string;
+  executionDurationMs: number;
+  sourceStatus: DataStatus;
+  summary: string;
+  data: T;
+  evidence: AuditedEvidenceItem[];
+  warnings: string[];
+  errors?: string[];
+  provenance: {
+    adapter?: string;
+    source: string;
+    datasetName?: string;
+    retrievedAt: string;
+    isLive: boolean;
+  };
+}
+
+export interface OrchestrationStep {
+  stepNumber: number;
+  stepName: string;
+  specialist?: SpecialistType;
+  description: string;
+  durationMs: number;
+  status: 'SUCCESS' | 'WARNING' | 'FAILED';
+}
+
+export interface OrchestrationTrace {
+  traceId: string;
+  startedAt: string;
+  completedAt: string;
+  totalDurationMs: number;
+  dependencyGraph: Record<string, string[]>;
+  steps: OrchestrationStep[];
+}
+
+export interface OrchestratedDecisionResult {
+  queryId: string;
+  queryText?: string;
+  evaluatedAt: string;
+  orchestration: OrchestrationTrace;
+  specialists: Record<SpecialistType, SpecialistTaskResult>;
+  decision: DecisionEvaluationResponse;
+  evidence: AuditedEvidenceItem[];
+  confidence: ExplainableDecisionConfidence;
+  provenance: {
+    orchestratorVersion: string;
+    decisionEngineVersion: string;
+    timestamp: string;
+  };
+}
+
+// ============================================================================
+// 12. PHASE 16 — LLM INTELLIGENCE & NATURAL LANGUAGE REASONING LAYER
+// ============================================================================
+
+export type UserActivityType =
+  | 'FISHING'
+  | 'SURVEY'
+  | 'PATROL'
+  | 'TRANSIT'
+  | 'UNKNOWN';
+
+export type QuestionClassificationType =
+  | 'FEASIBILITY'
+  | 'SAFETY'
+  | 'OPPORTUNITY'
+  | 'EXPLANATION'
+  | 'ROUTE'
+  | 'CONDITIONS'
+  | 'ALERT'
+  | 'WHAT_IF'
+  | 'GENERAL_INFORMATION'
+  | 'UNKNOWN';
+
+export type LlmProviderType =
+  | 'GEMINI'
+  | 'OPENAI'
+  | 'MOCK'
+  | 'DETERMINISTIC_FALLBACK';
+
+export interface LlmStructuredIntent {
+  intentId: string;
+  rawQuery: string;
+  activity: UserActivityType;
+  questionType: QuestionClassificationType;
+  location: {
+    regionId: string;
+    sectorName?: string;
+    portName?: string;
+    coordinates?: [number, number];
+  };
+  departureWindow: {
+    timeString: string;
+    isEstimated: boolean;
+    requestedDate?: string;
+  };
+  durationHours: number;
+  vessel: {
+    vesselId?: string;
+    vesselType?: string;
+    isExplicit: boolean;
+  };
+  targetZoneId?: string | null;
+  constraints: string[];
+  requiresClarification: boolean;
+  clarificationPrompts?: LlmClarificationPrompt[];
+  confidenceScore: number;
+  extractedEntities: Record<string, unknown>;
+}
+
+export interface LlmClarificationPrompt {
+  promptId: string;
+  fieldTargeted: string;
+  question: string;
+  suggestedOptions: string[];
+}
+
+export interface LlmExplanationResult {
+  summary: string;
+  detailedReasoning: string;
+  actionableAdvisories: string[];
+  citedEvidenceIds: string[];
+  providerUsed: LlmProviderType;
+  modelUsed: string;
+  generatedAt: string;
+  isFallback: boolean;
+  tokensUsed?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
+}
+
+export interface ConversationTurnRecord {
+  turnId: string;
+  timestamp: string;
+  userQuery: string;
+  structuredIntent: LlmStructuredIntent;
+  verdict: DecisionVerdict;
+  explanation: LlmExplanationResult;
+}
+
+export interface ServerConversationContext {
+  conversationId: string;
+  createdAt: string;
+  updatedAt: string;
+  role: 'FISHERMAN' | 'AUTHORITY' | 'DISASTER' | 'RESEARCHER' | 'OPERATOR';
+  turns: ConversationTurnRecord[];
+  activeMissionContext?: {
+    regionId: string;
+    activity: UserActivityType;
+    departureTime: string;
+    durationHours: number;
+    vesselId: string;
+    targetZoneId?: string | null;
+  };
+}
+
+export interface Phase16OrcaQueryResponse extends OrcaQueryResponse {
+  conversationId?: string;
+  turnId?: string;
+  llmIntent?: LlmStructuredIntent;
+  llmExplanation?: LlmExplanationResult;
+  clarifications?: LlmClarificationPrompt[];
+  inheritedContext?: {
+    wasContextInherited: boolean;
+    inheritedFields: string[];
+    previousVerdict?: DecisionVerdict;
+  };
+  shortAnswer?: string;
+  primaryDriver?: string;
+  actionableAdvice?: string[];
+  intelligenceMode?: LlmProviderType;
+  sourceStatus?: Record<string, string>;
+}
+
+export interface Phase17OrcaQueryResponse extends Phase16OrcaQueryResponse {
+  productionPipelineVersion: string;
+}
+
+// ============================================================================
+// 13. PHASE 18 — WHAT-IF / SCENARIO INTELLIGENCE CONTRACTS
+// ============================================================================
+
+export type ScenarioType =
+  | 'TIME_CHANGE'
+  | 'DURATION_CHANGE'
+  | 'VESSEL_CHANGE'
+  | 'ROUTE_CHANGE'
+  | 'ENVIRONMENTAL_ASSUMPTION'
+  | 'COMBINED_CHANGE'
+  | 'CUSTOM';
+
+export interface ScenarioAssumption {
+  waveHeightMeters?: number;
+  windSpeedKnots?: number;
+  seaSurfaceTemperatureCelsius?: number;
+  currentSpeedKnots?: number;
+  notes?: string;
+}
+
+export interface ScenarioModificationInput {
+  departureTime?: string;
+  durationHours?: number;
+  vesselId?: string;
+  regionId?: string;
+  activity?: UserActivityType;
+  targetZoneId?: string | null;
+  avoidRestrictedZones?: boolean;
+  waypoints?: Array<{ latitude: number; longitude: number; name?: string | null; depthMeters?: number | null }>;
+  assumptions?: ScenarioAssumption;
+}
+
+export interface ScenarioInputDelta {
+  changedFields: string[];
+  fieldDeltas: Record<
+    string,
+    {
+      from: string | number | boolean;
+      to: string | number | boolean;
+      label: string;
+    }
+  >;
+}
+
+export interface ScenarioRuleDeltaItem {
+  ruleId: string;
+  ruleName: string;
+  category: string;
+  verdictImpact: 'PASS' | 'CAUTION' | 'AVOID' | 'INSUFFICIENT_DATA';
+  reason: string;
+}
+
+export interface ScenarioRuleComparison {
+  newlyTriggeredRules: ScenarioRuleDeltaItem[];
+  noLongerTriggeredRules: ScenarioRuleDeltaItem[];
+  persistingRules: ScenarioRuleDeltaItem[];
+}
+
+export interface ScenarioEvidenceComparison {
+  newEvidence: AuditedEvidenceItem[];
+  changedEvidence: Array<{
+    variable: string;
+    baselineValue: string | number;
+    scenarioValue: string | number;
+    unit?: string;
+    impactDelta: string;
+    isHypothetical: boolean;
+  }>;
+}
+
+export interface ScenarioEvaluationRequest {
+  baselineQueryId?: string;
+  conversationId?: string;
+  naturalLanguageScenario?: string;
+  modifications?: ScenarioModificationInput;
+  operatorRole?: 'FISHERMAN' | 'AUTHORITY' | 'DISASTER' | 'RESEARCHER' | 'OPERATOR';
+  regionId?: string;
+}
+
+export interface ScenarioEvaluationResponse {
+  scenarioId: string;
+  scenarioType: ScenarioType;
+  naturalLanguagePrompt?: string;
+  baseline: {
+    queryId?: string;
+    verdict: DecisionVerdict;
+    confidence: DecisionConfidenceMeta;
+    primaryDriver: string;
+    summary: string;
+    departureTime: string;
+    durationHours: number;
+    vesselId: string;
+    regionId: string;
+  };
+  scenario: {
+    verdict: DecisionVerdict;
+    confidence: DecisionConfidenceMeta;
+    primaryDriver: string;
+    summary: string;
+    actionableAdvice: string[];
+    departureTime: string;
+    durationHours: number;
+    vesselId: string;
+    regionId: string;
+  };
+  delta: ScenarioInputDelta;
+  ruleComparison: ScenarioRuleComparison;
+  evidenceComparison: ScenarioEvidenceComparison;
+  evidence: AuditedEvidenceItem[];
+  verdictChangeReason: string;
+  isHypotheticalAssumption: boolean;
+  intelligenceMode: LlmProviderType;
+  evaluatedAt: string;
+}
 
 

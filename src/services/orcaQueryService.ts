@@ -1,11 +1,16 @@
-import type { OrcaQueryRequest, OrcaQueryResponse } from '@/types/contract';
+import type { OrcaQueryRequest, Phase16OrcaQueryResponse } from '@/types/contract';
 import { getApiBaseUrl } from './apiConfig';
+
+export interface ExtendedOrcaQueryRequest extends OrcaQueryRequest {
+  conversationId?: string;
+  operatorRole?: 'FISHERMAN' | 'AUTHORITY' | 'DISASTER' | 'RESEARCHER' | 'OPERATOR';
+}
 
 export const orcaQueryService = {
   /**
    * Executes a multi-agent decision evaluation query against the ORCA backend.
    */
-  async queryOrca(payload: OrcaQueryRequest): Promise<OrcaQueryResponse> {
+  async queryOrca(payload: ExtendedOrcaQueryRequest): Promise<Phase16OrcaQueryResponse> {
     const baseUrl = getApiBaseUrl();
     const url = `${baseUrl}/orca/query`;
 
@@ -32,6 +37,7 @@ export const orcaQueryService = {
       throw new Error(errorMessage);
     }
 
-    return (await response.json()) as OrcaQueryResponse;
+    return (await response.json()) as Phase16OrcaQueryResponse;
   },
 };
+

@@ -115,4 +115,17 @@ export interface OrchestrationPackage {
   pfz: PfzResult;
   geoSafety: GeoSafetyResult;
   decision?: DecisionResult;
+  queryId?: string;
+  orchestrationResult?: any;
+  conversationId?: string;
+  turnId?: string;
+  llmIntent?: any;
+  llmExplanation?: any;
+  clarifications?: any[];
+  inheritedContext?: {
+    wasContextInherited: boolean;
+    inheritedFields: string[];
+    previousVerdict?: string;
+  };
 }
+

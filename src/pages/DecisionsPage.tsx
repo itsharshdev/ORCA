@@ -217,7 +217,7 @@ export const DecisionsPage: React.FC = () => {
             </h3>
           </div>
           <span className="text-[10px] font-telemetry text-slate-400">
-            ZERO HALLUCINATION SAFETY LAYER
+            DETERMINISTIC EVIDENCE AUDIT
           </span>
         </div>
 

@@ -6,25 +6,31 @@ import {
   Clock, 
   Sliders, 
   Compass, 
-  RefreshCw,
-  Info,
-  CheckCircle2,
-  ShieldCheck,
-  Map,
-  ChevronDown,
-  ChevronUp,
-  Waves,
-  Fish,
-  MapPin,
-  Wind
+  RefreshCw, 
+  CheckCircle2, 
+  ShieldCheck, 
+  Map, 
+  ChevronDown, 
+  ChevronUp, 
+  Waves, 
+  Fish, 
+  MapPin, 
+  Wind,
+  HelpCircle,
+  Ship,
+  ShieldAlert,
+  RotateCcw
 } from 'lucide-react';
 import { useRegion } from '@/hooks/useRegion';
 import { useOrchestration } from '@/hooks/useOrchestration';
 import { DecisionHeroCard } from '@/components/decision/DecisionHeroCard';
 import { WhyDecisionModal } from '@/components/decision/WhyDecisionModal';
+import { ScenarioComparisonCard } from '@/components/decision/ScenarioComparisonCard';
 import { MarineMapCanvas } from '@/components/map/MarineMapCanvas';
 import { ROUTES } from '@/routes';
+import { scenarioService } from '@/services/scenarioService';
 import type { DecisionVerdict } from '@/types/marine';
+import type { ScenarioEvaluationResponse } from '@/types/contract';
 
 export const AskOrcaPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -36,8 +42,15 @@ export const AskOrcaPage: React.FC = () => {
   const [queryInput, setQueryInput] = useState(queryParam || 'Can I go fishing tomorrow morning for five hours?');
   const [departureTime, setDepartureTime] = useState('05:45');
   const [durationHours, setDurationHours] = useState(5);
+  const [selectedVessel, setSelectedVessel] = useState('VESSEL-001');
   const [showWhyModal, setShowWhyModal] = useState(false);
   const [showTechnicalTrace, setShowTechnicalTrace] = useState(false);
+
+  // Phase 18 What-If Scenario State
+  const [scenarioInput, setScenarioInput] = useState('');
+  const [scenarioResult, setScenarioResult] = useState<ScenarioEvaluationResponse | null>(null);
+  const [isEvaluatingScenario, setIsEvaluatingScenario] = useState(false);
+  const [scenarioError, setScenarioError] = useState<string | null>(null);
 
   const sampleQueries = [
     'Can I go fishing tomorrow morning for five hours?',
@@ -46,13 +59,23 @@ export const AskOrcaPage: React.FC = () => {
     'Evaluate patrol corridor clearance near Naval Anchorage',
   ];
 
+  const whatIfExamples = [
+    { label: 'Leave at 2 PM', text: 'What if I leave at 2 PM?' },
+    { label: '3-Hour Trip', text: 'What if the trip is only 3 hours?' },
+    { label: 'Use VESSEL-002', text: 'What if I use VESSEL-002?' },
+    { label: 'Avoid Restricted Zone', text: 'What if I avoid this restricted area?' },
+    { label: 'Waves 2.5m (Hypothetical)', text: 'What if wave height increases to 2.5 metres?' },
+  ];
+
   const handleRunQuery = async (queryTextToRun: string, duration?: number, departure?: string) => {
     if (!queryTextToRun.trim()) return;
+    setScenarioResult(null);
+    setScenarioError(null);
     await runOrchestration(
       queryTextToRun,
       activeRegion.id,
-      duration || durationHours,
-      departure || `${departureTime} IST`
+      duration,
+      departure
     );
   };
 
@@ -61,18 +84,93 @@ export const AskOrcaPage: React.FC = () => {
     handleRunQuery(queryInput);
   };
 
-  const handleWhatIfChange = (newDuration: number, newDeparture: string) => {
-    setDurationHours(newDuration);
-    setDepartureTime(newDeparture);
-    handleRunQuery(
-      `What-if scenario: Mission duration ${newDuration}h departing at ${newDeparture}`,
-      newDuration,
-      `${newDeparture} IST`
-    );
+  // Evaluate What-If scenario via backend deterministic scenario service
+  const handleEvaluateScenario = async (nlScenario: string) => {
+    if (!nlScenario.trim()) return;
+    setIsEvaluatingScenario(true);
+    setScenarioError(null);
+
+    try {
+      const response = await scenarioService.evaluateScenario({
+        baselineQueryId: orchestration?.queryId || undefined,
+        conversationId: orchestration?.conversationId || undefined,
+        naturalLanguageScenario: nlScenario,
+        regionId: activeRegion.id,
+        operatorRole: 'FISHERMAN',
+      });
+      setScenarioResult(response);
+    } catch (err) {
+      setScenarioError(err instanceof Error ? err.message : 'Failed to evaluate scenario');
+    } finally {
+      setIsEvaluatingScenario(false);
+    }
+  };
+
+  // Structured slider/button What-If trigger
+  const handleStructuredWhatIf = async (mods: {
+    departureTime?: string;
+    durationHours?: number;
+    vesselId?: string;
+    avoidRestrictedZones?: boolean;
+    waveAssumption?: number;
+  }) => {
+    setIsEvaluatingScenario(true);
+    setScenarioError(null);
+
+    if (mods.departureTime) setDepartureTime(mods.departureTime);
+    if (mods.durationHours) setDurationHours(mods.durationHours);
+    if (mods.vesselId) setSelectedVessel(mods.vesselId);
+
+    try {
+      const response = await scenarioService.evaluateScenario({
+        baselineQueryId: orchestration?.queryId || undefined,
+        conversationId: orchestration?.conversationId || undefined,
+        modifications: {
+          departureTime: mods.departureTime || departureTime,
+          durationHours: mods.durationHours || durationHours,
+          vesselId: mods.vesselId || selectedVessel,
+          avoidRestrictedZones: mods.avoidRestrictedZones,
+          regionId: activeRegion.id,
+          assumptions: mods.waveAssumption !== undefined ? { waveHeightMeters: mods.waveAssumption } : undefined,
+        },
+        regionId: activeRegion.id,
+        operatorRole: 'FISHERMAN',
+      });
+      setScenarioResult(response);
+    } catch (err) {
+      setScenarioError(err instanceof Error ? err.message : 'Failed to evaluate scenario');
+    } finally {
+      setIsEvaluatingScenario(false);
+    }
   };
 
   const decision = orchestration?.decision;
   const simulatedVerdict: DecisionVerdict = decision?.verdict || 'CAUTION';
+
+  const oceanSpec = (orchestration as any)?.orchestrationResult?.specialists?.OCEANOGRAPHY;
+  const pfzSpec = (orchestration as any)?.orchestrationResult?.specialists?.PFZ_FISHERIES;
+  const gisSpec = (orchestration as any)?.orchestrationResult?.specialists?.GEO_SAFETY;
+  const weatherSpec = (orchestration as any)?.orchestrationResult?.specialists?.METEOROLOGY;
+
+  const oceanWaveValue = oceanSpec?.data?.waveHeightMeters !== undefined 
+    ? `${oceanSpec.data.waveHeightMeters}m (Hs)` 
+    : '0.9m → 2.1m (Hs)';
+  const oceanSummary = oceanSpec?.summary || 'Morning calm; midday swell warning.';
+
+  const pfzValue = pfzSpec?.data?.opportunities?.[0]?.distanceKm !== undefined
+    ? `Zone Alpha (${pfzSpec.data.opportunities[0].distanceKm.toFixed(1)} km)`
+    : 'Zone Alpha (18.5 km)';
+  const pfzSummary = pfzSpec?.summary || 'Thermal/chlorophyll front detected.';
+
+  const gisValue = gisSpec?.data?.clearanceDistanceKm !== undefined
+    ? `${gisSpec.data.clearanceDistanceKm.toFixed(1)} km Clearance`
+    : '4.2 km Clearance';
+  const gisSummary = gisSpec?.summary || 'Outside naval buffer exclusion.';
+
+  const weatherValue = weatherSpec?.data?.windSpeedKnots !== undefined
+    ? `${weatherSpec.data.windSpeedKnots} kts Wind`
+    : 'Squall > 25 NM';
+  const weatherSummary = weatherSpec?.summary || 'Afternoon squall advisory active.';
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 flex flex-col gap-6 select-none animate-fade-in">
@@ -90,7 +188,7 @@ export const AskOrcaPage: React.FC = () => {
             Ask ORCA
           </h1>
           <p className="text-xs sm:text-sm text-[#5A7C99]">
-            Natural-language marine reasoning backed by deterministic constraints and live oceanography.
+            Natural-language marine reasoning & What-If scenario intelligence backed by deterministic constraints and live oceanography.
           </p>
         </div>
 
@@ -103,7 +201,7 @@ export const AskOrcaPage: React.FC = () => {
         </button>
       </div>
 
-      {/* 2. Sequence Step 1: QUESTION */}
+      {/* 2. Sequence Step 1: BASELINE MISSION QUESTION */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#D8E5EC] shadow-sm flex flex-col gap-3">
         <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-2.5">
           <div className="flex-1 flex items-center gap-3 px-3.5 py-2.5 bg-[#F9FCFE] border border-[#D8E5EC] rounded-xl w-full focus-within:border-[#147FB3] focus-within:bg-white transition">
@@ -153,18 +251,233 @@ export const AskOrcaPage: React.FC = () => {
             </button>
           ))}
         </div>
+
+        {/* Multi-turn Context Continuity Badge */}
+        {orchestration?.inheritedContext?.wasContextInherited && (
+          <div className="flex items-center gap-2 p-2 px-3 rounded-xl bg-[#EAF5FA] border border-[#BCE1F2] text-[11px] text-[#147FB3]">
+            <span className="w-2 h-2 rounded-full bg-[#147FB3] animate-pulse shrink-0" />
+            <span>
+              <strong>Conversational Context Maintained:</strong> Inherited {orchestration.inheritedContext.inheritedFields.join(', ')} from prior turn.
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* 3. Sequence Step 2: DECISION HERO */}
+      {/* 3. Sequence Step 2: CURRENT DECISION HERO */}
       <DecisionHeroCard
         verdict={simulatedVerdict}
         departureTime={`${departureTime} IST`}
         vesselName="Matsya Sagar 1"
       />
 
-      {/* 4. Sequence Step 3 & 4: WHY & ACTION */}
+      {/* 4. Sequence Step 3: WHAT-IF / SCENARIO EVALUATION SECTION (Phase 18) */}
+      <div className="bg-[#F8FBFE] rounded-2xl p-4 sm:p-6 border-2 border-[#147FB3]/30 shadow-sm flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#D8E5EC] pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-[#147FB3] text-white shadow-xs">
+              <Sliders className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-[#123B5D] uppercase tracking-wider flex items-center gap-2">
+                What-If Scenario Intelligence
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#EAF5FA] text-[#147FB3] border border-[#BCE1F2]">
+                  PHASE 18 DETERMINISTIC
+                </span>
+              </h2>
+              <p className="text-[11px] text-[#5A7C99]">
+                Hypothesize timing, vessel, route or condition changes. Re-evaluated deterministically against safety boundaries.
+              </p>
+            </div>
+          </div>
+
+          {scenarioResult && (
+            <button
+              type="button"
+              onClick={() => {
+                setScenarioResult(null);
+                setScenarioInput('');
+              }}
+              className="px-3 py-1.5 rounded-lg bg-white border border-[#D8E5EC] hover:bg-[#FDF0F0] hover:text-[#DC2626] text-xs font-bold text-[#5A7C99] transition flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Reset To Baseline
+            </button>
+          )}
+        </div>
+
+        {/* Natural-Language What-If Query Box */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleEvaluateScenario(scenarioInput);
+          }}
+          className="flex flex-col sm:flex-row items-center gap-2.5"
+        >
+          <div className="flex-1 flex items-center gap-3 px-3.5 py-2.5 bg-white border border-[#D8E5EC] rounded-xl w-full focus-within:border-[#147FB3] shadow-2xs transition">
+            <HelpCircle className="w-5 h-5 text-[#147FB3] shrink-0" />
+            <input
+              type="text"
+              value={scenarioInput}
+              onChange={(e) => setScenarioInput(e.target.value)}
+              placeholder="Ask a scenario: 'What if I leave at 2 PM?' or 'What if waves reach 2.5m?'"
+              className="w-full text-xs sm:text-sm text-[#123B5D] placeholder-[#88A4BC] focus:outline-none font-medium bg-transparent"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isEvaluatingScenario || !scenarioInput.trim()}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#147FB3] hover:bg-[#106A96] text-white font-bold text-xs tracking-wider transition flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-sm disabled:opacity-50"
+          >
+            {isEvaluatingScenario ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>EVALUATING SCENARIO...</span>
+              </>
+            ) : (
+              <>
+                <Sliders className="w-4 h-4" />
+                <span>TEST SCENARIO</span>
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Quick Scenario Chips */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-bold uppercase text-[#88A4BC]">What-If Presets:</span>
+          {whatIfExamples.map((item, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => {
+                setScenarioInput(item.text);
+                handleEvaluateScenario(item.text);
+              }}
+              className="text-[11px] px-2.5 py-1 rounded-lg bg-white hover:bg-[#EAF5FA] text-[#147FB3] border border-[#D8E5EC] transition cursor-pointer font-medium shadow-2xs"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Scenario Error Feedback */}
+        {scenarioError && (
+          <div className="p-3 rounded-xl bg-[#FDF0F0] border border-[#F8B4B4] text-xs text-[#DC2626] font-medium flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 shrink-0" />
+            <span>{scenarioError}</span>
+          </div>
+        )}
+
+        {/* Render Scenario Comparison Card if Result Exists */}
+        {scenarioResult && (
+          <div className="mt-2">
+            <ScenarioComparisonCard
+              scenarioResult={scenarioResult}
+              onAdoptScenario={(sc) => {
+                setDepartureTime(sc.scenario.departureTime);
+                setDurationHours(sc.scenario.durationHours);
+                setSelectedVessel(sc.scenario.vesselId);
+                navigate(ROUTES.MISSION);
+              }}
+            />
+          </div>
+        )}
+
+        {/* Structured Scenario Controls (Sliders & Selectors) */}
+        <div className="pt-2 border-t border-[#D8E5EC] flex flex-col gap-3">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#5A7C99]">
+            Structured Scenario Controls:
+          </span>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Departure Control */}
+            <div className="p-3 rounded-xl bg-white border border-[#D8E5EC] flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs font-bold text-[#123B5D]">
+                <span className="flex items-center gap-1.5 uppercase text-[10px] text-[#5A7C99]">
+                  <Clock className="w-3.5 h-3.5 text-[#147FB3]" />
+                  Departure
+                </span>
+                <span className="font-mono text-[#147FB3]">{departureTime}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {['06:00', '14:00', '18:00'].map((time) => (
+                  <button
+                    key={time}
+                    type="button"
+                    onClick={() => handleStructuredWhatIf({ departureTime: time })}
+                    className={`py-1.5 rounded-lg text-xs font-bold font-mono transition border cursor-pointer ${
+                      departureTime === time
+                        ? 'bg-[#147FB3] text-white border-[#147FB3]'
+                        : 'bg-[#F9FCFE] text-[#123B5D] border-[#D8E5EC] hover:bg-[#EAF5FA]'
+                    }`}
+                  >
+                    {time}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Duration Control */}
+            <div className="p-3 rounded-xl bg-white border border-[#D8E5EC] flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs font-bold text-[#123B5D]">
+                <span className="flex items-center gap-1.5 uppercase text-[10px] text-[#5A7C99]">
+                  <Compass className="w-3.5 h-3.5 text-[#147FB3]" />
+                  Duration
+                </span>
+                <span className="font-mono text-[#147FB3]">{durationHours}h</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[3, 5, 8].map((hrs) => (
+                  <button
+                    key={hrs}
+                    type="button"
+                    onClick={() => handleStructuredWhatIf({ durationHours: hrs })}
+                    className={`py-1.5 rounded-lg text-xs font-bold font-mono transition border cursor-pointer ${
+                      durationHours === hrs
+                        ? 'bg-[#147FB3] text-white border-[#147FB3]'
+                        : 'bg-[#F9FCFE] text-[#123B5D] border-[#D8E5EC] hover:bg-[#EAF5FA]'
+                    }`}
+                  >
+                    {hrs}h
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Vessel Selection */}
+            <div className="p-3 rounded-xl bg-white border border-[#D8E5EC] flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs font-bold text-[#123B5D]">
+                <span className="flex items-center gap-1.5 uppercase text-[10px] text-[#5A7C99]">
+                  <Ship className="w-3.5 h-3.5 text-[#147FB3]" />
+                  Vessel Class
+                </span>
+                <span className="font-mono text-[#147FB3]">{selectedVessel}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {['VESSEL-001', 'VESSEL-002'].map((vessel) => (
+                  <button
+                    key={vessel}
+                    type="button"
+                    onClick={() => handleStructuredWhatIf({ vesselId: vessel })}
+                    className={`py-1.5 rounded-lg text-xs font-bold font-mono transition border cursor-pointer ${
+                      selectedVessel === vessel
+                        ? 'bg-[#147FB3] text-white border-[#147FB3]'
+                        : 'bg-[#F9FCFE] text-[#123B5D] border-[#D8E5EC] hover:bg-[#EAF5FA]'
+                    }`}
+                  >
+                    {vessel}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Sequence Step 4 & 5: WHY & ACTION SUMMARY */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Why this decision card */}
+        {/* Why this decision card (Grounded Natural Language Explanation) */}
         <div className="bg-white rounded-2xl p-5 border border-[#D8E5EC] shadow-sm flex flex-col justify-between gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -182,13 +495,20 @@ export const AskOrcaPage: React.FC = () => {
             </button>
           </div>
 
-          <p className="text-xs text-[#123B5D] leading-relaxed">
-            Morning departure is favorable (&lt; 1.2m swell), but deteriorating afternoon wave swell (&gt; 2.1m post-12:00 IST) constrains safe return window. Maintain minimum 4.2 km clearance from Naval Anchorage Geofence.
-          </p>
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs text-[#123B5D] font-semibold leading-relaxed">
+              {orchestration?.llmExplanation?.summary || decision?.primaryDriver || 'Evaluation completed against deterministic hydrographic and meteorological boundaries.'}
+            </p>
+            <p className="text-xs text-[#5A7C99] leading-relaxed">
+              {orchestration?.llmExplanation?.detailedReasoning || decision?.explanation || 'All safety constraints evaluated deterministically.'}
+            </p>
+          </div>
 
           <div className="p-2.5 rounded-xl bg-[#F9FCFE] border border-[#D8E5EC] text-[11px] text-[#5A7C99] flex items-center justify-between">
-            <span>Evaluation Mode:</span>
-            <strong className="text-[#2E8B57] font-mono">DETERMINISTIC GIS SAFETY</strong>
+            <span>Intelligence Mode:</span>
+            <strong className="text-[#147FB3] font-mono">
+              {orchestration?.llmExplanation?.isFallback ? 'DETERMINISTIC REASONING' : 'ORCA NL REASONING'}
+            </strong>
           </div>
         </div>
 
@@ -202,18 +522,31 @@ export const AskOrcaPage: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-2 text-xs text-[#123B5D]">
-            <div className="flex items-start gap-2">
-              <span className="w-5 h-5 rounded-full bg-[#EBF7EE] text-[#2E8B57] flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">1</span>
-              <span><strong>Depart at 05:45 IST</strong> to utilize calm morning sea window.</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="w-5 h-5 rounded-full bg-[#EBF7EE] text-[#2E8B57] flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">2</span>
-              <span><strong>Conclude return by 11:30 IST</strong> before afternoon squall envelope.</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="w-5 h-5 rounded-full bg-[#EBF7EE] text-[#2E8B57] flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">3</span>
-              <span><strong>Steer 245° WSW</strong> to reach high-yield INCOIS Zone Alpha.</span>
-            </div>
+            {orchestration?.llmExplanation?.actionableAdvisories && orchestration.llmExplanation.actionableAdvisories.length > 0 ? (
+              orchestration.llmExplanation.actionableAdvisories.map((adv: string, idx: number) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#EBF7EE] text-[#2E8B57] flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    {idx + 1}
+                  </span>
+                  <span>{adv}</span>
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#EBF7EE] text-[#2E8B57] flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">1</span>
+                  <span><strong>Depart at {decision?.recommendedDeparture || '05:45 IST'}</strong> to utilize calm morning sea window.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#EBF7EE] text-[#2E8B57] flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">2</span>
+                  <span><strong>Conclude return by {decision?.recommendedReturn || '11:30 IST'}</strong> before afternoon wave envelope.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#EBF7EE] text-[#2E8B57] flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">3</span>
+                  <span><strong>Steer 245° WSW</strong> toward designated clearance corridor.</span>
+                </div>
+              </>
+            )}
           </div>
 
           <Link
@@ -225,7 +558,7 @@ export const AskOrcaPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. Sequence Step 5: EVIDENCE STREAMS */}
+      {/* 6. Sequence Step 6: EVIDENCE STREAMS */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#D8E5EC] shadow-sm flex flex-col gap-3">
         <div className="flex items-center justify-between border-b border-[#E2EDF4] pb-2.5">
           <div className="flex items-center gap-2">
@@ -248,11 +581,11 @@ export const AskOrcaPage: React.FC = () => {
                 INCOIS Swell
               </span>
               <span className="px-1.5 py-0.5 rounded bg-[#EBF7EE] text-[#2E8B57] font-mono text-[9px] font-bold border border-[#A3E6B5]">
-                LIVE ERDDAP
+                {oceanSpec?.sourceStatus === 'LIVE' ? 'LIVE ERDDAP' : 'ERDDAP OSF'}
               </span>
             </div>
-            <div className="text-sm font-bold text-[#123B5D]">0.9m &rarr; 2.1m (Hs)</div>
-            <div className="text-[11px] text-[#5A7C99]">Morning calm; midday swell warning.</div>
+            <div className="text-sm font-bold text-[#123B5D]">{oceanWaveValue}</div>
+            <div className="text-[11px] text-[#5A7C99] truncate">{oceanSummary}</div>
           </div>
 
           {/* Fishing Opportunity */}
@@ -263,11 +596,11 @@ export const AskOrcaPage: React.FC = () => {
                 INCOIS PFZ
               </span>
               <span className="px-1.5 py-0.5 rounded bg-[#EBF7EE] text-[#2E8B57] font-mono text-[9px] font-bold border border-[#A3E6B5]">
-                LIVE WFS
+                {pfzSpec?.sourceStatus === 'LIVE' ? 'LIVE WFS' : 'INCOIS WFS'}
               </span>
             </div>
-            <div className="text-sm font-bold text-[#123B5D]">Zone Alpha (18.5 km)</div>
-            <div className="text-[11px] text-[#5A7C99]">Thermal/chlorophyll front detected.</div>
+            <div className="text-sm font-bold text-[#123B5D]">{pfzValue}</div>
+            <div className="text-[11px] text-[#5A7C99] truncate">{pfzSummary}</div>
           </div>
 
           {/* Spatial Boundaries */}
@@ -281,8 +614,8 @@ export const AskOrcaPage: React.FC = () => {
                 DETERMINISTIC
               </span>
             </div>
-            <div className="text-sm font-bold text-[#123B5D]">4.2 km Clearance</div>
-            <div className="text-[11px] text-[#5A7C99]">Outside naval buffer exclusion.</div>
+            <div className="text-sm font-bold text-[#123B5D]">{gisValue}</div>
+            <div className="text-[11px] text-[#5A7C99] truncate">{gisSummary}</div>
           </div>
 
           {/* Weather Warning */}
@@ -296,13 +629,13 @@ export const AskOrcaPage: React.FC = () => {
                 ACCESS PENDING
               </span>
             </div>
-            <div className="text-sm font-bold text-[#123B5D]">Squall &gt; 25 NM</div>
-            <div className="text-[11px] text-[#5A7C99]">Afternoon squall advisory active.</div>
+            <div className="text-sm font-bold text-[#123B5D]">{weatherValue}</div>
+            <div className="text-[11px] text-[#5A7C99] truncate">{weatherSummary}</div>
           </div>
         </div>
       </div>
 
-      {/* 6. Sequence Step 6: TACTICAL MAP PREVIEW */}
+      {/* 7. Sequence Step 7: TACTICAL MAP PREVIEW */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#D8E5EC] shadow-sm flex flex-col gap-3">
         <div className="flex items-center justify-between border-b border-[#E2EDF4] pb-2.5">
           <div className="flex items-center gap-2">
@@ -321,97 +654,6 @@ export const AskOrcaPage: React.FC = () => {
 
         <div className="h-64 sm:h-80 rounded-xl overflow-hidden border border-[#D8E5EC] relative">
           <MarineMapCanvas className="w-full h-full" showOverlayControls={false} />
-        </div>
-      </div>
-
-      {/* 7. Sequence Step 7: INTERACTIVE WHAT-IF ENGINE */}
-      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-[#D8E5EC] shadow-sm flex flex-col gap-4">
-        <div className="flex items-center justify-between border-b border-[#E2EDF4] pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-[#EAF5FA] text-[#147FB3]">
-              <Sliders className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-[#123B5D] uppercase tracking-wider">
-                Interactive What-If Scenario Re-evaluator
-              </h2>
-              <p className="text-[11px] text-[#5A7C99]">
-                Adjust departure and duration to observe deterministic constraint evaluation in real time.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Departure Selector */}
-          <div className="p-3.5 rounded-xl bg-[#F9FCFE] border border-[#D8E5EC] flex flex-col gap-2">
-            <div className="flex items-center justify-between text-xs font-bold text-[#123B5D]">
-              <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                <Clock className="w-3.5 h-3.5 text-[#147FB3]" />
-                Departure Time (IST)
-              </span>
-              <span className="font-mono text-[#147FB3] font-bold">{departureTime} IST</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2 mt-1">
-              {['05:45', '08:30', '13:00'].map((time) => (
-                <button
-                  key={time}
-                  type="button"
-                  onClick={() => handleWhatIfChange(durationHours, time)}
-                  className={`py-2 rounded-xl text-xs font-bold font-mono transition border cursor-pointer ${
-                    departureTime === time
-                      ? 'bg-[#147FB3] text-white border-[#147FB3] shadow-xs'
-                      : 'bg-white text-[#123B5D] border-[#D8E5EC] hover:bg-[#EAF5FA]'
-                  }`}
-                >
-                  {time}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Duration Slider */}
-          <div className="p-3.5 rounded-xl bg-[#F9FCFE] border border-[#D8E5EC] flex flex-col gap-2">
-            <div className="flex items-center justify-between text-xs font-bold text-[#123B5D]">
-              <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                <Compass className="w-3.5 h-3.5 text-[#147FB3]" />
-                Mission Duration
-              </span>
-              <span className="font-mono text-[#147FB3] font-bold">{durationHours} Hours</span>
-            </div>
-            <input
-              type="range"
-              min={2}
-              max={12}
-              step={1}
-              value={durationHours}
-              onChange={(e) => handleWhatIfChange(Number(e.target.value), departureTime)}
-              className="w-full accent-[#147FB3] mt-2 cursor-pointer"
-            />
-            <div className="flex items-center justify-between text-[10px] text-[#88A4BC]">
-              <span>2 hrs (Local)</span>
-              <span>5 hrs (Standard)</span>
-              <span>12 hrs (Deep Sea)</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-3 rounded-xl bg-[#F9FCFE] border border-[#D8E5EC] text-xs text-[#5A7C99] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-[#147FB3] shrink-0" />
-            <span>
-              {durationHours > 7 
-                ? 'Extended voyage duration crosses midday wave swell limit (2.1m) triggering AVOID recommendation.'
-                : 'Standard duration allows safe return to Sassoon Docks before midday chop.'}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate(ROUTES.MISSION)}
-            className="px-3.5 py-1.5 rounded-xl bg-[#123B5D] hover:bg-[#0F2C4C] text-white font-bold text-xs tracking-wider transition shrink-0 cursor-pointer shadow-xs ml-3"
-          >
-            CONFIRM PLAN
-          </button>
         </div>
       </div>
 
@@ -492,4 +734,3 @@ export const AskOrcaPage: React.FC = () => {
     </div>
   );
 };
-
