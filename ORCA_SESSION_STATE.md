@@ -1,17 +1,17 @@
 # ORCA SESSION STATE
 
 ## Current phase
-PHASE 10 — Live INCOIS PFZ / Fisheries Intelligence (Completed)
+PHASE 11 — Deterministic GIS Safety + UI Clarity Integration (Completed)
 
 ## Status
-PHASE 10 LIVE INCOIS PFZ INTEGRATION COMPLETED & VERIFIED.
-Note: Phase 9.2 remains OPEN pending IMD institutional credentials. Stopped for review before Phase 11.
+PHASE 11 DETERMINISTIC GIS SAFETY LAYER & UI CLARITY INTEGRATION COMPLETED & VERIFIED.
+Note: Phase 9.2 remains OPEN pending IMD institutional credentials. Stopped for review before Phase 12.
 
 ## Baseline
 Observed stack:
 - Backend: Fastify (`^5.12.5`), `@supabase/supabase-js` (`^2.116.0`), Zod (`^4.6.5`), `@fastify/cors` (`^11.3.0`), `dotenv` (`^18.0.0`)
 - Database: Supabase PostgreSQL 17 (`hxhnerghnpdrijzyhmuw`), PostGIS 3.3.7, 15 domain tables with RLS enabled, persisted multi-agency observations in `public.observations` (`INCOIS_OSF`, `IMD_WEATHER`, `INCOIS_PFZ`, `ORCA_DEMO` with PostGIS geometry points)
-- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 99 passing tests across 9 suites
+- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 112 passing tests across 10 suites (including 13 comprehensive GIS safety tests)
 - Frontend: React 19 (`^19.2.8`), TypeScript 6 (`~6.0.2`), Vite 8 (`^8.2.2`), React Router 7 (`^7.18.3`), Tailwind CSS 4 (`^4.3.3`), Leaflet (`^1.9.4`), Turf.js (`^7.4.0`), vite-plugin-pwa (`^1.3.0`)
 
 Existing important systems:
@@ -28,12 +28,13 @@ Existing important systems:
 - Phase 9 & 9.1 IMD Weather & Marine Warnings: `ImdWeatherAdapter` (`server/adapters/imdWeatherAdapter.ts`) aligned with official IMD endpoints (`/api/v1/coastalbulletin`, `/api/v1/current_wx`), API key header support (`IMD_API_KEY`), Zod validation for direct array and composite payloads, `POST /api/v1/ingestion/imd`, warning validity handling (STALE/DEGRADED for expired alerts), and truthful UI metrics.
 - Phase 9.2 IMD Live Access Verification (OPEN): Audited official IMD API reference portal (`https://api.imd.gov.in/public/api_reference.html`), verified dual-header API gateway authentication (`X-Api-Key` + `Authorization: Bearer <JWT>`), tested live upstream responses, confirmed zero false live claims and graceful fallback behavior. Remains open pending provision of institutional credentials.
 - Phase 10 Live INCOIS PFZ / Fisheries Intelligence: Discovered and integrated official INCOIS GeoServer WFS endpoints (`PFZ_Automation:pfzlines`, `PFZ_LandingCentres:LandingCenters_29Apr2024`), implemented `IncoisPfzAdapter`, normalized multi-line geometries, calculated mission-aware distance/bearing/direction/relevance, added `GET /api/v1/pfz` & `POST /api/v1/ingestion/pfz`, enforced strict safety separation, built `PfzOpportunityPanel` HUD, and verified live 27-feature response & persistence.
+- Phase 11 Deterministic GIS Safety Layer & UI Clarity: Built `GisSafetyService` (`server/services/gisSafetyService.ts`) with point-in-polygon, route line intersection, configurable safety buffers (1.0 km violation / 2.5 km caution), projected track calculations, and strict Safety Precedence Engine (`PFZ = OPPORTUNITY`, `GIS SAFETY = CONSTRAINT`). Exposed `POST /api/v1/gis/evaluate-route` and `GET /api/v1/gis/restricted-zones`. Replaced confusing global "DEMO SNAPSHOT" badge with truthful `DataSourceStatusBar` (INCOIS PFZ LIVE, INCOIS OSF LIVE, IMD WEATHER DEMO/PENDING, GIS SAFETY DETERMINISTIC), created fisherman-first `TripSafetyHUD`, and enhanced map cartography popups to strictly distinguish Opportunities from Constraints.
 
 ## Current Branch
 `orca-core`
 
 ## Immediate Next Task
-Phase 10 complete and verified. Await user review before starting Phase 11. (Phase 9.2 remains OPEN for IMD credentials).
+Phase 11 complete and verified. Await user manual review and git commit/push before Phase 12. (Phase 9.2 remains OPEN for IMD credentials).
 
 
 
@@ -599,6 +600,45 @@ curl http://localhost:3000/api/v1/pfz?latitude=18.92&longitude=72.83&region=maha
 # Test PFZ Ingestion endpoint
 curl -X POST http://localhost:3000/api/v1/ingestion/pfz -H "Content-Type: application/json" -d '{"region":"maharashtra","allowFallback":true}'
 ```
+
+---
+
+## Developer Learning Notes — Phase 11
+
+### 1. The Core Architectural Precedence Principle
+- **PFZ = OPPORTUNITY:** Identifies biological pelagic aggregations derived from satellite SST and chlorophyll gradients.
+- **GIS SAFETY = CONSTRAINT:** Evaluates authoritative legal boundaries (MPAs, Naval defence zones, rig buffers) and dynamic hazard envelopes.
+- **Fundamental Invariant:** An opportunity signal can **NEVER** override a safety constraint. If a route to a high-value PFZ breaches or approaches within the safety buffer of a forbidden restricted zone, the system strictly outputs `verdict: "AVOID"`, `safetyClearance: false`, and `status: "RESTRICTED"`.
+
+### 2. Spatial Calculations: Server-Authoritative PostGIS + Turf.js
+1. **Point-in-Polygon (`turf.booleanPointInPolygon` / `ST_Contains`):** Checks if the vessel location or any waypoint falls within a restricted zone or active hazard polygon.
+2. **LineString Intersection (`turf.lineIntersect` / `ST_Intersects`):** Detects if the planned trajectory cuts through polygon perimeters.
+3. **Safety Buffers & Proximity (`turf.pointToLineDistance` / `ST_DWithin`):**
+   - **Hard Violation Buffer (e.g. 1.0 km):** Triggers `RESTRICTED` and `AVOID`.
+   - **Navigational Caution Buffer (e.g. 2.5 km):** Triggers `CAUTION` and requires vigilant monitoring.
+4. **Projected Route Checks (`turf.destination`):** Extrapolates current speed, heading, and mission duration into future dead-reckoning vectors to flag incursion risks before departure.
+
+### 3. Truthful Granular Data Source Architecture
+The confusing monolithic "DEMO SNAPSHOT" badge was eliminated and replaced by individual, verifiable source badges:
+- `INCOIS PFZ` → `● LIVE (WFS)` (Verified live upstream GeoServer)
+- `INCOIS OSF` → `● LIVE (OSF)` (Verified live ERDDAP wave forecast)
+- `IMD MARINE` → `● DEMO (ACCESS PENDING)` (Phase 9.2 credential dependency)
+- `GIS SAFETY` → `● DETERMINISTIC` (PostGIS spatial geofence)
+
+### 4. Verification Commands
+```bash
+# Test full test suite (112 tests across 10 test suites)
+npm test -- --run
+
+# Test GIS Safety Route Evaluation Endpoint
+curl -X POST http://localhost:3000/api/v1/gis/evaluate-route \
+  -H "Content-Type: application/json" \
+  -d '{"vesselPosition":{"latitude":18.93,"longitude":72.85}}'
+
+# Test Restricted Zones Endpoint
+curl http://localhost:3000/api/v1/gis/restricted-zones
+```
+
 
 
 

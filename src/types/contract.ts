@@ -514,3 +514,130 @@ export interface ObservationsListResponse {
   timestamp: string;
 }
 
+// ============================================================================
+// 10. GIS SAFETY EVALUATION CONTRACTS (Phase 11)
+// ============================================================================
+
+export type RestrictedZoneType = 
+  | 'MARINE_PROTECTED_AREA'
+  | 'MILITARY_DEFENCE_ZONE'
+  | 'HIGH_COLLISION_CORRIDOR'
+  | 'OFFSHORE_RIG_BUFFER'
+  | 'WEATHER_HAZARD_ZONE'
+  | 'INTERNATIONAL_BORDER_BUFFER';
+
+export type RestrictedZoneSeverity = 'INFO' | 'WARNING' | 'CRITICAL' | 'FORBIDDEN';
+
+export interface RestrictedZoneRecord {
+  id: string;
+  source_id?: string | null;
+  code: string;
+  name: string;
+  zone_type: RestrictedZoneType;
+  severity: RestrictedZoneSeverity;
+  status: 'ACTIVE' | 'INACTIVE' | 'SEASONAL' | 'DEMO_TEST';
+  effective_from?: string | null;
+  effective_until?: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export type GisSafetyStatus = 'CLEAR' | 'CAUTION' | 'RESTRICTED' | 'HAZARD' | 'INSUFFICIENT_SPATIAL_DATA';
+
+export interface RouteWaypointInput {
+  latitude: number;
+  longitude: number;
+  sequenceOrder?: number;
+  waypointType?: string;
+  label?: string;
+}
+
+export interface RouteEvaluationRequest {
+  missionId?: string;
+  vesselId?: string;
+  vesselPosition?: GeoPoint;
+  waypoints?: RouteWaypointInput[];
+  projectedHeadingDegrees?: number;
+  projectedSpeedKnots?: number;
+  projectedDurationHours?: number;
+  targetPfzUid?: string;
+  safetyBufferKm?: number;
+  cautionBufferKm?: number;
+  region?: string;
+}
+
+export interface RestrictionEvaluationItem {
+  zoneId: string;
+  code: string;
+  name: string;
+  zoneType: string;
+  severity: string;
+  distanceKm: number;
+  intersects: boolean;
+  bufferBreached: boolean;
+  description?: string;
+}
+
+export interface HazardEvaluationItem {
+  alertId: string;
+  title: string;
+  alertType: string;
+  severity: string;
+  distanceKm: number;
+  intersects: boolean;
+  description?: string;
+}
+
+export interface RouteIntersectionItem {
+  zoneName: string;
+  zoneType: string;
+  severity: string;
+  segmentIndex: number;
+  coordinates?: [number, number];
+}
+
+export interface GisSafetyEvaluationResponse {
+  status: GisSafetyStatus;
+  safetyClearance: boolean;
+  overallVerdict: 'PASS' | 'CAUTION' | 'AVOID';
+  summary: string;
+  explanation: string;
+  restrictions: RestrictionEvaluationItem[];
+  hazards: HazardEvaluationItem[];
+  proximityChecks: {
+    nearestRestrictedZone?: {
+      name: string;
+      distanceKm: number;
+      bufferKm: number;
+      isBreached: boolean;
+    };
+    nearestHazardZone?: {
+      name: string;
+      distanceKm: number;
+      isIntersecting: boolean;
+    };
+  };
+  routeIntersections: RouteIntersectionItem[];
+  projectedRouteChecks?: {
+    projectedEndpoint?: [number, number];
+    projectedDistanceKm?: number;
+    intersectsRestricted: boolean;
+    conflictingZoneName?: string;
+  };
+  opportunityConflict?: {
+    targetPfzUid?: string;
+    isTargetBlocked: boolean;
+    conflictingReason?: string;
+  };
+  evaluatedAt: string;
+  provenance: {
+    engine: 'POSTGIS_SERVER' | 'TURF_DETERMINISTIC_FALLBACK';
+    evaluatedZonesCount: number;
+    evaluatedHazardsCount: number;
+    rulesEnforced: string[];
+    isLiveSpatialData: boolean;
+  };
+}
+
+

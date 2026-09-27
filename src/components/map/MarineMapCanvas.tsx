@@ -531,11 +531,14 @@ const MarineMapCanvasInner: React.FC<MarineMapCanvasProps> = ({
                 >
                   <Popup>
                     <div className="text-xs p-1">
-                      <div className="font-bold text-emerald-400 font-label-caps">{zone.zoneName}</div>
+                      <div className="flex items-center justify-between gap-2 border-b border-emerald-500/30 pb-1 mb-1">
+                        <span className="font-bold text-emerald-400 font-label-caps">{zone.zoneName}</span>
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold">OPPORTUNITY</span>
+                      </div>
                       <div className="text-slate-300 font-telemetry mt-1">SST: {zone.sstIndicator}</div>
                       <div className="text-slate-300 font-telemetry">Chlorophyll: {zone.chlorophyllIndicator}</div>
-                      <div className="text-slate-400 text-[11px] mt-1">
-                        Target: {zone.recommendedFishTypes?.join(', ')}
+                      <div className="text-slate-400 text-[10px] mt-1 italic">
+                        Notice: PFZ is an ecological opportunity only. It is NOT a safety clearance.
                       </div>
                     </div>
                   </Popup>
@@ -566,12 +569,18 @@ const MarineMapCanvasInner: React.FC<MarineMapCanvasProps> = ({
               >
                 <Popup>
                   <div className="text-xs p-1">
-                    <div className="font-bold text-rose-400 font-label-caps">{feature.properties.name}</div>
-                    <div className="text-rose-300 text-[11px] mt-1 font-semibold">
-                      Restriction: {feature.properties.zoneType.toUpperCase()}
+                    <div className="flex items-center justify-between gap-2 border-b border-rose-500/30 pb-1 mb-1">
+                      <span className="font-bold text-rose-400 font-label-caps">{feature.properties.name}</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-rose-500/20 text-rose-300 font-bold">HARD CONSTRAINT</span>
                     </div>
-                    <div className="text-slate-400 text-[11px] mt-0.5">
+                    <div className="text-rose-300 text-[11px] font-semibold">
+                      Restriction: {feature.properties.zoneType.toUpperCase()} (FORBIDDEN)
+                    </div>
+                    <div className="text-slate-300 text-[11px] mt-0.5">
                       {feature.properties.restrictionDescription}
+                    </div>
+                    <div className="text-amber-400 text-[10px] mt-1 font-bold">
+                      Safety Rule: Hard exclusion boundary. Trajectories breaching this zone are forbidden.
                     </div>
                   </div>
                 </Popup>

@@ -4,18 +4,18 @@ import {
   Compass, 
   Map, 
   Navigation2, 
-  ShieldCheck, 
-  History 
+  Bell, 
+  Settings 
 } from 'lucide-react';
 import { ROUTES } from '@/routes';
 
 export const MobileNav: React.FC = () => {
   const navItems = [
-    { label: 'Status', path: ROUTES.DASHBOARD, icon: Compass },
-    { label: 'Trip', path: ROUTES.MISSION, icon: Navigation2 },
+    { label: 'Home', path: ROUTES.DASHBOARD, icon: Compass },
+    { label: 'Trips', path: ROUTES.MISSION, icon: Navigation2 },
     { label: 'Map', path: ROUTES.MAP, icon: Map },
-    { label: 'Decision', path: ROUTES.DECISIONS, icon: ShieldCheck },
-    { label: 'History', path: ROUTES.HISTORY, icon: History },
+    { label: 'Alerts', path: ROUTES.ALERTS, icon: Bell },
+    { label: 'Settings', path: ROUTES.SETTINGS, icon: Settings },
   ];
 
   return (

@@ -9,6 +9,7 @@ import { adapterRoutes } from './routes/adapters.js';
 import { ingestionRoutes } from './routes/ingestion.js';
 import { observationRoutes } from './routes/observations.js';
 import { pfzRoutes } from './routes/pfz.js';
+import { gisSafetyRoutes } from './routes/gisSafety.js';
 import { config } from './config.js';
 import type { ApiErrorEnvelope } from './types.js';
 
@@ -72,6 +73,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(ingestionRoutes);
   await app.register(observationRoutes);
   await app.register(pfzRoutes);
+  await app.register(gisSafetyRoutes);
 
   // Also support /api/v1 versioned prefix
   await app.register(
@@ -85,6 +87,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       await v1.register(ingestionRoutes);
       await v1.register(observationRoutes);
       await v1.register(pfzRoutes);
+      await v1.register(gisSafetyRoutes);
     },
     { prefix: '/api/v1' }
   );
