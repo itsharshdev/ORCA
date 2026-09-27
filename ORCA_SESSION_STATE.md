@@ -1,34 +1,35 @@
 # ORCA SESSION STATE
 
 ## Current phase
-PHASE 12 — VESSEL CAPABILITY MODEL (Completed & Verified)
+PHASE 14 — EVIDENCE + CONFIDENCE SYSTEM (Completed & Verified)
 
 ## Status
-PHASE 12 COMPLETED & SYSTEMATICALLY VERIFIED.
-- **Previous Phases Audited (Phases 0–11)**: Audited against live repository source code, automated test suites, database migrations, and runtime verification. Phase 11 GIS safety engine verified with deterministic spatial intersection and proximity buffers.
-- **Phase 12 Vessel Capability Model**:
-  - `public.vessels` schema extended with structured capability columns: `operating_range_nm`, `max_operating_distance_nm`, `endurance_hours`, `fuel_capacity_liters`, `fuel_burn_rate_lph`, `min_crew`, `max_crew`, `beam_meters`, `draft_meters`, `cruising_speed_knots`, `safety_equipment`, `capability_profile_status`, and `capability_provenance`.
-  - Migration file created: `supabase/migrations/20260927000001_phase12_vessel_capability.sql`.
-  - Critical Threshold Rule strictly enforced: Every configured threshold is classified into `OFFICIAL_SOURCED`, `VESSEL_SPECIFIC`, `PROTOTYPE_ASSUMPTION`, or `UNKNOWN`. No universal maritime threshold is invented or falsely claimed as official.
-- **Backend Capability Services & Endpoints**:
-  - `server/services/vesselCapabilityService.ts`: Deterministically evaluates 9 constraint dimensions (`RANGE`, `DISTANCE_FROM_PORT`, `ENDURANCE`, `FUEL`, `WAVE`, `WIND`, `CREW`, `SAFETY_EQUIPMENT`, `CERTIFICATION`) yielding structured `PASS | CAUTION | FAIL | UNKNOWN | NOT_APPLICABLE` statuses.
-  - Endpoints in `server/routes/vessels.ts`:
-    - `GET /api/v1/vessels/:id/capability` &rarr; 200 OK with threshold provenance metadata
-    - `PATCH /api/v1/vessels/:id/capability` &rarr; 200 OK update
-    - `POST /api/v1/vessels/evaluate-capability` &rarr; 200 OK deterministic evaluation
-    - `POST /api/v1/vessels/:id/evaluate-capability` &rarr; 200 OK
-- **Differential Seaworthiness Verified**:
-  - For identical high-wave/wind conditions (2.2m swell, 22 kts wind, 30 NM voyage):
-    - Non-motorized canoe (`VESSEL-TRAD-01`) &rarr; `FAIL` on wave limit (0.9m), wind limit (12 kts), and operating range.
-    - Mechanized trawler (`VESSEL-MECH-01`) &rarr; `PASS` on wave limit (2.8m), wind limit (28 kts), and operating range (80 NM).
-- **Frontend Presentation & Progressive Disclosure**:
-  - `VesselCapabilityCard.tsx`: Fisherman simple view (Range vs Trip, Endurance vs Duration, Seaworthiness checks) + progressive disclosure table displaying exact threshold provenance and source references.
-  - Integrated into `FishermanHomePage.tsx` (dedicated tab) and `MissionPlannerPage.tsx` (dynamic mission parameter evaluation).
+PHASE 14 COMPLETED & SYSTEMATICALLY VERIFIED.
+- **Previous Phases Audited (Phases 0–13)**: Audited against live repository source code, automated test suites, database migrations, and runtime verification. Phase 11 GIS safety engine, Phase 12 Vessel Capability model, and Phase 13 Deterministic Decision Engine V2 verified.
+- **Phase 14 Evidence & Explainable Confidence Model**:
+  - Authoritative evidence logging implemented across all 7 operational categories: `SAFETY`, `GIS`, `VESSEL`, `OCEAN`, `WEATHER`, `MISSION`, `OPPORTUNITY`.
+  - Canonical `AuditedEvidenceItem` model: `evidenceId`, `category`, `source`, `dataset`, `variable`, `value`, `unit`, `geometry`, `observedAt`, `issuedAt`, `validUntil`, `retrievedAt`, `spatialRelevance` (`HIGH | MEDIUM | LOW | NOT_APPLICABLE`), `temporalRelevance` (`CURRENT | VALID_FOR_MISSION | PARTIALLY_VALID | EXPIRED | UNKNOWN`), `quality` (`GOOD | DEGRADED | POOR | UNKNOWN`), `status` (`FRESH | AGING | STALE | EXPIRED | UNAVAILABLE | DEMO | ACCESS_PENDING`), `transformation`, `ruleIds`, `decisionImpact` (`POSITIVE | NEUTRAL | CAUTION | CRITICAL_BLOCKER`).
+  - Strict **Explainable Decision Confidence** (`HIGH | MODERATE | LOW`):
+    - Completely eliminated fake probabilistic percentages (no "87% safe").
+    - Confidence is strictly evidence-based: derived from missing required streams, data staleness beyond TTL, demo status, and active source conflicts.
+  - **Source Conflict Handling**: Typed `SourceConflictRecord` (`variable`, `sourceA`, `sourceB`, `discrepancyDescription`, `resolutionPolicy`, `resolvedValue`, `unresolved`). Unresolved conflicts immediately downgrade decision confidence to MODERATE/LOW with human-readable rationale.
+  - **Bidirectional Rule &harr; Evidence Linkage**: Every evaluated rule references a valid `evidenceRef` matching an `evidenceId`. Every evidence item records `ruleIds` documenting which deterministic safety rules consumed it.
+  - **Truthful IMD Data Tagging**: IMD coastal observations truthfully labeled `status: 'ACCESS_PENDING'` or `status: 'DEMO'`, preventing false live data assertions.
+- **Backend Endpoints & API Integration**:
+  - `POST /api/v1/decisions/evaluate`: Returns full structured `confidence`, `evidence`, `evidenceSummary`, and `conflicts`.
+  - `GET /api/v1/decisions/:id`: Populates `fullEvidenceLog` mapped from audited evidence records.
+  - `POST /api/v1/orca/query`: Retains full evidence and explainable confidence trace.
+- **Comprehensive Test Suite**:
+  - `server/__tests__/evidence_confidence.test.ts`: 25 mandatory test matrix scenarios covering fresh evidence, missing data, stale/expired records, demo snapshots, IMD access-pending provenance, deterministic spatial/temporal relevance calculations, conflict records & policies, rule &harr; evidence linkage, explainable confidence degradation, PFZ opportunity separation, extreme wave blocker tagging, unique keying, and multi-category summary aggregation.
 - **Quality Gates**:
-  - Vitest: 133/133 tests passed across 11 test suites
-  - Server TypeScript Typecheck: `npm run server:typecheck` &rarr; 0 errors
-  - ESLint: `npm run lint` &rarr; 0 errors
-  - Production Build: `npm run build` &rarr; Clean build with PWA service worker precache
+  - Vitest: **183 / 183 passing tests** across 13 test suites (0 failures).
+  - TypeScript Server Check: `npm run server:typecheck` &rarr; 0 errors.
+  - ESLint: `npm run lint` &rarr; 0 errors.
+  - Production Build: `npm run build` &rarr; Clean build with PWA service worker precache (`sw.js`, `manifest.webmanifest`).
+  - Live HTTP Runtime Verification: Tested `POST /api/v1/decisions/evaluate` and `GET /api/v1/decisions/:id` returning 14 audited evidence items and 7 verified evidence groups.
+- **Phase 9.2 External Blocker**:
+  - Official IMD API key and bearer token institutional credentials remain pending. Truthfully tagged in evidence as `ACCESS_PENDING / DEMO`. Zero fabricated live weather claims.
+
 
 ## Baseline
 Observed stack:
@@ -729,6 +730,171 @@ No universal maritime threshold is invented or falsely claimed as official statu
 - `PATCH /api/v1/vessels/:id/capability`: Updates vessel parameters with validation.
 - `POST /api/v1/vessels/evaluate-capability`: Deterministically evaluates mission context against vessel capability profile.
 - `POST /api/v1/vessels/:id/evaluate-capability`: Evaluates specific vessel by ID.
+
+---
+
+## Developer Learning Notes — Phase 13: Deterministic Decision Engine V2
+
+### 1. Architectural Philosophy
+In real-world marine operations, an LLM or frontend heuristic must never decide whether a vessel is cleared to sail. The decision must be reproducible, mathematically rigorous, and auditable. Phase 13 consolidates all operational decision authority into a single backend service: `DecisionEngineService`.
+
+### 2. Strict 8-Stage Precedence Hierarchy
+When evaluating any voyage, the engine applies rules in order of strict safety precedence:
+1. **Precedence Level 1 — Severe Meteorological Warnings & Cyclones**:
+   - RED / CRITICAL / ORANGE alert active &rarr; `AVOID` (Blocking safety override).
+   - Expired alerts filtered out per temporal TTL policy (`NOT_APPLICABLE`).
+2. **Precedence Level 2 — Deterministic GIS Safety Boundaries**:
+   - Spatial intersection or incursion into restricted military/naval zone or sanctuary buffer &rarr; `AVOID` (Blocking spatial constraint).
+   - Proximity within caution buffer (2.5 km) &rarr; `CAUTION`.
+3. **Precedence Level 3 — Vessel Seaworthiness & Physical Capability**:
+   - Significant wave height (Hs) > `maxWaveToleranceMeters` &rarr; `AVOID`.
+   - Sustained wind speed > `maxWindToleranceKnots` &rarr; `AVOID`.
+   - Planned voyage distance > `operatingRangeNm` &rarr; `AVOID`.
+   - Offshore distance > `maxOperatingDistanceNm` &rarr; `AVOID`.
+   - Operating margin (85% of limit) &rarr; `CAUTION`.
+4. **Precedence Level 4 — Data Freshness & Quality Gate**:
+   - Critical observations missing (wave/wind unsupplied) &rarr; `INSUFFICIENT_DATA`.
+   - Stale observations (> 24 hrs old) &rarr; `CAUTION` with data quality warning.
+5. **Precedence Level 5 — Physical Oceanographic & Meteorological Constraints**:
+   - Elevated ocean swell (Hs &ge; 2.0m) or wind (&ge; 18 kts) &rarr; `CAUTION`.
+6. **Precedence Level 6 — Temporal Return Window & Daylight Constraints**:
+   - Return past sunset/twilight &rarr; `CAUTION` (visual navigation / bar crossing hazard).
+   - Forecast validity window expires before expected return time &rarr; `CAUTION`.
+7. **Precedence Level 7 — Mission Parameters**:
+   - Mission duration / routing feasibility checks.
+8. **Precedence Level 8 — Potential Fishing Zone (PFZ) Opportunity Enhancement**:
+   - PFZ thermal fronts and chlorophyll gradients enrich the recommendation but **CANNOT** override safety blocks. If an active hazard exists, PFZ is tagged `RULE_08_PFZ_OPPORTUNITY_BLOCKED` (`NOT_APPLICABLE`).
+
+### 3. Canonical Decision Object Format
+```json
+{
+  "decisionId": "DEC-20260927-001",
+  "state": "GO",
+  "verdict": "GO",
+  "summary": "FAVORABLE (GO): Optimal navigation corridor and fishing conditions.",
+  "explanation": "All safety checks passed. Marine conditions are calm and within configured vessel seaworthiness limits.",
+  "primaryDriver": "All safety constraints verified and favorable ocean conditions",
+  "evaluatedAt": "2026-09-27T08:35:00.000Z",
+  "recommendedDeparture": "05:45 IST",
+  "recommendedReturn": "09:45 IST",
+  "rules": [
+    {
+      "ruleId": "RULE_01_SEVERE_WARNING_CLEAR",
+      "ruleName": "Official Severe Warning Audit",
+      "category": "WARNING",
+      "result": "PASS",
+      "severity": "INFO",
+      "reason": "No severe meteorological warnings active.",
+      "thresholdSource": "OFFICIAL_SOURCED"
+    }
+  ],
+  "blockingFactors": [],
+  "cautionFactors": [],
+  "opportunityFactors": ["High pelagic fish aggregation front verified by INCOIS PFZ advisory at PFZ-MUM-01."],
+  "dataStatus": {
+    "status": "LIVE",
+    "requiredSourcesCount": 5,
+    "availableSourcesCount": 5,
+    "staleSourcesCount": 0,
+    "hasConflicts": false
+  },
+  "provenance": {
+    "engine": "decision-engine-v2",
+    "version": "2.0.0",
+    "evaluatedAt": "2026-09-27T08:35:00.000Z",
+    "rulesEvaluatedCount": 6,
+    "precedenceEnforced": [
+      "1. Severe Warnings",
+      "2. GIS Geofences",
+      "3. Vessel Seaworthiness",
+      "4. Data Freshness Gate",
+      "5. Physical Ocean State",
+      "6. Temporal Return Window",
+      "7. Mission Constraints",
+      "8. PFZ Opportunity Enhancement"
+    ]
+  }
+}
+```
+
+### 4. API Endpoints
+- `POST /api/v1/decisions/evaluate`: Primary deterministic evaluation endpoint.
+- `GET /api/v1/decisions/:id`: Fetches persisted decision log by ID.
+- `POST /api/v1/orca/query`: Synthesizes multi-agent context and runs `DecisionEngineService`.
+
+### 5. Determinism Assertion
+The engine guarantees mathematical determinism:
+$$\text{Engine}(\text{Request}) \equiv \text{Engine}(\text{Request})$$
+Same normalized inputs yield identical verdicts, identical rule evaluations, and identical blocking/caution factors with zero stochastic drift or LLM hallucination.
+
+---
+
+## Developer Walkthrough — Phase 14: Evidence & Explainable Confidence System
+
+### 1. The Core Problem Phase 14 Solves
+In high-stakes maritime navigation and coastal fisheries safety, a system cannot simply return a verdict like `CAUTION` or `AVOID` without providing a fully auditable chain of evidence. If a boat capsizes or an authority inquires why a mission was barred, the system must answer:
+- **What data did you use?** (Exact variables, values, and units).
+- **Where did it come from?** (Data source, institutional registry, sensor feed).
+- **When was it observed and retrieved?** (Explicit timestamps, not just "live").
+- **Is it still valid?** (Freshness TTL state: `FRESH`, `AGING`, `STALE`, `EXPIRED`, `DEMO`, `ACCESS_PENDING`).
+- **How relevant is it spatially and temporally?** (Distance in km to mission corridor, validity window relative to departure and return).
+- **Was there a source conflict?** (e.g., INCOIS buoy wave = 1.2m vs Coastal Radar = 2.4m, structured resolution policies).
+- **Which deterministic rule evaluated it?** (Direct linkage `rule.evidenceRef` $\leftrightarrow$ `evidence.ruleIds`).
+- **What was its impact on the decision?** (`POSITIVE`, `NEUTRAL`, `CAUTION`, `CRITICAL_BLOCKER`).
+
+### 2. Elimination of Fake Probabilities
+ORCA strictly rejects fabricated safety percentages (such as "87% safe" or "94.2% confidence"):
+- Probabilistic percentages in safety-critical marine environments without calibrated scientific models mislead fishermen and create false senses of security.
+- Confidence is strictly categorized as **`HIGH`**, **`MODERATE`**, or **`LOW`**, backed by explicit, human-readable evidence reasons:
+  - **`HIGH`**: All 5 core marine data streams (Safety, GIS, Vessel, Ocean, Weather) verified within TTL, 0 active source conflicts, deterministic safety margins satisfied.
+  - **`MODERATE`**: Data aging past standard TTL, evaluation against prototype demo snapshots, or resolved non-critical observation variance.
+  - **`LOW`**: Missing critical required evidence (wave height, surface wind, GIS geofence verification), unresolved multi-source conflicts, or `INSUFFICIENT_DATA` state.
+
+### 3. Canonical Evidence Data Model
+Every piece of evidence is captured as an `AuditedEvidenceItem`:
+```typescript
+export interface AuditedEvidenceItem {
+  evidenceId: string;                     // e.g. "EVID-OCEAN-WAVE-01"
+  category: EvidenceCategory;            // "SAFETY" | "GIS" | "VESSEL" | "OCEAN" | "WEATHER" | "MISSION" | "OPPORTUNITY"
+  source: string;                        // e.g. "INCOIS_OCEAN_STATE_FORECAST"
+  dataset: string;                       // e.g. "OSF_ARABIAN_SEA_TABLEDAP"
+  variable: string;                      // e.g. "significantWaveHeight"
+  value: string | number | boolean | string[] | Record<string, unknown>; // e.g. 1.4
+  unit?: string | null;                  // e.g. "m"
+  geometry?: { type: string; coordinates: unknown } | null;
+  observedAt: string;                    // ISO 8601 UTC
+  issuedAt?: string | null;              // ISO 8601 UTC
+  validUntil?: string | null;            // ISO 8601 UTC
+  retrievedAt: string;                   // ISO 8601 UTC
+  spatialRelevance: SpatialRelevanceLevel; // "HIGH" (<=25km) | "MEDIUM" (<=75km) | "LOW" (>75km) | "NOT_APPLICABLE"
+  spatialDistanceKm?: number | null;     // e.g. 18.5
+  temporalRelevance: TemporalRelevanceLevel; // "CURRENT" | "VALID_FOR_MISSION" | "PARTIALLY_VALID" | "EXPIRED" | "UNKNOWN"
+  quality: DataQualityGrade;             // "GOOD" | "DEGRADED" | "POOR" | "UNKNOWN"
+  status: FreshnessState;                // "FRESH" | "AGING" | "STALE" | "EXPIRED" | "UNAVAILABLE" | "DEMO" | "ACCESS_PENDING"
+  transformation?: string | null;        // e.g. "Turf.js 2.5 km caution buffer calculation"
+  ruleIds: string[];                     // e.g. ["RULE_05_PHYSICAL_WAVE_PASS"]
+  decisionImpact: EvidenceDecisionImpact; // "POSITIVE" | "NEUTRAL" | "CAUTION" | "CRITICAL_BLOCKER"
+  notes?: string;
+}
+```
+
+### 4. Seven Operational Evidence Categories
+To avoid overwhelming operators while maintaining complete auditability, evidence is grouped into 7 canonical categories:
+1. **Safety**: Official IMD Coastal Warnings & Cyclonic Hazards.
+2. **GIS**: PostGIS Hydrographic Restricted Zones, Naval Anchorage, & MPA Geofences.
+3. **Vessel**: Registered Builder Limits (Wave tolerance, wind limit, fuel endurance, crew capacity).
+4. **Ocean**: INCOIS OSF Significant Wave Height ($H_s$), Swell Period, & Surface Current.
+5. **Weather**: IMD Atmospheric Weather (Surface Wind Velocity, Wind Gusts, Visibility).
+6. **Mission**: Voyage Departure, Duration Window, & Sunset Navigation Restrictions.
+7. **Opportunity**: INCOIS PFZ Thermal-Chlorophyll Fronts (Favorable fishing corridors).
+
+### 5. Multi-Level Progressive Disclosure
+- **Level 1 (Fisherman Glance)**: Verdict (`GO`, `CAUTION`, `AVOID`, `INSUFFICIENT_DATA`), recommended action, and confidence badge (`HIGH`, `MODERATE`, `LOW`).
+- **Level 2 (Operational Why)**: Plain-language operational rationale and primary decision driver.
+- **Level 3 (Evidence Explorer)**: Categorized evidence cards with freshness badges and source attribution.
+- **Level 4 (Authority & Audit Deep Dive)**: Full provenance records, exact timestamps, Turf.js transformations, rule IDs, and conflict logs.
+
+
 
 
 

@@ -64,6 +64,60 @@ const DEFAULT_VESSELS: Record<string, VesselCapabilityContract> = {
     },
     updatedAt: new Date().toISOString(),
   },
+  'VESSEL-002': {
+    vesselId: 'VESSEL-002',
+    name: 'Samudra Ratna',
+    registrationNumber: 'IND-MH-01-MM-124',
+    vesselType: 'MECHANIZED_TRAWLER',
+    lengthMeters: 14.0,
+    beamMeters: 4.5,
+    draftMeters: 2.0,
+    engineHp: 110,
+    operatingRangeNm: 75.0,
+    maxOperatingDistanceNm: 35.0,
+    enduranceHours: 30.0,
+    fuelCapacityLiters: 350.0,
+    fuelBurnRateLph: 8.5,
+    cruisingSpeedKnots: 8.0,
+    maxWaveToleranceMeters: 2.8,
+    maxWindToleranceKnots: 26.0,
+    minCrew: 3,
+    maxCrew: 7,
+    safetyEquipment: ['VHF_RADIO', 'LIFE_JACKETS', 'EPIRB', 'AIS_TRANSPONDER', 'GPS_PLOTTER', 'FIRST_AID_KIT'],
+    capabilityProfileStatus: 'ACTIVE',
+    provenance: {
+      wave: {
+        status: 'VESSEL_SPECIFIC',
+        source: 'Vessel Stability Booklet & Survey Certificate',
+        officialReference: 'IRS Class Certificate No. 2024-MH-9812',
+      },
+      wind: {
+        status: 'OFFICIAL_SOURCED',
+        source: 'Mercantile Marine Department Mechanized Vessel Operations Directive',
+      },
+      range: {
+        status: 'VESSEL_SPECIFIC',
+        source: 'Naval Architecture Range Calculation',
+      },
+      endurance: {
+        status: 'VESSEL_SPECIFIC',
+        source: 'Bunker Capacity & Auxiliary Generator Draw',
+      },
+      fuel: {
+        status: 'VESSEL_SPECIFIC',
+        source: 'Calibrated Tank Capacity',
+      },
+      crew: {
+        status: 'OFFICIAL_SOURCED',
+        source: 'Merchant Shipping (Fishing Vessel Manning Regulations)',
+      },
+      safetyEquipment: {
+        status: 'OFFICIAL_SOURCED',
+        source: 'IMO / DG Shipping Safety of Fishing Vessels Guidelines',
+      },
+    },
+    updatedAt: new Date().toISOString(),
+  },
   'VESSEL-MECH-01': {
     vesselId: 'VESSEL-MECH-01',
     name: 'Samudra Ratna',
@@ -119,6 +173,7 @@ const DEFAULT_VESSELS: Record<string, VesselCapabilityContract> = {
     },
     updatedAt: new Date().toISOString(),
   },
+
   'VESSEL-TRAD-01': {
     vesselId: 'VESSEL-TRAD-01',
     name: 'Koli Kanya',

@@ -774,4 +774,223 @@ export interface CapabilityEvaluationResponse {
   };
 }
 
+// ============================================================================
+// 18. PHASE 13: DETERMINISTIC DECISION ENGINE V2 CONTRACTS
+// ============================================================================
+
+export type DecisionRuleSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
+
+export type DeterministicRuleCategory =
+  | 'WARNING'
+  | 'GIS_SAFETY'
+  | 'VESSEL_CAPABILITY'
+  | 'OCEAN'
+  | 'WEATHER'
+  | 'TEMPORAL'
+  | 'MISSION'
+  | 'DATA_QUALITY'
+  | 'OPPORTUNITY';
+
+export type DeterministicRuleResult =
+  | 'PASS'
+  | 'CAUTION'
+  | 'FAIL'
+  | 'UNKNOWN'
+  | 'NOT_APPLICABLE';
+
+export interface DeterministicRuleEvaluation {
+  ruleId: string;
+  ruleName: string;
+  category: DeterministicRuleCategory;
+  input: Record<string, unknown>;
+  threshold?: Record<string, unknown> | null;
+  thresholdSource: ThresholdProvenanceStatus | string;
+  result: DeterministicRuleResult;
+  severity: DecisionRuleSeverity;
+  reason: string;
+  evidenceRef?: string;
+}
+
+export interface DecisionEvaluationRequest {
+  missionId?: string;
+  vesselId?: string;
+  regionId?: string;
+  departureTime?: string;
+  durationHours?: number;
+  targetZoneId?: string;
+  originLocation?: { latitude: number; longitude: number };
+  waypoints?: Array<{ latitude: number; longitude: number; sequenceOrder?: number; label?: string }>;
+  environmentalContext?: {
+    waveHeightMeters?: number;
+    wavePeriodSeconds?: number;
+    windSpeedKnots?: number;
+    windGustKnots?: number;
+    visibilityKm?: number;
+    seaSurfaceTemperatureCelsius?: number;
+    currentSpeedKnots?: number;
+    activeWarnings?: Array<{
+      alertId: string;
+      severity: 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED' | 'CRITICAL' | string;
+      warningType: string;
+      description: string;
+      validFrom?: string;
+      validUntil?: string;
+    }>;
+    observedAt?: string;
+    validUntil?: string;
+    isLive?: boolean;
+  };
+  requiredEquipment?: string[];
+  vesselOverrides?: Partial<VesselCapabilityContract>;
+  mustReturnBeforeSunset?: boolean;
+}
+
+// ============================================================================
+// 12. PHASE 14: EVIDENCE, CONFIDENCE & CONFLICT HANDLING CONTRACTS
+// ============================================================================
+
+export type EvidenceCategory = 'SAFETY' | 'VESSEL' | 'OCEAN' | 'WEATHER' | 'GIS' | 'MISSION' | 'OPPORTUNITY';
+export type SpatialRelevanceLevel = 'HIGH' | 'MEDIUM' | 'LOW' | 'NOT_APPLICABLE';
+export type TemporalRelevanceLevel = 'CURRENT' | 'VALID_FOR_MISSION' | 'PARTIALLY_VALID' | 'EXPIRED' | 'UNKNOWN';
+export type DataQualityGrade = 'GOOD' | 'DEGRADED' | 'POOR' | 'UNKNOWN';
+export type FreshnessState = 'FRESH' | 'AGING' | 'STALE' | 'EXPIRED' | 'UNAVAILABLE' | 'DEMO' | 'ACCESS_PENDING';
+export type EvidenceDecisionImpact = 'POSITIVE' | 'NEUTRAL' | 'CAUTION' | 'CRITICAL_BLOCKER';
+export type ConfidenceLevel = 'HIGH' | 'MODERATE' | 'LOW';
+
+export interface SourceConflictRecord {
+  conflictId: string;
+  variable: string;
+  sourceA: {
+    source: string;
+    dataset?: string;
+    value: unknown;
+    unit?: string | null;
+    observedAt: string;
+    quality: DataQualityGrade;
+  };
+  sourceB: {
+    source: string;
+    dataset?: string;
+    value: unknown;
+    unit?: string | null;
+    observedAt: string;
+    quality: DataQualityGrade;
+  };
+  discrepancyDescription: string;
+  resolutionPolicy: 'PREFER_AUTHORITATIVE_SENSOR' | 'CONSERVATIVE_MAX_RISK' | 'UNRESOLVED_DOWNGRADE_CONFIDENCE';
+  resolvedValue?: unknown;
+  unresolved: boolean;
+}
+
+export interface AuditedEvidenceItem {
+  evidenceId: string;
+  category: EvidenceCategory;
+  source: string;
+  dataset: string;
+  variable: string;
+  value: string | number | boolean | string[] | Record<string, unknown>;
+  unit?: string | null;
+  geometry?: { type: string; coordinates: unknown } | null;
+  observedAt: string;
+  issuedAt?: string | null;
+  validUntil?: string | null;
+  retrievedAt: string;
+  spatialRelevance: SpatialRelevanceLevel;
+  spatialDistanceKm?: number | null;
+  temporalRelevance: TemporalRelevanceLevel;
+  quality: DataQualityGrade;
+  status: FreshnessState;
+  transformation?: string | null;
+  ruleIds: string[];
+  decisionImpact: EvidenceDecisionImpact;
+  notes?: string;
+}
+
+export interface ExplainableDecisionConfidence {
+  level: ConfidenceLevel;
+  reasons: string[];
+  missingRequiredEvidence: string[];
+  unresolvedConflictsCount: number;
+  staleEvidenceCount: number;
+  freshEvidenceCount: number;
+  totalEvidenceCount: number;
+  completenessRatio: number;
+}
+
+export interface EvidenceGroupSummary {
+  category: EvidenceCategory;
+  label: string;
+  count: number;
+  status: FreshnessState;
+  summary: string;
+  items: AuditedEvidenceItem[];
+}
+
+export interface EvidenceSummary {
+  totalCount: number;
+  freshCount: number;
+  staleCount: number;
+  demoCount: number;
+  accessPendingCount: number;
+  conflictsCount: number;
+  unresolvedConflictsCount: number;
+  groups: EvidenceGroupSummary[];
+}
+
+export interface DecisionEvaluationResponse {
+  decisionId: string;
+  state: DecisionVerdict;
+  verdict: DecisionVerdict;
+  summary: string;
+  explanation: string;
+  primaryDriver: string;
+  evaluatedAt: string;
+
+  missionId?: string;
+  vesselId?: string;
+  vesselName?: string;
+
+  recommendedDeparture: string;
+  recommendedReturn: string;
+  recommendedZone?: {
+    id: string;
+    name: string;
+    distanceKm: number;
+    bearingDegrees: number;
+    opportunityLevel: 'HIGH' | 'MODERATE' | 'LOW';
+  } | null;
+
+  rules: DeterministicRuleEvaluation[];
+
+  blockingFactors: string[];
+  cautionFactors: string[];
+  opportunityFactors: string[];
+
+  confidence: ExplainableDecisionConfidence;
+  evidence: AuditedEvidenceItem[];
+  evidenceSummary: EvidenceSummary;
+  conflicts: SourceConflictRecord[];
+
+  dataStatus: {
+    status: DataStatus;
+    requiredSourcesCount: number;
+    availableSourcesCount: number;
+    staleSourcesCount: number;
+    hasConflicts: boolean;
+    conflictSummary?: string;
+  };
+
+  gisResult?: GisSafetyEvaluationResponse;
+  vesselResult?: CapabilityEvaluationResponse;
+
+  provenance: {
+    engine: 'decision-engine-v2';
+    version: '2.0.0';
+    evaluatedAt: string;
+    rulesEvaluatedCount: number;
+    precedenceEnforced: string[];
+  };
+}
+
+
 
