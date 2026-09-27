@@ -30,55 +30,49 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#071424] text-[#d7e3fa] flex flex-col justify-between p-4 sm:p-6 md:p-8 relative overflow-hidden select-none">
-      {/* Background Decorative Grid */}
-      <div className="absolute inset-0 pointer-events-none opacity-15">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] border border-cyan-500/20 rounded-full" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] border border-cyan-500/10 rounded-full border-dashed" />
-      </div>
-
+    <div className="min-h-screen w-full bg-[#F5F9FC] text-[#102B40] flex flex-col justify-between p-4 sm:p-6 md:p-8 relative select-none">
       {/* Top Header */}
       <header className="w-full max-w-5xl mx-auto flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+          <div className="w-9 h-9 rounded-xl bg-[#E8F4FA] border border-[#CFE6F3] flex items-center justify-center text-[#147FB3]">
             <Anchor className="w-5 h-5" />
           </div>
           <div>
-            <span className="font-display-decision text-xl font-bold tracking-wider text-white">
+            <span className="font-display-decision text-xl font-bold tracking-tight text-[#123B5D]">
               {APP_NAME}
             </span>
-            <span className="block text-[10px] text-slate-400 font-telemetry">
+            <span className="block text-[10px] text-[#5A7C99]">
               Marine Decision Intelligence
             </span>
           </div>
         </div>
 
-        <div className="text-[11px] font-telemetry px-3 py-1 rounded bg-slate-900/80 border border-slate-800 text-slate-400 hidden sm:block">
+        <div className="text-[11px] px-3 py-1 rounded-lg bg-white border border-[#D8E5EC] text-[#5A7C99] hidden sm:block shadow-xs">
           {SIH_PROBLEM_STATEMENT}
         </div>
       </header>
 
       {/* Login Card */}
       <div className="w-full max-w-md mx-auto my-auto z-10 py-6">
-        <div className="hud-glass rounded-2xl p-6 sm:p-8 border border-slate-800 shadow-2xl flex flex-col gap-6">
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-[#D8E5EC] shadow-sm flex flex-col gap-6">
           <div className="text-center">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-800/50 text-cyan-300 text-xs font-label-caps mb-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF5FA] border border-[#BCE1F2] text-[#147FB3] text-xs font-semibold mb-3">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>OPERATIONAL WORKSPACE ACCESS</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-display-decision">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#123B5D] tracking-tight">
               Sign In to ORCA
             </h1>
-            <p className="text-xs text-slate-400 mt-1 font-sans">
+            <p className="text-xs text-[#5A7C99] mt-1 font-sans">
               From Marine Data to Mission-Ready Decisions
             </p>
           </div>
 
           {/* Role Preview Switcher */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between text-[11px] font-label-caps text-slate-400">
+            <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#5A7C99]">
               <span>SELECT ROLE WORKSPACE</span>
-              <span className="text-[10px] text-cyan-400 font-mono">DEV PREVIEW</span>
+              <span className="text-[10px] text-[#147FB3] font-mono">DEV PREVIEW</span>
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {AVAILABLE_ROLES.map((roleKey) => {
@@ -90,13 +84,13 @@ export const LoginPage: React.FC = () => {
                     type="button"
                     key={roleKey}
                     onClick={() => handleRoleSelect(roleKey)}
-                    className={`p-2 rounded-lg text-left text-xs transition border flex items-center gap-2 ${
+                    className={`p-2 rounded-xl text-left text-xs transition border flex items-center gap-2 ${
                       isSelected
-                        ? 'bg-cyan-500/20 border-cyan-400 text-white font-bold'
-                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                        ? 'bg-[#EAF5FA] border-[#147FB3] text-[#123B5D] font-bold shadow-xs'
+                        : 'bg-[#F9FCFE] border-[#D8E5EC] text-[#5A7C99] hover:text-[#123B5D] hover:bg-[#F0F7FB]'
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5 shrink-0 text-cyan-400" />
+                    <Icon className="w-3.5 h-3.5 shrink-0 text-[#147FB3]" />
                     <span className="truncate text-[11px]">{conf.shortLabel}</span>
                   </button>
                 );
@@ -106,8 +100,8 @@ export const LoginPage: React.FC = () => {
 
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div>
-              <label className="block text-[11px] font-label-caps text-slate-400 mb-1.5">
-                ORGANIZATIONAL EMAIL / VESSEL OPERATOR ID
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#5A7C99] mb-1.5">
+                ORGANIZATIONAL EMAIL / OPERATOR ID
               </label>
               <div className="relative">
                 <input
@@ -116,18 +110,18 @@ export const LoginPage: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="operator@incois.gov.in"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 rounded-lg py-2.5 pl-9 pr-3 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
+                  className="w-full bg-[#F9FCFE] border border-[#D8E5EC] focus:border-[#147FB3] rounded-xl py-2.5 pl-9 pr-3 text-xs text-[#123B5D] placeholder:text-[#88A4BC] focus:outline-none transition-colors"
                 />
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-[#88A4BC] absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[11px] font-label-caps text-slate-400">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[#5A7C99]">
                   SECURITY KEY / PASSWORD
                 </label>
-                <a href="#forgot" onClick={(e) => e.preventDefault()} className="text-[11px] text-cyan-400 hover:underline">
+                <a href="#forgot" onClick={(e) => e.preventDefault()} className="text-[11px] text-[#147FB3] hover:underline">
                   Forgot?
                 </a>
               </div>
@@ -138,15 +132,15 @@ export const LoginPage: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="••••••••••••"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 rounded-lg py-2.5 pl-9 pr-3 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors font-mono"
+                  className="w-full bg-[#F9FCFE] border border-[#D8E5EC] focus:border-[#147FB3] rounded-xl py-2.5 pl-9 pr-3 text-xs text-[#123B5D] placeholder:text-[#88A4BC] focus:outline-none transition-colors font-mono"
                 />
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-[#88A4BC] absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full py-2.5 px-4 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs font-label-caps tracking-wider hover:bg-cyan-400 transition-colors flex items-center justify-center gap-2 shadow-[0_0_16px_rgba(70,234,237,0.3)] mt-2"
+              className="w-full py-2.5 px-4 rounded-xl bg-[#147FB3] text-white font-bold text-xs tracking-wider hover:bg-[#106A96] transition-colors flex items-center justify-center gap-2 shadow-sm mt-2 cursor-pointer"
             >
               <span>ENTER {ROLE_CONFIGS[activeRole]?.shortLabel.toUpperCase()} WORKSPACE</span>
               <ArrowRight className="w-4 h-4" />
@@ -154,22 +148,23 @@ export const LoginPage: React.FC = () => {
           </form>
 
           {/* Access Policy Footer */}
-          <div className="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 text-center flex flex-col gap-1">
+          <div className="pt-3 border-t border-[#E2EDF4] text-[11px] text-[#5A7C99] text-center flex flex-col gap-1">
             <p>
               Need access? Contact your organization administrator.
             </p>
-            <p className="text-[10px] text-slate-500">
-              Data and safety information are handled according to your organization's access policy.
+            <p className="text-[10px] text-[#88A4BC]">
+              Data and safety information are handled according to official institutional access policy.
             </p>
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="w-full max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500 z-10">
-        <span>© 2026 ORCA Platform • Indian Space Research Organisation (ISRO)</span>
+      <footer className="w-full max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#88A4BC] z-10">
+        <span>© 2026 ORCA Platform • Indian National Marine Decision Intelligence</span>
         <span>SIH26176 Track: Software / Marine Decision Intelligence</span>
       </footer>
     </div>
   );
 };
+

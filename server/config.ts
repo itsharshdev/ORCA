@@ -9,7 +9,7 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   NODE_ENV: z.enum(['development', 'production', 'test', 'demo']).default('development'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
-  CORS_ORIGIN: z.string().default('*'),
+  CORS_ORIGIN: z.string().default('http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173'),
 
   // Supabase Configuration (Phase 4)
   // Supports current model (SUPABASE_PUBLISHABLE_KEY / SUPABASE_SECRET_KEY)

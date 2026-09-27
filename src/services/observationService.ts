@@ -3,14 +3,7 @@ import type {
   ObservationsListResponse,
   ObservationCategory,
 } from '../types/contract';
-
-const getApiBaseUrl = (): string => {
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    // If running with Vite dev server on port 5173, point directly to backend at port 3000 if not proxied
-    return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
-  }
-  return import.meta.env.VITE_API_BASE_URL || '/api/v1';
-};
+import { getApiBaseUrl } from './apiConfig';
 
 export interface FetchObservationsParams {
   category?: ObservationCategory;

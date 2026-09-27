@@ -632,11 +632,145 @@ export interface GisSafetyEvaluationResponse {
   };
   evaluatedAt: string;
   provenance: {
-    engine: 'POSTGIS_SERVER' | 'TURF_DETERMINISTIC_FALLBACK';
+    engine: 'POSTGIS_SERVER' | 'TURF_DETERMINISTIC_FALLBACK' | 'CLIENT_OFFLINE_UNVERIFIED';
     evaluatedZonesCount: number;
     evaluatedHazardsCount: number;
     rulesEnforced: string[];
     isLiveSpatialData: boolean;
+  };
+}
+
+// ============================================================================
+// 17. PHASE 12: VESSEL CAPABILITY MODEL CONTRACTS
+// ============================================================================
+
+export type ThresholdProvenanceStatus = 
+  | 'OFFICIAL_SOURCED'
+  | 'VESSEL_SPECIFIC'
+  | 'PROTOTYPE_ASSUMPTION'
+  | 'UNKNOWN';
+
+export interface ThresholdProvenanceMeta {
+  status: ThresholdProvenanceStatus;
+  source: string;
+  officialReference?: string;
+  notes?: string;
+}
+
+export interface VesselCapabilityContract {
+  vesselId: string;
+  name: string;
+  registrationNumber?: string;
+  vesselType: VesselType | string;
+  lengthMeters: number;
+  beamMeters: number;
+  draftMeters: number;
+  engineHp: number;
+  operatingRangeNm: number;
+  maxOperatingDistanceNm: number;
+  enduranceHours: number;
+  fuelCapacityLiters: number;
+  fuelBurnRateLph: number;
+  cruisingSpeedKnots: number;
+  maxWaveToleranceMeters: number;
+  maxWindToleranceKnots: number;
+  minCrew: number;
+  maxCrew: number;
+  safetyEquipment: string[];
+  capabilityProfileStatus: 'ACTIVE' | 'PENDING_SURVEY' | 'RESTRICTED' | 'INCOMPLETE';
+  provenance: {
+    wave: ThresholdProvenanceMeta;
+    wind: ThresholdProvenanceMeta;
+    range: ThresholdProvenanceMeta;
+    endurance: ThresholdProvenanceMeta;
+    fuel?: ThresholdProvenanceMeta;
+    crew?: ThresholdProvenanceMeta;
+    safetyEquipment?: ThresholdProvenanceMeta;
+  };
+  updatedAt: string;
+}
+
+export type CapabilityConstraintCategory =
+  | 'RANGE'
+  | 'DISTANCE_FROM_PORT'
+  | 'ENDURANCE'
+  | 'FUEL'
+  | 'CREW'
+  | 'WAVE'
+  | 'WIND'
+  | 'SAFETY_EQUIPMENT'
+  | 'CERTIFICATION';
+
+export type CapabilityConstraintStatus =
+  | 'PASS'
+  | 'CAUTION'
+  | 'FAIL'
+  | 'UNKNOWN'
+  | 'NOT_APPLICABLE';
+
+export interface ConstraintEvaluationItem {
+  constraintId: string;
+  category: CapabilityConstraintCategory;
+  input: {
+    name: string;
+    value: number | string | boolean | string[] | null;
+    unit?: string;
+  };
+  configuredLimit: {
+    value: number | string | boolean | string[] | null;
+    unit?: string;
+  };
+  actualValue: number | string | boolean | string[] | null;
+  unit?: string;
+  status: CapabilityConstraintStatus;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  reason: string;
+  sourceStatus: ThresholdProvenanceStatus;
+  sourceDescription?: string;
+}
+
+export interface CapabilityEvaluationRequest {
+  vesselId?: string;
+  vesselOverrides?: Partial<VesselCapabilityContract>;
+  missionDistanceNm?: number;
+  maxDistanceFromPortNm?: number;
+  missionDurationHours?: number;
+  plannedCrewCount?: number;
+  environmentalContext?: {
+    waveHeightMeters?: number;
+    windSpeedKnots?: number;
+    windGustKnots?: number;
+    visibilityKm?: number;
+    seaState?: string;
+  };
+  requiredEquipment?: string[];
+}
+
+export interface CapabilityEvaluationResponse {
+  vesselId: string;
+  vesselName: string;
+  vesselType: string;
+  evaluatedAt: string;
+  allPassed: boolean;
+  hasCriticalFailure: boolean;
+  hasWarnings: boolean;
+  evaluations: ConstraintEvaluationItem[];
+  summary: {
+    passedCount: number;
+    cautionCount: number;
+    failedCount: number;
+    unknownCount: number;
+    notApplicableCount: number;
+  };
+  provenance: {
+    engine: string;
+    rulesEvaluatedCount: number;
+    thresholdBreakdown: {
+      officialSourced: number;
+      vesselSpecific: number;
+      prototypeAssumption: number;
+      unknown: number;
+    };
   };
 }
 

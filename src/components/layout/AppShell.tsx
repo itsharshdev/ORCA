@@ -6,7 +6,7 @@ import { MobileNav } from './MobileNav';
 
 export const AppShell: React.FC = () => {
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#071424] text-[#d7e3fa] overflow-hidden">
+    <div className="flex flex-col h-screen w-screen bg-[#F5F9FC] text-[#102B40] overflow-hidden">
       {/* Top Application Header */}
       <TopBar />
 
@@ -14,7 +14,7 @@ export const AppShell: React.FC = () => {
       <div className="flex-1 flex overflow-hidden relative">
         <Sidebar />
         
-        <main className="flex-1 relative flex flex-col overflow-y-auto pb-16 md:pb-0">
+        <main className="flex-1 relative flex flex-col overflow-y-auto pb-20 md:pb-6 bg-[#F5F9FC]">
           <Outlet />
         </main>
       </div>

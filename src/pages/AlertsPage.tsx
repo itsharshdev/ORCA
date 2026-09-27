@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, ShieldAlert, AlertTriangle, Database, Compass } from 'lucide-react';
 import { useRegion } from '@/hooks/useRegion';
 
 export const AlertsPage: React.FC = () => {
@@ -45,7 +45,7 @@ export const AlertsPage: React.FC = () => {
       source: 'IMD API Gateway Audit',
       time: 'Verified 26 Sep',
       validUntil: 'Pending MoU',
-      action: 'Zero-hallucination transparency active.',
+      action: 'Truthful data status active (DEMO / ACCESS PENDING).',
     },
   ];
 
@@ -54,31 +54,31 @@ export const AlertsPage: React.FC = () => {
   const getCategoryBadge = (cat: string) => {
     switch (cat) {
       case 'CRITICAL':
-        return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+        return 'bg-rose-50 text-rose-800 border-rose-300';
       case 'WARNING':
-        return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+        return 'bg-amber-50 text-amber-800 border-amber-300';
       case 'INFO':
-        return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
+        return 'bg-blue-50 text-blue-800 border-blue-300';
       case 'DATA':
-        return 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+        return 'bg-purple-50 text-purple-800 border-purple-300';
       default:
-        return 'bg-slate-800 text-slate-300 border-slate-700';
+        return 'bg-slate-50 text-slate-800 border-slate-300';
     }
   };
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 flex flex-col gap-6 select-none animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#D8E5EC]">
         <div>
-          <div className="flex items-center gap-2 text-xs font-telemetry text-cyan-400 mb-1">
+          <div className="flex items-center gap-2 text-xs font-telemetry text-[#147FB3] mb-1 font-bold">
             <Bell className="w-3.5 h-3.5" />
             <span>OPERATIONAL SAFETY &amp; ADVISORY NOTICES • {activeRegion.name.toUpperCase()}</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-display-decision">
+          <h1 className="text-2xl sm:text-3xl font-black text-[#123B5D] tracking-tight font-display-decision">
             Maritime Alert Center
           </h1>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs sm:text-sm text-[#587083]">
             Authoritative multi-agency advisories, navigational constraints, and data feed integrity alerts
           </p>
         </div>
@@ -90,10 +90,10 @@ export const AlertsPage: React.FC = () => {
           <button
             key={cat}
             onClick={() => setFilter(cat as any)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-label-caps transition ${
+            className={`px-4 py-1.5 rounded-xl text-xs font-label-caps transition cursor-pointer ${
               filter === cat
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold shadow-sm'
-                : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800'
+                ? 'bg-[#147FB3] text-white font-bold shadow-xs'
+                : 'bg-white text-[#587083] hover:text-[#123B5D] border border-[#D8E5EC]'
             }`}
           >
             {cat}
@@ -101,53 +101,51 @@ export const AlertsPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Alerts Feed */}
+      {/* Alerts List */}
       <div className="flex flex-col gap-3.5">
-        {filtered.map((item) => (
+        {filtered.map((alt) => (
           <div
-            key={item.id}
-            className={`hud-glass rounded-2xl p-4 sm:p-5 border flex flex-col gap-3 relative overflow-hidden transition shadow-lg ${
-              item.category === 'CRITICAL'
-                ? 'border-rose-500/40 bg-rose-950/10'
-                : item.category === 'WARNING'
-                ? 'border-amber-500/40 bg-amber-950/10'
-                : 'border-slate-800 bg-[#071424]/80'
-            }`}
+            key={alt.id}
+            className="bg-white rounded-2xl p-4 sm:p-5 border border-[#D8E5EC] shadow-sm flex flex-col gap-3 transition hover:border-[#147FB3]"
           >
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <span className={`px-2.5 py-1 rounded text-[10px] font-bold font-mono uppercase border ${getCategoryBadge(item.category)}`}>
-                  {item.category}
-                </span>
-                <h3 className="text-sm sm:text-base font-bold text-white font-display-decision">
-                  {item.title}
-                </h3>
+              <div className="flex items-start gap-3">
+                <div className={`p-2 rounded-xl border mt-0.5 ${getCategoryBadge(alt.category)}`}>
+                  {alt.category === 'CRITICAL' && <ShieldAlert className="w-5 h-5 text-rose-600" />}
+                  {alt.category === 'WARNING' && <AlertTriangle className="w-5 h-5 text-amber-600" />}
+                  {alt.category === 'INFO' && <Compass className="w-5 h-5 text-blue-600" />}
+                  {alt.category === 'DATA' && <Database className="w-5 h-5 text-purple-600" />}
+                </div>
+
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono border ${getCategoryBadge(alt.category)}`}>
+                      {alt.category}
+                    </span>
+                    <span className="text-[11px] font-telemetry text-[#7E93A3]">{alt.id}</span>
+                  </div>
+                  <h3 className="text-base font-bold text-[#123B5D] font-display-decision">
+                    {alt.title}
+                  </h3>
+                </div>
               </div>
 
-              <span className="text-[10px] font-telemetry text-slate-400 shrink-0">
-                {item.time}
-              </span>
+              <div className="text-right text-[11px] font-telemetry text-[#587083] shrink-0">
+                <span>{alt.time}</span>
+              </div>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              {item.description}
+            <p className="text-xs sm:text-sm text-[#587083] leading-relaxed pl-12 font-medium">
+              {alt.description}
             </p>
 
-            <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 text-xs text-slate-300 flex items-center justify-between">
+            <div className="pl-12 pt-2 border-t border-[#EDF5F8] flex flex-wrap items-center justify-between text-xs text-[#587083] gap-2">
               <div>
-                <strong className="text-cyan-300 text-[10px] font-label-caps uppercase mr-1">
-                  ACTION:
-                </strong>
-                {item.action}
+                <strong>Source:</strong> {alt.source}
               </div>
-              <div className="text-[10px] text-slate-400 font-telemetry shrink-0 hidden sm:block">
-                Valid: {item.validUntil}
+              <div className="text-[#147FB3] font-semibold">
+                <strong>Mandatory Action:</strong> {alt.action}
               </div>
-            </div>
-
-            <div className="flex items-center justify-between text-[10px] font-telemetry text-slate-500 pt-1 border-t border-slate-800/60">
-              <span>Source: {item.source}</span>
-              <span>Ref: #{item.id}</span>
             </div>
           </div>
         ))}

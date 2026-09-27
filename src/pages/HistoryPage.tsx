@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Eye } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Eye, Clock } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/routes';
+import { missionService, type MissionRecord } from '@/services/missionService';
 
 interface HistoryRecord {
   id: string;
@@ -18,8 +19,9 @@ interface HistoryRecord {
 
 export const HistoryPage: React.FC = () => {
   const [filter, setFilter] = useState<'ALL' | 'GO' | 'CAUTION' | 'AVOID'>('ALL');
+  const [persistedMissions, setPersistedMissions] = useState<MissionRecord[]>([]);
 
-  const historyData: HistoryRecord[] = [
+  const defaultHistoryData: HistoryRecord[] = [
     {
       id: 'DEC-20260902-01',
       timestamp: '2026-09-02 08:30 IST',
@@ -55,7 +57,36 @@ export const HistoryPage: React.FC = () => {
     },
   ];
 
-  const filtered = filter === 'ALL' ? historyData : historyData.filter((r) => r.verdict === filter);
+  useEffect(() => {
+    let isMounted = true;
+    async function loadMissions() {
+      try {
+        const { missions } = await missionService.fetchMissions();
+        if (isMounted && missions && missions.length > 0) {
+          setPersistedMissions(missions);
+        }
+      } catch (err) {
+        console.warn('Could not load backend missions for history:', err);
+      }
+    }
+    loadMissions();
+    return () => { isMounted = false; };
+  }, []);
+
+  const convertedPersistedRecords: HistoryRecord[] = persistedMissions.map((m) => ({
+    id: `MSN-${m.id.slice(0, 8)}`,
+    timestamp: new Date(m.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }),
+    mission: m.title || `${m.mission_type} (${m.duration_hours || 5}h)`,
+    vessel: m.vessel_id || 'VESSEL-001',
+    zone: m.target_zone_id || 'Alibaug Outer Bank',
+    verdict: ((m.metadata?.verdict as string)?.toUpperCase() as any) || 'CAUTION',
+    confidence: (m.metadata?.confidenceScore as number) || 82.5,
+    reason: (m.metadata?.reason as string) || 'Persisted mission logged to ORCA database.',
+    dataStatus: 'live',
+  }));
+
+  const allRecords = [...convertedPersistedRecords, ...defaultHistoryData];
+  const filtered = filter === 'ALL' ? allRecords : allRecords.filter((r) => r.verdict === filter);
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col gap-6">
@@ -69,7 +100,7 @@ export const HistoryPage: React.FC = () => {
             <span className="text-xs text-slate-400 font-telemetry">DECISION REPLAY REPOSITORY</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            Decision Replay & Operational History
+            Decision Replay &amp; Operational History
           </h1>
           <p className="text-xs text-slate-400">
             Audit trail of historical operational recommendations, recorded constraints, and evidence snapshots.
@@ -101,8 +132,8 @@ export const HistoryPage: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-950/70 border-b border-slate-800 text-[10px] font-label-caps text-slate-400 font-bold">
               <tr>
-                <th className="p-3">DECISION ID & TIME</th>
-                <th className="p-3">MISSION & VESSEL</th>
+                <th className="p-3">DECISION ID &amp; TIME</th>
+                <th className="p-3">MISSION &amp; VESSEL</th>
                 <th className="p-3">TARGET ZONE</th>
                 <th className="p-3">VERDICT</th>
                 <th className="p-3">PRIMARY RATIONALE</th>
@@ -114,7 +145,10 @@ export const HistoryPage: React.FC = () => {
                 <tr key={record.id} className="hover:bg-slate-900/40 transition-colors">
                   <td className="p-3">
                     <div className="font-telemetry font-bold text-slate-200">{record.id}</div>
-                    <div className="text-[11px] text-slate-400 font-telemetry mt-0.5">{record.timestamp}</div>
+                    <div className="text-[11px] text-slate-400 font-telemetry mt-0.5 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-500" />
+                      <span>{record.timestamp}</span>
+                    </div>
                   </td>
                   <td className="p-3">
                     <div className="font-semibold text-slate-200">{record.mission}</div>

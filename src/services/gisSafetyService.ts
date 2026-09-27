@@ -3,13 +3,7 @@ import type {
   GisSafetyEvaluationResponse,
   RestrictedZoneRecord,
 } from '@/types/contract';
-
-const getApiBaseUrl = (): string => {
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
-  }
-  return import.meta.env.VITE_API_BASE_URL || '/api/v1';
-};
+import { getApiBaseUrl } from './apiConfig';
 
 export const gisSafetyService = {
   /**
@@ -36,20 +30,20 @@ export const gisSafetyService = {
       const data = (await response.json()) as GisSafetyEvaluationResponse;
       return data;
     } catch (err) {
-      console.warn('GIS Safety Evaluation API call failed, generating deterministic fallback:', err);
-      // Fallback deterministic response
+      console.warn('GIS Safety Evaluation API call failed, generating fallback:', err);
+      // Honest fallback when backend is unreachable
       return {
-        status: 'CLEAR',
-        safetyClearance: true,
-        overallVerdict: 'PASS',
-        summary: 'Corridor verified clear via local client-side spatial fallback.',
-        explanation: 'Maintains > 2.5 km buffer from naval and marine sanctuary geofences.',
+        status: 'CAUTION',
+        safetyClearance: false,
+        overallVerdict: 'CAUTION',
+        summary: 'GIS safety service temporarily unreachable — clearance unverified.',
+        explanation: 'Authoritative backend GIS spatial evaluation could not be contacted. Exercise caution.',
         restrictions: [],
         hazards: [],
         proximityChecks: {
           nearestRestrictedZone: {
-            name: 'Naval & Port Anchorage Security Geofence',
-            distanceKm: 4.2,
+            name: 'Restricted Zones (Unverified)',
+            distanceKm: 0,
             bufferKm: 1.0,
             isBreached: false,
           },
@@ -57,10 +51,10 @@ export const gisSafetyService = {
         routeIntersections: [],
         evaluatedAt: new Date().toISOString(),
         provenance: {
-          engine: 'TURF_DETERMINISTIC_FALLBACK',
-          evaluatedZonesCount: 3,
-          evaluatedHazardsCount: 1,
-          rulesEnforced: ['RULE_RESTRICTED_ZONE_BREACH', 'RULE_SAFETY_BUFFER_PROXIMITY'],
+          engine: 'CLIENT_OFFLINE_UNVERIFIED',
+          evaluatedZonesCount: 0,
+          evaluatedHazardsCount: 0,
+          rulesEnforced: ['RULE_BACKEND_REACHABILITY_CHECK'],
           isLiveSpatialData: false,
         },
       };

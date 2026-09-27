@@ -10,6 +10,7 @@ import { ingestionRoutes } from './routes/ingestion.js';
 import { observationRoutes } from './routes/observations.js';
 import { pfzRoutes } from './routes/pfz.js';
 import { gisSafetyRoutes } from './routes/gisSafety.js';
+import { vesselRoutes } from './routes/vessels.js';
 import { config } from './config.js';
 import type { ApiErrorEnvelope } from './types.js';
 
@@ -24,11 +25,19 @@ export async function buildApp(): Promise<FastifyInstance> {
     genReqId: () => `req-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`,
   });
 
-  // Enable CORS
+  // Explicitly allow development frontend origins
+  const allowedOrigins = config.CORS_ORIGIN
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  // Enable CORS with explicit origins
   await app.register(cors, {
-    origin: config.CORS_ORIGIN === '*' ? true : config.CORS_ORIGIN.split(','),
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'X-Api-Key'],
     credentials: true,
+    maxAge: 86400,
   });
 
   // Custom Not Found (404) Handler conforming to ApiErrorEnvelope
@@ -74,6 +83,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(observationRoutes);
   await app.register(pfzRoutes);
   await app.register(gisSafetyRoutes);
+  await app.register(vesselRoutes);
 
   // Also support /api/v1 versioned prefix
   await app.register(
@@ -88,6 +98,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       await v1.register(observationRoutes);
       await v1.register(pfzRoutes);
       await v1.register(gisSafetyRoutes);
+      await v1.register(vesselRoutes);
     },
     { prefix: '/api/v1' }
   );

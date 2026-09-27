@@ -1,17 +1,40 @@
 # ORCA SESSION STATE
 
 ## Current phase
-PHASE 11 — Deterministic GIS Safety + UI Clarity Integration (Completed)
+PHASE 12 — VESSEL CAPABILITY MODEL (Completed & Verified)
 
 ## Status
-PHASE 11 DETERMINISTIC GIS SAFETY LAYER & UI CLARITY INTEGRATION COMPLETED & VERIFIED.
-Note: Phase 9.2 remains OPEN pending IMD institutional credentials. Stopped for review before Phase 12.
+PHASE 12 COMPLETED & SYSTEMATICALLY VERIFIED.
+- **Previous Phases Audited (Phases 0–11)**: Audited against live repository source code, automated test suites, database migrations, and runtime verification. Phase 11 GIS safety engine verified with deterministic spatial intersection and proximity buffers.
+- **Phase 12 Vessel Capability Model**:
+  - `public.vessels` schema extended with structured capability columns: `operating_range_nm`, `max_operating_distance_nm`, `endurance_hours`, `fuel_capacity_liters`, `fuel_burn_rate_lph`, `min_crew`, `max_crew`, `beam_meters`, `draft_meters`, `cruising_speed_knots`, `safety_equipment`, `capability_profile_status`, and `capability_provenance`.
+  - Migration file created: `supabase/migrations/20260927000001_phase12_vessel_capability.sql`.
+  - Critical Threshold Rule strictly enforced: Every configured threshold is classified into `OFFICIAL_SOURCED`, `VESSEL_SPECIFIC`, `PROTOTYPE_ASSUMPTION`, or `UNKNOWN`. No universal maritime threshold is invented or falsely claimed as official.
+- **Backend Capability Services & Endpoints**:
+  - `server/services/vesselCapabilityService.ts`: Deterministically evaluates 9 constraint dimensions (`RANGE`, `DISTANCE_FROM_PORT`, `ENDURANCE`, `FUEL`, `WAVE`, `WIND`, `CREW`, `SAFETY_EQUIPMENT`, `CERTIFICATION`) yielding structured `PASS | CAUTION | FAIL | UNKNOWN | NOT_APPLICABLE` statuses.
+  - Endpoints in `server/routes/vessels.ts`:
+    - `GET /api/v1/vessels/:id/capability` &rarr; 200 OK with threshold provenance metadata
+    - `PATCH /api/v1/vessels/:id/capability` &rarr; 200 OK update
+    - `POST /api/v1/vessels/evaluate-capability` &rarr; 200 OK deterministic evaluation
+    - `POST /api/v1/vessels/:id/evaluate-capability` &rarr; 200 OK
+- **Differential Seaworthiness Verified**:
+  - For identical high-wave/wind conditions (2.2m swell, 22 kts wind, 30 NM voyage):
+    - Non-motorized canoe (`VESSEL-TRAD-01`) &rarr; `FAIL` on wave limit (0.9m), wind limit (12 kts), and operating range.
+    - Mechanized trawler (`VESSEL-MECH-01`) &rarr; `PASS` on wave limit (2.8m), wind limit (28 kts), and operating range (80 NM).
+- **Frontend Presentation & Progressive Disclosure**:
+  - `VesselCapabilityCard.tsx`: Fisherman simple view (Range vs Trip, Endurance vs Duration, Seaworthiness checks) + progressive disclosure table displaying exact threshold provenance and source references.
+  - Integrated into `FishermanHomePage.tsx` (dedicated tab) and `MissionPlannerPage.tsx` (dynamic mission parameter evaluation).
+- **Quality Gates**:
+  - Vitest: 133/133 tests passed across 11 test suites
+  - Server TypeScript Typecheck: `npm run server:typecheck` &rarr; 0 errors
+  - ESLint: `npm run lint` &rarr; 0 errors
+  - Production Build: `npm run build` &rarr; Clean build with PWA service worker precache
 
 ## Baseline
 Observed stack:
 - Backend: Fastify (`^5.12.5`), `@supabase/supabase-js` (`^2.116.0`), Zod (`^4.6.5`), `@fastify/cors` (`^11.3.0`), `dotenv` (`^18.0.0`)
-- Database: Supabase PostgreSQL 17 (`hxhnerghnpdrijzyhmuw`), PostGIS 3.3.7, 15 domain tables with RLS enabled, persisted multi-agency observations in `public.observations` (`INCOIS_OSF`, `IMD_WEATHER`, `INCOIS_PFZ`, `ORCA_DEMO` with PostGIS geometry points)
-- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 112 passing tests across 10 suites (including 13 comprehensive GIS safety tests)
+- Database: Supabase PostgreSQL 17 (`hxhnerghnpdrijzyhmuw`), PostGIS 3.3.7, 16 domain tables with RLS enabled, persisted multi-agency observations in `public.observations` (`INCOIS_OSF`, `IMD_WEATHER`, `INCOIS_PFZ`, `ORCA_DEMO` with PostGIS geometry points)
+- Testing: Vitest (`^5.0.1`), tsx (`^4.23.13`) — 133 passing tests across 11 suites (including 21 comprehensive vessel capability tests and 13 GIS safety tests)
 - Frontend: React 19 (`^19.2.8`), TypeScript 6 (`~6.0.2`), Vite 8 (`^8.2.2`), React Router 7 (`^7.18.3`), Tailwind CSS 4 (`^4.3.3`), Leaflet (`^1.9.4`), Turf.js (`^7.4.0`), vite-plugin-pwa (`^1.3.0`)
 
 Existing important systems:
@@ -29,12 +52,13 @@ Existing important systems:
 - Phase 9.2 IMD Live Access Verification (OPEN): Audited official IMD API reference portal (`https://api.imd.gov.in/public/api_reference.html`), verified dual-header API gateway authentication (`X-Api-Key` + `Authorization: Bearer <JWT>`), tested live upstream responses, confirmed zero false live claims and graceful fallback behavior. Remains open pending provision of institutional credentials.
 - Phase 10 Live INCOIS PFZ / Fisheries Intelligence: Discovered and integrated official INCOIS GeoServer WFS endpoints (`PFZ_Automation:pfzlines`, `PFZ_LandingCentres:LandingCenters_29Apr2024`), implemented `IncoisPfzAdapter`, normalized multi-line geometries, calculated mission-aware distance/bearing/direction/relevance, added `GET /api/v1/pfz` & `POST /api/v1/ingestion/pfz`, enforced strict safety separation, built `PfzOpportunityPanel` HUD, and verified live 27-feature response & persistence.
 - Phase 11 Deterministic GIS Safety Layer & UI Clarity: Built `GisSafetyService` (`server/services/gisSafetyService.ts`) with point-in-polygon, route line intersection, configurable safety buffers (1.0 km violation / 2.5 km caution), projected track calculations, and strict Safety Precedence Engine (`PFZ = OPPORTUNITY`, `GIS SAFETY = CONSTRAINT`). Exposed `POST /api/v1/gis/evaluate-route` and `GET /api/v1/gis/restricted-zones`. Replaced confusing global "DEMO SNAPSHOT" badge with truthful `DataSourceStatusBar` (INCOIS PFZ LIVE, INCOIS OSF LIVE, IMD WEATHER DEMO/PENDING, GIS SAFETY DETERMINISTIC), created fisherman-first `TripSafetyHUD`, and enhanced map cartography popups to strictly distinguish Opportunities from Constraints.
+- Phase 12+ Frontend Master Redesign: Replaced active React routing and layout with the Stitch **TIDAL LIGHT** design system across all pages and workspaces.
 
 ## Current Branch
 `orca-core`
 
 ## Immediate Next Task
-Phase 11 complete and verified. Await user manual review and git commit/push before Phase 12. (Phase 9.2 remains OPEN for IMD credentials).
+Await user manual review and git commit/push. (Phase 9.2 remains OPEN for IMD credentials).
 
 
 
@@ -625,19 +649,88 @@ The confusing monolithic "DEMO SNAPSHOT" badge was eliminated and replaced by in
 - `IMD MARINE` → `● DEMO (ACCESS PENDING)` (Phase 9.2 credential dependency)
 - `GIS SAFETY` → `● DETERMINISTIC` (PostGIS spatial geofence)
 
-### 4. Verification Commands
-```bash
-# Test full test suite (112 tests across 10 test suites)
-npm test -- --run
+---
 
-# Test GIS Safety Route Evaluation Endpoint
-curl -X POST http://localhost:3000/api/v1/gis/evaluate-route \
-  -H "Content-Type: application/json" \
-  -d '{"vesselPosition":{"latitude":18.93,"longitude":72.85}}'
+## Developer Learning Notes — Frontend & Backend Full Integration Milestone
 
-# Test Restricted Zones Endpoint
-curl http://localhost:3000/api/v1/gis/restricted-zones
+### 1. Architectural Boundaries & System Ownership
 ```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          ORCA FRONTEND (Client PWA)                         │
+│  - Presentation & HUD visual rendering                                      │
+│  - Map rendering & layer state (Leaflet / Canvas / Turf fallback)           │
+│  - Reactive UI state, responsive layout & role switching                     │
+│  - Form capturing & trip planning (departure time, duration, activity)      │
+│  - Typed service clients (pfzService, gisSafetyService, orcaQueryService)    │
+│  - Offline UI shell & zero-downtime graceful fallback                       │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │ HTTP REST & Schema Contracts
+┌──────────────────────────────────────▼──────────────────────────────────────┐
+│                        ORCA BACKEND (Fastify Server)                        │
+│  - Authentication (/api/v1/me, Supabase JWT verification)                   │
+│  - Persistent storage (Missions, Waypoints, Observations, Decisions)        │
+│  - Live external data ingestion & validation (INCOIS WFS, ERDDAP, IMD)      │
+│  - Deterministic Safety Decision Engine (GO / CAUTION / AVOID / INSUF_DATA) │
+│  - Deterministic GIS Spatial Calculations (PostGIS + Turf.js)               │
+│  - Multi-Agent Orchestration & Structured Evidence Extraction               │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2. End-to-End Typed Service Inventory
+1. **`orcaQueryService.queryOrca` (`POST /api/v1/orca/query`)**:
+   - Dispatches operator inquiry and structured mission parameters to the multi-agent orchestration pipeline.
+   - Maps backend `OrcaQueryResponse` directly into frontend `OrchestrationPackage` reactive state.
+2. **`gisSafetyService.evaluateRoute` (`POST /api/v1/gis/evaluate-route`)**:
+   - Server-authoritative spatial calculation checking point-in-polygon, route intersections, and 1.0 km / 2.5 km safety buffers against naval and sanctuary boundaries.
+3. **`pfzService.fetchPfz` (`GET /api/v1/pfz`)**:
+   - Retrieves live INCOIS GeoServer WFS PFZ advisories, calculating distance, bearing, and compass direction from the operator's harbor.
+4. **`missionService.createMission` & `fetchMissions` (`POST & GET /api/v1/missions`)**:
+   - Persists planned trips and ordered waypoints to `public.missions` and `public.mission_waypoints` in Supabase PostgreSQL/PostGIS.
+5. **`decisionService.fetchDecisionById` (`GET /api/v1/decisions/:id`)**:
+   - Fetches complete audited decision logs, rule breakdown, and evidence provenance chains for transparency and decision replay.
+6. **`adapterService.fetchAdapters` (`GET /api/v1/adapters`)**:
+   - Returns live registry status and latency benchmarks for all registered data adapters.
+7. **`authService.fetchMe` (`GET /api/v1/me`)**:
+   - Returns authenticated user session, assigned vessels, and role permissions.
+
+### 3. Verification & Quality Gates
+- **Vitest Test Suite:** 133 passing tests across 11 test suites (including Domain Model, Multi-Agent Ingestion, IMD, INCOIS, GIS Safety, Vessel Capability, API, and Auth).
+- **TypeScript Server Check:** `tsc -p tsconfig.server.json --noEmit` clean with 0 errors.
+- **ESLint:** Clean with 0 errors across all files.
+- **Production Build:** `tsc -b && vite build` generates clean production PWA distribution bundle with ServiceWorker caching.
+
+---
+
+## Developer Learning Notes — Phase 12: Vessel Capability Model
+
+### 1. Goal & Product Thesis
+Marine safety is inherently vessel-specific. A 2.2m significant wave height or a 30 NM voyage represents an acceptable operational condition for a 15-meter mechanized trawler, but a hazardous condition for a 5.5-meter non-motorized canoe. Phase 12 establishes this vessel-specific constraint evaluation layer deterministically before Decision Engine V2 (Phase 13).
+
+### 2. Critical Threshold Provenance Rule
+No universal maritime threshold is invented or falsely claimed as official statutory policy:
+- `OFFICIAL_SOURCED`: Formal statutory standards (e.g., DG Shipping Merchant Shipping Manning Rules, Mercantile Marine Department circulars).
+- `VESSEL_SPECIFIC`: Vessel-specific builder plates, class survey stability certificates, tank capacities, and engine fuel consumption curves.
+- `PROTOTYPE_ASSUMPTION`: Explicit prototype heuristic models calibrated for regional fishing crafts, clearly labeled with provenance metadata.
+- `UNKNOWN`: Missing or unsupplied environmental observations or vessel parameters.
+
+### 3. Evaluated Constraint Dimensions
+1. **`RANGE`**: Total round-trip mission distance vs vessel operating range (`operating_range_nm`).
+2. **`DISTANCE_FROM_PORT`**: Maximum offshore distance vs harbor distance limit (`max_operating_distance_nm`).
+3. **`ENDURANCE`**: Voyage duration vs maximum hours on full fuel/supplies (`endurance_hours`).
+4. **`FUEL`**: Calculated burn rate + 20% regulatory reserve vs bunker capacity (`fuel_capacity_liters`).
+5. **`WAVE`**: Significant wave height (Hs) vs vessel seaworthiness limit (`max_safe_wave_meters`).
+6. **`WIND`**: Sustained wind speed vs stability limit (`max_safe_wind_knots`).
+7. **`CREW`**: Planned crew vs certified minimum/maximum manning bounds (`min_crew`, `max_crew`).
+8. **`SAFETY_EQUIPMENT`**: Voyage mandatory equipment vs verified onboard inventory (`safety_equipment`).
+9. **`CERTIFICATION`**: Operational status certificate (`capability_profile_status`).
+
+### 4. Fastify Endpoints & Service Contracts
+- `GET /api/v1/vessels/:id/capability`: Retrieves full capability profile with threshold provenance.
+- `PATCH /api/v1/vessels/:id/capability`: Updates vessel parameters with validation.
+- `POST /api/v1/vessels/evaluate-capability`: Deterministically evaluates mission context against vessel capability profile.
+- `POST /api/v1/vessels/:id/evaluate-capability`: Evaluates specific vessel by ID.
+
+
 
 
 

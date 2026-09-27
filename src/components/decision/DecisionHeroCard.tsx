@@ -7,7 +7,9 @@ import {
   ChevronRight, 
   Map, 
   ShieldCheck,
-  Compass
+  Compass,
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/routes';
@@ -30,9 +32,7 @@ export const DecisionHeroCard: React.FC<DecisionHeroCardProps> = ({
   verdict = 'CAUTION',
   confidence = 78.4,
   reason = 'Morning departure is favorable (< 1.2m swell), but deteriorating afternoon wave swell (> 2.1m post-12:00 IST) constrains safe return window. Maintain minimum 4.2 km clearance from Naval Anchorage Geofence.',
-  recommendation = 'Plan return to Sassoon Docks before 11:30 IST. Maintain active VHF watch on Channel 16.',
   departureTime = '05:45 IST',
-  durationHours = 5,
   vesselName = 'Matsya Sagar 1',
   className = '',
 }) => {
@@ -47,46 +47,50 @@ export const DecisionHeroCard: React.FC<DecisionHeroCardProps> = ({
     switch (activeVerdict) {
       case 'GO':
         return {
-          title: 'VOYAGE CLEAR',
-          subtitle: 'Favorable Sea & Wind Conditions',
+          title: 'VOYAGE CLEAR (GO)',
+          subtitle: 'Favorable Sea & Atmospheric State',
           badgeText: 'GO — CLEARANCE GRANTED',
-          badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50',
-          cardBorder: 'border-emerald-500/50 shadow-[0_0_24px_rgba(46,204,113,0.15)]',
-          bannerBg: 'bg-emerald-950/40',
-          textColor: 'text-emerald-400',
+          badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+          accentColor: '#2E9B73',
+          cardBorder: 'border-emerald-300',
+          bannerBg: 'bg-emerald-50/60',
+          textColor: 'text-emerald-700',
           Icon: CheckCircle2,
         };
       case 'CAUTION':
         return {
           title: 'PROCEED WITH CAUTION',
-          subtitle: 'Window & Proximity Constraints Active',
+          subtitle: 'Midday Return & Proximity Constraints Active',
           badgeText: 'CAUTION — ADVISORY ACTIVE',
-          badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/50',
-          cardBorder: 'border-amber-500/50 shadow-[0_0_24px_rgba(241,196,15,0.15)]',
-          bannerBg: 'bg-amber-950/40',
-          textColor: 'text-amber-400',
+          badgeBg: 'bg-amber-50 text-amber-800 border-amber-300',
+          accentColor: '#D99520',
+          cardBorder: 'border-amber-300',
+          bannerBg: 'bg-amber-50/60',
+          textColor: 'text-amber-800',
           Icon: AlertTriangle,
         };
       case 'AVOID':
         return {
-          title: 'VOYAGE RESTRICTED',
-          subtitle: 'Safety Hazard / Boundary Violation',
+          title: 'VOYAGE RESTRICTED (AVOID)',
+          subtitle: 'Safety Hazard / Boundary Violation Triggered',
           badgeText: 'AVOID — CLEARANCE DENIED',
-          badgeBg: 'bg-rose-500/20 text-rose-300 border-rose-500/50',
-          cardBorder: 'border-rose-500/50 shadow-[0_0_24px_rgba(231,76,60,0.2)]',
-          bannerBg: 'bg-rose-950/40',
-          textColor: 'text-rose-400',
+          badgeBg: 'bg-rose-50 text-rose-800 border-rose-300',
+          accentColor: '#D65B5B',
+          cardBorder: 'border-rose-300',
+          bannerBg: 'bg-rose-50/60',
+          textColor: 'text-rose-700',
           Icon: XCircle,
         };
       default:
         return {
-          title: 'CHECK REQUIRED',
-          subtitle: 'Insufficient Spatial / Weather Data',
+          title: 'INSUFFICIENT DATA',
+          subtitle: 'Critical Observation Feeds Unavailable',
           badgeText: 'INSUFFICIENT DATA',
-          badgeBg: 'bg-slate-700/40 text-slate-300 border-slate-600',
-          cardBorder: 'border-slate-700',
-          bannerBg: 'bg-slate-900/60',
-          textColor: 'text-slate-300',
+          badgeBg: 'bg-slate-100 text-slate-800 border-slate-300',
+          accentColor: '#6F7F8F',
+          cardBorder: 'border-slate-300',
+          bannerBg: 'bg-slate-50',
+          textColor: 'text-slate-700',
           Icon: HelpCircle,
         };
     }
@@ -98,98 +102,145 @@ export const DecisionHeroCard: React.FC<DecisionHeroCardProps> = ({
   return (
     <>
       <div
-        className={`hud-glass rounded-2xl p-5 sm:p-6 border flex flex-col gap-4 relative overflow-hidden transition-all ${theme.cardBorder} ${className}`}
+        className={`w-full bg-white rounded-2xl border ${theme.cardBorder} shadow-sm overflow-hidden flex flex-col relative transition-all ${className}`}
+        style={{ borderLeftWidth: '6px', borderLeftColor: theme.accentColor }}
       >
-        {/* Accent Top Gradient Line */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-80" />
-
-        {/* Top Header: Vessel & Departure Context */}
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-              <Compass className="w-5 h-5" />
+        {/* Card Header & Decision Verdict Banner */}
+        <div className={`p-4 sm:p-6 ${theme.bannerBg} border-b border-[#D8E5EC] flex flex-col md:flex-row md:items-center justify-between gap-4`}>
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div 
+              className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+              style={{ backgroundColor: `${theme.accentColor}15`, color: theme.accentColor }}
+            >
+              <Icon className="w-7 h-7" />
             </div>
+
             <div>
-              <div className="text-[10px] uppercase font-telemetry tracking-wider text-slate-400">
-                OPERATIONAL MISSION DECISION
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className={`px-2.5 py-0.5 rounded text-[11px] font-bold font-label-caps border ${theme.badgeBg}`}>
+                  {theme.badgeText}
+                </span>
+                <span className="text-[11px] font-telemetry text-[#587083]">
+                  EVALUATED AT {departureTime}
+                </span>
               </div>
-              <h2 className="text-sm font-bold text-white tracking-wide font-display-decision">
-                {vesselName} • {durationHours} hr voyage
+              <h2 className="text-xl sm:text-2xl font-black text-[#123B5D] tracking-tight font-display-decision">
+                {theme.title}
               </h2>
+              <p className="text-xs text-[#587083] font-medium">
+                {theme.subtitle} • Target Craft: <strong className="text-[#123B5D]">{vesselName}</strong>
+              </p>
             </div>
           </div>
 
-          <div className="text-right">
-            <span className="text-xs font-bold font-telemetry text-cyan-300 block">
-              {departureTime}
-            </span>
-            <span className="text-[10px] text-slate-400 font-telemetry">
-              Confidence: {activeConfidence.toFixed(1)}%
-            </span>
+          {/* Right Action Quick Links */}
+          <div className="flex flex-wrap items-center gap-2 self-start md:self-center">
+            <button
+              type="button"
+              onClick={() => setShowWhyModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-white border border-[#CBD5E1] hover:border-[#147FB3] text-xs font-bold text-[#123B5D] font-label-caps transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <ShieldCheck className="w-4 h-4 text-[#147FB3]" />
+              <span>WHY THIS DECISION?</span>
+              <ChevronRight className="w-3.5 h-3.5 text-[#587083]" />
+            </button>
+
+            <Link
+              to={ROUTES.ASK}
+              className="px-3.5 py-2 rounded-xl bg-[#147FB3] hover:bg-[#0284C7] text-white font-bold text-xs font-label-caps tracking-wider transition flex items-center gap-1.5 shadow-sm"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>ASK ORCA</span>
+            </Link>
           </div>
         </div>
 
-        {/* Decision Hero Status */}
-        <div className={`p-4 rounded-xl border flex items-start gap-4 ${theme.bannerBg} ${theme.badgeBg}`}>
-          <Icon className={`w-8 h-8 ${theme.textColor} shrink-0 mt-0.5`} />
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h1 className={`text-xl sm:text-2xl font-black tracking-tight font-display-decision ${theme.textColor}`}>
-                {theme.title}
-              </h1>
-              <span className={`px-2.5 py-1 rounded text-xs font-bold font-mono tracking-wider uppercase border ${theme.badgeBg}`}>
-                {activeVerdict}
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-200 mt-1 font-medium leading-relaxed">
+        {/* Card Body: Decision Summary + Mission Parameters */}
+        <div className="p-4 sm:p-6 bg-white flex flex-col gap-4">
+          {/* Plain-Language Explanation */}
+          <div className="p-4 rounded-xl bg-[#F5F9FC] border border-[#D8E5EC]">
+            <span className="text-[10px] font-bold font-label-caps text-[#587083] block mb-1">
+              OPERATIONAL RATIONALE &amp; SYNTHESIS
+            </span>
+            <p className="text-xs sm:text-sm text-[#102B40] leading-relaxed font-sans font-medium">
               {activeReason}
             </p>
           </div>
-        </div>
 
-        {/* Actionable Operational Advice */}
-        {recommendation && (
-          <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 flex items-start gap-2.5">
-            <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-            <div className="leading-relaxed">
-              <strong className="text-cyan-300 block text-[11px] font-label-caps uppercase">
-                RECOMMENDED OPERATIONAL ACTION:
-              </strong>
-              {recommendation}
+          {/* Operational Window & Navigation Recommendations */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Departure / Return Window */}
+            <div className="p-3.5 rounded-xl bg-[#F5F9FC] border border-[#D8E5EC] flex flex-col justify-between">
+              <div className="text-[10px] font-bold font-label-caps text-[#587083] flex items-center gap-1.5 mb-1">
+                <Clock className="w-3.5 h-3.5 text-[#147FB3]" />
+                <span>RECOMMENDED TIMING</span>
+              </div>
+              <div className="text-sm font-bold text-[#123B5D] font-telemetry">
+                Depart {departureTime}
+              </div>
+              <div className="text-xs text-[#D99520] font-semibold mt-0.5">
+                Conclude Return by 11:30 IST
+              </div>
+            </div>
+
+            {/* Target Area Opportunity */}
+            <div className="p-3.5 rounded-xl bg-[#F5F9FC] border border-[#D8E5EC] flex flex-col justify-between">
+              <div className="text-[10px] font-bold font-label-caps text-[#587083] flex items-center gap-1.5 mb-1">
+                <Compass className="w-3.5 h-3.5 text-[#2E9B73]" />
+                <span>PFZ OPPORTUNITY (INCOIS)</span>
+              </div>
+              <div className="text-sm font-bold text-[#123B5D] truncate">
+                Zone Alpha (Alibaug Outer Bank)
+              </div>
+              <div className="text-xs text-[#2E9B73] font-semibold mt-0.5">
+                18.5 km • Bearing 245° WSW (High Pelagic)
+              </div>
+            </div>
+
+            {/* Safety Clearance Margin */}
+            <div className="p-3.5 rounded-xl bg-[#F5F9FC] border border-[#D8E5EC] flex flex-col justify-between">
+              <div className="text-[10px] font-bold font-label-caps text-[#587083] flex items-center gap-1.5 mb-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#147FB3]" />
+                <span>DETERMINISTIC SAFETY</span>
+              </div>
+              <div className="text-sm font-bold text-[#123B5D]">
+                Clear Navigation Corridor
+              </div>
+              <div className="text-xs text-[#587083] font-medium mt-0.5">
+                4.2 km Buffer from Naval Geofence
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Interactive Bottom Actions */}
-        <div className="flex flex-wrap items-center justify-between pt-1 gap-2 border-t border-slate-800/80">
-          <button
-            onClick={() => setShowWhyModal(true)}
-            className="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 hover:text-white font-bold text-xs font-label-caps tracking-wider transition flex items-center gap-1.5 shadow-sm"
-          >
-            <span>WHY THIS DECISION?</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+        {/* Footer Quick Action Bar */}
+        <div className="px-4 sm:px-6 py-3 bg-[#F5F9FC] border-t border-[#D8E5EC] flex flex-wrap items-center justify-between text-xs text-[#587083] gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-telemetry text-[11px] text-[#123B5D]">
+              All 5 marine observation feeds correlated
+            </span>
+          </div>
 
-          <Link
-            to={ROUTES.MAP}
-            className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-label-caps tracking-wider transition flex items-center gap-1.5 shadow-md"
-          >
-            <Map className="w-4 h-4" />
-            <span>INSPECT ROUTE ON MAP</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              to={ROUTES.MAP}
+              className="text-xs font-bold text-[#147FB3] hover:underline flex items-center gap-1"
+            >
+              <Map className="w-3.5 h-3.5" />
+              <span>Inspect on Marine Map &rarr;</span>
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Explainable Decision Evidence Modal */}
+      {/* Why This Decision Detailed Breakdown Modal */}
       <WhyDecisionModal
         isOpen={showWhyModal}
         onClose={() => setShowWhyModal(false)}
         verdict={activeVerdict}
-        reason={activeReason}
-        confidence={activeConfidence}
+        confidenceScore={activeConfidence}
         vesselName={vesselName}
-        departureTime={departureTime}
-        durationHours={durationHours}
       />
     </>
   );

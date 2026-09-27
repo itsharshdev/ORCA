@@ -6,7 +6,7 @@
 
 export type DataStatus = 'demo_snapshot' | 'cached' | 'live' | 'degraded';
 
-export type DecisionVerdict = 'GO' | 'CAUTION' | 'AVOID';
+export type DecisionVerdict = 'GO' | 'CAUTION' | 'AVOID' | 'INSUFFICIENT_DATA';
 
 export type RiskLevel = 'low' | 'moderate' | 'high' | 'critical';
 

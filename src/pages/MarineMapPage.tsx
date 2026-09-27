@@ -5,7 +5,7 @@ import { MapContextPanel } from '@/components/map/MapContextPanel';
 import { MapLegend } from '@/components/map/MapLegend';
 import { useRegion } from '@/hooks/useRegion';
 import type { MapLayerVisibility, SelectedMapEntity } from '@/types/map';
-import { Fish, AlertTriangle, ShieldAlert, Anchor, Compass } from 'lucide-react';
+import { Fish, AlertTriangle, ShieldAlert, Anchor } from 'lucide-react';
 
 export const MarineMapPage: React.FC = () => {
   const { activeRegion } = useRegion();
@@ -100,14 +100,13 @@ export const MarineMapPage: React.FC = () => {
       severity: 'favorable',
       location: { latitude: v.currentLocation.latitude, longitude: v.currentLocation.longitude },
       details: {
-        vesselLength: `${v.lengthMeters} m`,
-        enginePower: `${v.engineHp || 30} HP`,
+        maxWaveTolerance: `${v.maxWaveToleranceMeters} m`,
         cruisingSpeed: `${v.cruisingSpeedKnots} kts`,
-        waveLimit: `${v.maxWaveToleranceMeters} m`,
+        fuelCapacity: `${v.fuelCapacityHours} hours`,
         homePort: v.homePort.name,
       },
-      source: vesselsData.metadata.source,
-      observedAt: '2026-09-02 08:30 IST',
+      source: 'ORCA_VESSEL_TELEMETRY',
+      observedAt: '2026-09-02 08:00 IST',
     };
     setSelectedEntity(ent);
     setFlyToCoords([v.currentLocation.latitude, v.currentLocation.longitude]);
@@ -115,175 +114,122 @@ export const MarineMapPage: React.FC = () => {
 
   const selectHazard = () => {
     const h = hazardsData.alerts[0];
+    const coords = h.affectedCoordinates && h.affectedCoordinates.length > 0 
+      ? h.affectedCoordinates[0] 
+      : [18.90, 72.80] as [number, number];
+
     const ent: SelectedMapEntity = {
       id: h.id,
       type: 'hazard',
       title: h.title,
       subtitle: h.areaDescription,
-      status: String(h.severity).toUpperCase(),
-      severity: h.severity as any,
-      location: { latitude: h.affectedCoordinates[0][0], longitude: h.affectedCoordinates[0][1] },
-      details: {
-        hazardType: h.hazardType.toUpperCase(),
-        severity: String(h.severity).toUpperCase(),
-        activeState: h.isActive ? 'ACTIVE WARNING' : 'INACTIVE',
+      status: 'CRITICAL ALERT',
+      severity: 'critical',
+      location: {
+        latitude: coords[0],
+        longitude: coords[1],
       },
-      source: hazardsData.metadata.source,
+      details: {
+        hazardType: h.hazardType,
+        advisoryAction: h.advisoryAction,
+        severityLevel: h.severity,
+      },
+      source: hazardsData.metadata.source || 'IMD_INCOIS',
       observedAt: hazardsData.metadata.updatedAt || '2026-09-02 06:00 IST',
-      validUntil: hazardsData.metadata.validUntil,
-      actionRequired: h.advisoryAction,
+      validUntil: h.validUntil,
     };
     setSelectedEntity(ent);
-    setFlyToCoords([h.affectedCoordinates[0][0], h.affectedCoordinates[0][1]]);
+    setFlyToCoords([coords[0], coords[1]]);
   };
 
   const selectBoundary = () => {
     const b = boundariesData.features[0];
+    const coords = b.geometry.coordinates[0][0];
     const ent: SelectedMapEntity = {
-      id: b.id,
+      id: b.properties.name,
       type: 'boundary',
       title: b.properties.name,
       subtitle: b.properties.restrictionDescription,
-      status: b.properties.zoneType.toUpperCase(),
-      severity: b.properties.severityOnIncursion as any,
-      location: { latitude: mapCenter[0] + 0.1, longitude: mapCenter[1] + 0.1 },
+      status: 'RESTRICTED AREA',
+      severity: 'cautionary',
+      location: { latitude: coords[1], longitude: coords[0] },
       details: {
-        zoneType: b.properties.zoneType.toUpperCase(),
-        bufferRequired: `${b.properties.bufferDistanceMeters || 500} m`,
-        incursionSeverity: b.properties.severityOnIncursion.toUpperCase(),
+        zoneType: b.properties.zoneType,
+        severity: b.properties.severityOnIncursion,
+        bufferDistance: `${b.properties.bufferDistanceMeters || 500} m`,
       },
       source: boundariesData.metadata.source,
-      observedAt: boundariesData.metadata.updatedAt || '2026-09-02 06:00 IST',
-      actionRequired: b.properties.restrictionDescription,
+      observedAt: 'Permanent Geofence Regulation',
     };
     setSelectedEntity(ent);
-    setFlyToCoords([mapCenter[0] + 0.1, mapCenter[1] + 0.1]);
+    setFlyToCoords([coords[1], coords[0]]);
   };
 
   return (
-    <div className="relative w-full h-full flex-1 flex flex-col overflow-hidden">
-      {/* Top Quick Explorer Bar */}
-      <div className="hud-glass border-b border-slate-800/80 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 z-30 shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-            <Compass className="w-4 h-4" />
-          </div>
-          <div>
-            <span className="text-xs font-bold text-white font-label-caps tracking-wider">
-              INTERACTIVE MARINE MAP
-            </span>
-            <span className="hidden sm:inline text-[11px] font-telemetry text-slate-400 ml-2">
-              • {activeRegion.name.toUpperCase()}
-            </span>
-          </div>
-        </div>
-
-        {/* Quick Inspector Jump Chips */}
-        <div className="flex items-center gap-1.5 text-xs overflow-x-auto no-scrollbar py-0.5">
-          <button
-            type="button"
-            onClick={selectVessel}
-            className={`px-2.5 py-1 rounded-lg border text-[11px] font-label-caps flex items-center gap-1.5 transition-colors ${
-              selectedEntity?.type === 'vessel'
-                ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400'
-                : 'bg-slate-900/80 border-slate-800 text-cyan-300 hover:border-cyan-500/40'
-            }`}
-          >
-            <Anchor className="w-3 h-3" />
-            <span>Vessel</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={selectTopZone}
-            className={`px-2.5 py-1 rounded-lg border text-[11px] font-label-caps flex items-center gap-1.5 transition-colors ${
-              selectedEntity?.type === 'pfz'
-                ? 'bg-emerald-500 text-slate-950 font-bold border-emerald-400'
-                : 'bg-slate-900/80 border-slate-800 text-emerald-400 hover:border-emerald-500/40'
-            }`}
-          >
-            <Fish className="w-3 h-3" />
-            <span>Candidate PFZ</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={selectHazard}
-            className={`px-2.5 py-1 rounded-lg border text-[11px] font-label-caps flex items-center gap-1.5 transition-colors ${
-              selectedEntity?.type === 'hazard'
-                ? 'bg-amber-500 text-slate-950 font-bold border-amber-400'
-                : 'bg-slate-900/80 border-slate-800 text-amber-400 hover:border-amber-500/40'
-            }`}
-          >
-            <AlertTriangle className="w-3 h-3" />
-            <span>Hazard Alert</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={selectBoundary}
-            className={`px-2.5 py-1 rounded-lg border text-[11px] font-label-caps flex items-center gap-1.5 transition-colors ${
-              selectedEntity?.type === 'boundary'
-                ? 'bg-rose-500 text-slate-950 font-bold border-rose-400'
-                : 'bg-slate-900/80 border-slate-800 text-rose-400 hover:border-rose-500/40'
-            }`}
-          >
-            <ShieldAlert className="w-3 h-3" />
-            <span>Restricted Zone</span>
-          </button>
-        </div>
+    <div className="relative w-full h-[calc(100vh-3.5rem)] flex flex-col md:flex-row overflow-hidden bg-[#E2EFF7] select-none">
+      {/* Map Canvas Background */}
+      <div className="flex-1 h-full relative z-0">
+        <MarineMapCanvas
+          layers={layers}
+          onSelectEntity={setSelectedEntity}
+          flyToCoords={flyToCoords}
+        />
       </div>
 
-      {/* Main Map + Context Panel Layout */}
-      <div className="relative flex-1 w-full h-full flex flex-col md:flex-row overflow-hidden">
-        {/* Full Interactive Canvas */}
-        <div className="relative flex-1 w-full h-full">
-          <MarineMapCanvas
-            className="w-full h-full"
-            layers={layers}
-            selectedEntityId={selectedEntity?.id}
-            onSelectEntity={(ent) => setSelectedEntity(ent)}
-            flyToCoords={flyToCoords}
-            showOverlayControls={false}
-          />
+      {/* Floating Layer Controls (Top Left) */}
+      <div className="absolute top-4 left-4 z-20">
+        <MapLayerControl layers={layers} onChange={setLayers} />
+      </div>
 
-          {/* Floating Top-Left / Top-Right Controls on Canvas */}
-          <div className="absolute top-4 left-4 z-20 max-w-xs hidden sm:block">
-            <MapLayerControl layers={layers} onChange={setLayers} />
-          </div>
+      {/* Quick Jump Ribbon (Top Center / Right) */}
+      <div className="absolute top-4 right-4 z-20 hidden sm:flex items-center gap-2 p-1.5 rounded-2xl bg-white/95 backdrop-blur-md border border-[#D8E5EC] shadow-md">
+        <button
+          onClick={selectTopZone}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#147FB3] bg-[#E8F4FA] hover:bg-[#CFE6F3] transition cursor-pointer"
+        >
+          <Fish className="w-3.5 h-3.5" />
+          <span>PFZ Zone</span>
+        </button>
 
-          <div className="absolute bottom-12 left-4 z-20 max-w-xs hidden lg:block">
-            <MapLegend />
-          </div>
-        </div>
+        <button
+          onClick={selectVessel}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#123B5D] hover:bg-[#F5F9FC] transition cursor-pointer"
+        >
+          <Anchor className="w-3.5 h-3.5 text-[#147FB3]" />
+          <span>Vessel</span>
+        </button>
 
-        {/* Right Desktop Context Panel */}
-        <div className="hidden md:flex w-80 xl:w-96 p-4 flex-col gap-4 overflow-y-auto bg-slate-950/60 border-l border-slate-800/80 shrink-0 z-20">
+        <button
+          onClick={selectHazard}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-700 hover:bg-rose-50 transition cursor-pointer"
+        >
+          <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+          <span>Hazard</span>
+        </button>
+
+        <button
+          onClick={selectBoundary}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-700 hover:bg-amber-50 transition cursor-pointer"
+        >
+          <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+          <span>Geofence</span>
+        </button>
+      </div>
+
+      {/* Map Legend (Bottom Left) */}
+      <div className="absolute bottom-6 left-4 z-20 hidden md:block">
+        <MapLegend />
+      </div>
+
+      {/* Right Entity Details Drawer / Panel */}
+      <div className="w-full md:w-80 lg:w-96 h-1/2 md:h-full z-20 p-3 md:p-4 shrink-0 flex flex-col justify-end md:justify-start pointer-events-none">
+        <div className="pointer-events-auto h-full flex flex-col shadow-xl">
           <MapContextPanel
             entity={selectedEntity}
             onClose={() => setSelectedEntity(null)}
             onFocusEntity={handleFocusEntity}
           />
-
-          <div className="sm:hidden">
-            <MapLayerControl layers={layers} onChange={setLayers} />
-          </div>
-
-          <div className="lg:hidden">
-            <MapLegend />
-          </div>
         </div>
-
-        {/* Mobile Expandable Bottom Context Sheet */}
-        {selectedEntity && (
-          <div className="md:hidden fixed bottom-16 left-0 right-0 p-3 z-40">
-            <MapContextPanel
-              entity={selectedEntity}
-              onClose={() => setSelectedEntity(null)}
-              onFocusEntity={handleFocusEntity}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

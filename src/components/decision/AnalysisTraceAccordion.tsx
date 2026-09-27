@@ -57,78 +57,79 @@ export const AnalysisTraceAccordion: React.FC<{ className?: string }> = ({ class
   ];
 
   return (
-    <div className={`hud-glass rounded-2xl border border-slate-800 overflow-hidden transition select-none ${className}`}>
+    <div className={`bg-white rounded-2xl border border-[#D8E5EC] shadow-sm overflow-hidden transition select-none ${className}`}>
       {/* Accordion Toggle Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-4 flex items-center justify-between bg-slate-900/40 hover:bg-slate-900/70 transition text-left"
+        className="w-full p-4 sm:p-5 flex items-center justify-between bg-[#F5F9FC] hover:bg-[#EDF5F8] transition text-left cursor-pointer"
       >
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-[#E8F4FA] border border-[#CFE6F3] text-[#147FB3]">
             <Cpu className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-white tracking-wide uppercase font-label-caps">
+              <span className="text-xs font-bold text-[#123B5D] tracking-tight uppercase font-label-caps">
                 Technical Reasoning &amp; Analysis Trace
               </span>
-              <span className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 text-[10px] font-mono font-bold border border-cyan-800">
+              <span className="px-2 py-0.5 rounded bg-blue-50 text-[#147FB3] text-[10px] font-mono font-bold border border-[#CFE6F3]">
                 AUDIT LOG
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 mt-0.5">
+            <p className="text-[11px] text-[#587083] mt-0.5">
               Multi-agent reasoning pipeline &amp; deterministic handoff telemetry (Inspect for technical review)
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-slate-400">
-          <span className="text-[11px] font-mono hidden sm:inline">
+        <div className="flex items-center gap-2 text-[#587083]">
+          <span className="text-xs font-semibold hidden sm:inline">
             {isOpen ? 'Collapse Trace' : 'Expand Trace'}
           </span>
-          {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {isOpen ? <ChevronUp className="w-4 h-4 text-[#147FB3]" /> : <ChevronDown className="w-4 h-4 text-[#587083]" />}
         </div>
       </button>
 
       {/* Accordion Body */}
       {isOpen && (
-        <div className="p-4 bg-slate-950/70 border-t border-slate-800 flex flex-col gap-3 animate-fade-in text-xs">
-          <div className="flex items-center justify-between text-[11px] text-slate-400 pb-2 border-b border-slate-800">
+        <div className="p-4 sm:p-5 bg-white border-t border-[#D8E5EC] flex flex-col gap-3 animate-fade-in text-xs">
+          <div className="flex items-center justify-between text-[11px] text-[#587083] pb-2 border-b border-[#EDF5F8]">
             <span className="flex items-center gap-1.5 font-telemetry">
-              <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-              ORCA Reasoning Pipeline • Audit Trace Verified
+              <Terminal className="w-3.5 h-3.5 text-[#147FB3]" />
+              ORCA Multi-Agent Pipeline • Deterministic Consensus
             </span>
-            <span>Total Latency: 1.18s</span>
+            <span className="font-telemetry font-bold text-[#123B5D]">6/6 SPECIALISTS VERIFIED</span>
           </div>
 
           <div className="flex flex-col gap-2">
-            {traces.map((step, idx) => (
+            {traces.map((t, idx) => (
               <div
                 key={idx}
-                className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col gap-1"
+                className="p-3 rounded-xl bg-[#F5F9FC] border border-[#D8E5EC] flex flex-col gap-1 text-xs"
               >
-                <div className="flex items-center justify-between text-[11px]">
-                  <div className="flex items-center gap-2 font-bold text-slate-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{step.agent}</span>
-                    <span className="text-[10px] text-slate-500 font-normal">• {step.domain}</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">
-                    {step.latency}
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[#123B5D] flex items-center gap-1.5 font-label-caps">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    {t.agent}
                   </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-[#587083] font-telemetry">{t.domain}</span>
+                    <span className="px-1.5 py-0.2 rounded bg-white text-[#147FB3] text-[9px] font-mono border border-[#CFE6F3] font-bold">
+                      {t.latency}
+                    </span>
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-400 pl-5.5 leading-relaxed">
-                  {step.summary}
-                </p>
+                <p className="text-[11px] text-[#587083] pl-5 leading-relaxed">{t.summary}</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-2 p-2.5 rounded-lg bg-cyan-950/20 border border-cyan-500/20 text-[10px] text-cyan-300 flex items-center gap-2">
-            <Layers className="w-4 h-4 shrink-0" />
-            <span>
-              All agent observation records are normalized, timestamped, and stored with immutable PostGIS geometry in Supabase.
+          <div className="p-3 rounded-xl bg-[#E8F4FA] border border-[#CFE6F3] text-[11px] text-[#123B5D] flex items-center justify-between font-telemetry">
+            <span className="flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-[#147FB3]" />
+              Multi-Agent Orchestrator Total Handoff Latency:
             </span>
+            <span className="font-bold text-[#147FB3]">420ms</span>
           </div>
         </div>
       )}

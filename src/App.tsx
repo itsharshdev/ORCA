@@ -4,9 +4,13 @@ import { RegionProvider } from '@/context/RegionContext';
 import { OrchestrationProvider } from '@/context/OrchestrationContext';
 import { RoleProvider } from '@/context/RoleContext';
 import { AppShell } from '@/components/layout/AppShell';
+import { LandingPage } from '@/pages/LandingPage';
+import { AboutPage } from '@/pages/AboutPage';
+import { ContactPage } from '@/pages/ContactPage';
 import { LoginPage } from '@/pages/LoginPage';
-import { CommandCenterPage } from '@/pages/CommandCenterPage';
+import { ProfilePage } from '@/pages/ProfilePage';
 import { FishermanHomePage } from '@/pages/fisherman/FishermanHomePage';
+import { AskOrcaPage } from '@/pages/AskOrcaPage';
 import { AuthorityDashboardPage } from '@/pages/authority/AuthorityDashboardPage';
 import { DisasterManagementPage } from '@/pages/disaster/DisasterManagementPage';
 import { ResearcherDashboardPage } from '@/pages/researcher/ResearcherDashboardPage';
@@ -26,27 +30,36 @@ export const App: React.FC = () => {
         <RoleProvider>
           <BrowserRouter>
             <Routes>
+              {/* Public Marketing & Information Routes */}
+              <Route path={ROUTES.HOME} element={<LandingPage />} />
+              <Route path={ROUTES.ABOUT} element={<AboutPage />} />
+              <Route path={ROUTES.CONTACT} element={<ContactPage />} />
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
 
-              {/* Authenticated Application Shell Routes */}
+              {/* Authenticated Tidal Light Application Shell Routes */}
               <Route element={<AppShell />}>
-                <Route path={ROUTES.DASHBOARD} element={<CommandCenterPage />} />
-                <Route path={ROUTES.FISHERMAN} element={<FishermanHomePage />} />
-                <Route path={ROUTES.AUTHORITY} element={<AuthorityDashboardPage />} />
-                <Route path={ROUTES.DISASTER} element={<DisasterManagementPage />} />
-                <Route path={ROUTES.RESEARCHER} element={<ResearcherDashboardPage />} />
-                <Route path={ROUTES.OPERATOR} element={<OperatorDashboardPage />} />
-
-                {/* Shared Navigation Modules */}
+                {/* Primary Fisherman Experience */}
+                <Route path={ROUTES.DASHBOARD} element={<FishermanHomePage />} />
+                
+                {/* Core Operational Decision Modules */}
+                <Route path={ROUTES.ASK} element={<AskOrcaPage />} />
                 <Route path={ROUTES.MISSION} element={<MissionPlannerPage />} />
                 <Route path={ROUTES.MAP} element={<MarineMapPage />} />
                 <Route path={ROUTES.DECISIONS} element={<DecisionsPage />} />
                 <Route path={ROUTES.HISTORY} element={<HistoryPage />} />
                 <Route path={ROUTES.ALERTS} element={<AlertsPage />} />
+                <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
                 <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
+
+                {/* Institutional Role Workspaces */}
+                <Route path={ROUTES.AUTHORITY} element={<AuthorityDashboardPage />} />
+                <Route path={ROUTES.DISASTER} element={<DisasterManagementPage />} />
+                <Route path={ROUTES.RESEARCH} element={<ResearcherDashboardPage />} />
+                <Route path={ROUTES.RESEARCHER} element={<ResearcherDashboardPage />} />
+                <Route path={ROUTES.OPERATOR} element={<OperatorDashboardPage />} />
               </Route>
 
-              {/* Default & Fallback: Redirect to Command Center */}
+              {/* Default & Fallback: Redirect to /dashboard */}
               <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
             </Routes>
           </BrowserRouter>
@@ -57,3 +70,4 @@ export const App: React.FC = () => {
 };
 
 export default App;
+

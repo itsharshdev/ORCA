@@ -11,7 +11,6 @@ import {
   Radio,
   Compass,
   MapPin,
-  ExternalLink,
   ShieldAlert,
   Eye,
   CloudRain,
@@ -60,7 +59,7 @@ export const PersistedObservationPanel: React.FC = () => {
     });
 
     if (res.success && res.isLive) {
-      setStatusMessage('✓ Successfully ingested live INCOIS OSF oceanography into Supabase.');
+      setStatusMessage('✓ Successfully ingested live INCOIS OSF oceanography into PostGIS.');
     } else if (res.fallbackUsed) {
       setStatusMessage('ⓘ INCOIS server unreachable. Retained verified demo baseline.');
     } else {
@@ -106,33 +105,33 @@ export const PersistedObservationPanel: React.FC = () => {
     await observationService.triggerDemoIngestion([regionId]);
     const refreshed = await observationService.fetchObservations({ region: regionId, limit: 12 });
     setData(refreshed);
-    setStatusMessage('✓ Deterministic baseline snapshot synchronized with Supabase.');
+    setStatusMessage('✓ Deterministic baseline snapshot synchronized with PostGIS.');
     setSyncingDemo(false);
   };
 
   const getVariableIcon = (varName: string) => {
     if (varName.includes('wave') || varName.includes('swell')) {
-      return <Waves className="w-3.5 h-3.5 text-cyan-400" />;
+      return <Waves className="w-3.5 h-3.5 text-[#147FB3]" />;
     }
     if (varName.includes('wind') || varName.includes('gust')) {
-      return <Wind className="w-3.5 h-3.5 text-sky-400" />;
+      return <Wind className="w-3.5 h-3.5 text-[#4DB7D8]" />;
     }
     if (varName.includes('temp') || varName.includes('sst')) {
-      return <Thermometer className="w-3.5 h-3.5 text-amber-400" />;
+      return <Thermometer className="w-3.5 h-3.5 text-[#D99520]" />;
     }
     if (varName.includes('current')) {
-      return <Compass className="w-3.5 h-3.5 text-teal-400" />;
+      return <Compass className="w-3.5 h-3.5 text-[#2E9B73]" />;
     }
     if (varName.includes('visibility')) {
-      return <Eye className="w-3.5 h-3.5 text-indigo-400" />;
+      return <Eye className="w-3.5 h-3.5 text-[#123B5D]" />;
     }
     if (varName.includes('rain')) {
-      return <CloudRain className="w-3.5 h-3.5 text-blue-400" />;
+      return <CloudRain className="w-3.5 h-3.5 text-[#147FB3]" />;
     }
     if (varName.includes('warning') || varName.includes('alert')) {
-      return <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />;
+      return <ShieldAlert className="w-3.5 h-3.5 text-[#D65B5B]" />;
     }
-    return <Activity className="w-3.5 h-3.5 text-emerald-400" />;
+    return <Activity className="w-3.5 h-3.5 text-[#2E9B73]" />;
   };
 
   const formatVarTitle = (name: string): string => {
@@ -147,30 +146,21 @@ export const PersistedObservationPanel: React.FC = () => {
   const isLiveImd = observations.some((o) => o.status === 'LIVE' && o.dataset_identifier.includes('weather'));
   const isAnyLive = isLiveIncois || isLiveImd;
 
-  // Extract active warning if present
-  const warningObs = observations.find((o) => o.variable_name === 'imd_marine_warning' || o.category === 'HAZARD');
-  const warningStruct = warningObs?.structured_value as {
-    warningLevel?: string;
-    warningCategory?: string;
-    advisoryText?: string;
-    isWarningActive?: boolean;
-    validUntil?: string;
-    isFishermenAdvisedToAvoidSea?: boolean;
-  } | undefined;
-
   return (
-    <div className="hud-glass rounded-xl p-4 flex flex-col gap-3 border border-slate-800/80 shadow-lg select-none">
+    <div className="bg-white rounded-2xl p-4 sm:p-5 flex flex-col gap-4 border border-[#D8E5EC] shadow-sm select-none">
       {/* Panel Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
-        <div className="flex items-center gap-2">
-          <Database className="w-4 h-4 text-cyan-400" />
+      <div className="flex items-center justify-between pb-3 border-b border-[#EDF5F8]">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-[#E8F4FA] border border-[#CFE6F3] text-[#147FB3]">
+            <Database className="w-4 h-4" />
+          </div>
           <div>
-            <span className="text-[10px] font-label-caps text-slate-200 font-bold tracking-wider block">
+            <span className="text-sm font-bold text-[#123B5D] font-label-caps tracking-wide block">
               ENVIRONMENTAL OBSERVATIONS
             </span>
-            <span className="text-[8px] font-telemetry text-slate-400 flex items-center gap-1">
-              <MapPin className="w-2.5 h-2.5 text-cyan-400" />
-              {activeRegion.name}
+            <span className="text-[11px] font-telemetry text-[#587083] flex items-center gap-1">
+              <MapPin className="w-3 h-3 text-[#147FB3]" />
+              {activeRegion.name} • PostGIS Ingestion Layer
             </span>
           </div>
         </div>
@@ -178,12 +168,12 @@ export const PersistedObservationPanel: React.FC = () => {
         {/* Live / Baseline Badge */}
         <div className="flex items-center gap-1.5">
           {isAnyLive ? (
-            <span className="text-[9px] font-telemetry text-emerald-300 bg-emerald-950/80 border border-emerald-600/80 px-2 py-0.5 rounded font-bold flex items-center gap-1">
-              <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
+            <span className="text-[10px] font-telemetry text-emerald-800 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded font-bold flex items-center gap-1">
+              <Radio className="w-3 h-3 text-emerald-600 animate-pulse" />
               LIVE TELEMETRY
             </span>
           ) : (
-            <span className="text-[9px] font-telemetry text-amber-400 bg-amber-950/70 border border-amber-800/70 px-2 py-0.5 rounded font-semibold">
+            <span className="text-[10px] font-telemetry text-amber-800 bg-amber-50 border border-amber-300 px-2.5 py-0.5 rounded font-bold">
               DEMO SNAPSHOT
             </span>
           )}
@@ -191,211 +181,112 @@ export const PersistedObservationPanel: React.FC = () => {
       </div>
 
       {/* Backend Provenance Bar */}
-      <div className="flex items-center justify-between text-[10px] font-telemetry px-2.5 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800/80">
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-between text-xs font-telemetry px-3 py-2 rounded-xl bg-[#F5F9FC] border border-[#D8E5EC]">
+        <div className="flex items-center gap-2">
           {data?.isPersistedBackend ? (
             <>
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span className="text-emerald-300 font-medium">Supabase / PostGIS Persisted</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="text-emerald-800 font-semibold">PostGIS Database Persisted</span>
             </>
           ) : (
             <>
-              <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span className="text-amber-300">Memory / Cache Mode</span>
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span className="text-amber-800 font-medium">Memory Cache Mode</span>
             </>
           )}
         </div>
-        <div className="text-slate-400 text-right text-[9px] truncate max-w-[140px]">
+        <div className="text-[#587083] text-right text-[11px] truncate max-w-[160px]">
           {isAnyLive ? (
-            <span className="text-emerald-300 font-bold">INCOIS + IMD</span>
+            <span className="text-emerald-700 font-bold">INCOIS + IMD</span>
           ) : (
-            <span className="text-slate-200">ORCA_DEMO</span>
+            <span className="text-[#123B5D] font-medium">ORCA_DEMO</span>
           )}
         </div>
       </div>
 
       {/* Ingestion Actions Bar (3-column responsive) */}
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-3 gap-2">
         <button
           onClick={handleSyncIncois}
           disabled={syncingIncois || syncingImd || syncingDemo}
-          className="flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-700/60 text-cyan-300 font-bold text-[9px] font-label-caps transition-all disabled:opacity-50"
+          className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-[#F5F9FC] hover:bg-[#E8F4FA] border border-[#CBD5E1] hover:border-[#147FB3] text-[#123B5D] font-bold text-[10px] font-label-caps transition-all disabled:opacity-50 cursor-pointer shadow-xs"
           title="Query official INCOIS ERDDAP oceanography feed"
         >
-          <RefreshCw className={`w-2.5 h-2.5 ${syncingIncois ? 'animate-spin text-cyan-400' : ''}`} />
+          <RefreshCw className={`w-3 h-3 ${syncingIncois ? 'animate-spin text-[#147FB3]' : 'text-[#147FB3]'}`} />
           <span>{syncingIncois ? 'INCOIS...' : 'INCOIS OSF'}</span>
         </button>
 
         <button
           onClick={handleSyncImd}
           disabled={syncingIncois || syncingImd || syncingDemo}
-          className="flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-sky-950/60 hover:bg-sky-900/80 border border-sky-700/60 text-sky-300 font-bold text-[9px] font-label-caps transition-all disabled:opacity-50"
+          className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-[#F5F9FC] hover:bg-[#E8F4FA] border border-[#CBD5E1] hover:border-[#147FB3] text-[#123B5D] font-bold text-[10px] font-label-caps transition-all disabled:opacity-50 cursor-pointer shadow-xs"
           title="Query official IMD weather & marine warning bulletin"
         >
-          <RefreshCw className={`w-2.5 h-2.5 ${syncingImd ? 'animate-spin text-sky-400' : ''}`} />
+          <RefreshCw className={`w-3 h-3 ${syncingImd ? 'animate-spin text-[#4DB7D8]' : 'text-[#4DB7D8]'}`} />
           <span>{syncingImd ? 'IMD...' : 'IMD WEATHER'}</span>
         </button>
 
         <button
           onClick={handleSyncDemo}
           disabled={syncingIncois || syncingImd || syncingDemo}
-          className="flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-800/80 border border-slate-700/60 text-slate-300 font-bold text-[9px] font-label-caps transition-all disabled:opacity-50"
+          className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl bg-[#F5F9FC] hover:bg-[#E8F4FA] border border-[#CBD5E1] text-[#587083] font-bold text-[10px] font-label-caps transition-all disabled:opacity-50 cursor-pointer shadow-xs"
           title="Reset to deterministic baseline snapshot"
         >
-          <RefreshCw className={`w-2.5 h-2.5 ${syncingDemo ? 'animate-spin text-slate-400' : ''}`} />
+          <RefreshCw className={`w-3 h-3 ${syncingDemo ? 'animate-spin text-[#587083]' : 'text-[#587083]'}`} />
           <span>{syncingDemo ? 'DEMO...' : 'DEMO'}</span>
         </button>
       </div>
 
       {/* Status Notice if present */}
       {statusMessage && (
-        <div className="text-[9px] font-telemetry px-2 py-1 rounded bg-slate-900/90 border border-cyan-900/50 text-slate-300 leading-tight">
+        <div className="p-2.5 rounded-xl bg-[#E8F4FA] border border-[#CFE6F3] text-xs text-[#123B5D] font-telemetry animate-fade-in">
           {statusMessage}
         </div>
       )}
 
-      {/* Active Marine Warning Banner (if IMD alert present) */}
-      {warningStruct && (
-        <div className={`p-2.5 rounded-lg border text-xs font-telemetry flex flex-col gap-1 ${
-          warningStruct.warningLevel === 'RED' || warningStruct.warningLevel === 'WARNING'
-            ? 'bg-rose-950/60 border-rose-600/80 text-rose-200'
-            : warningStruct.warningLevel === 'ORANGE' || warningStruct.warningLevel === 'ALERT'
-            ? 'bg-amber-950/60 border-amber-600/80 text-amber-200'
-            : warningStruct.warningLevel === 'YELLOW' || warningStruct.warningLevel === 'WATCH'
-            ? 'bg-yellow-950/50 border-yellow-600/60 text-yellow-200'
-            : 'bg-emerald-950/40 border-emerald-700/40 text-emerald-300'
-        }`}>
-          <div className="flex items-center justify-between">
-            <span className="font-bold font-label-caps flex items-center gap-1 text-[10px]">
-              <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-              IMD BULLETIN: {warningStruct.warningLevel || 'GREEN'}
-            </span>
-            <span className="text-[9px] font-semibold opacity-80">
-              {warningStruct.validUntil ? `Until ${new Date(warningStruct.validUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} IST` : 'ACTIVE'}
-            </span>
+      {/* Observations Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
+        {loading ? (
+          <div className="col-span-full py-8 text-center text-xs text-[#587083] flex items-center justify-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin text-[#147FB3]" />
+            <span>Loading observations from PostGIS database...</span>
           </div>
-          <p className="text-[10px] leading-tight opacity-90">
-            {warningStruct.advisoryText || 'No severe weather warning issued. Sea condition moderate.'}
-          </p>
-          {warningStruct.isFishermenAdvisedToAvoidSea && (
-            <span className="text-[9px] font-bold text-rose-300 mt-0.5">
-              ⚠ FISHERMEN ADVISED NOT TO VENTURE INTO OPEN SEA
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Observations Grid / Skeletons */}
-      {loading ? (
-        <div className="grid grid-cols-2 gap-2 py-2">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+        ) : observations.length > 0 ? (
+          observations.map((obs: NormalizedObservationContract) => (
             <div
-              key={i}
-              className="p-2.5 rounded-lg bg-slate-900/40 border border-slate-800 animate-pulse flex flex-col gap-1.5"
+              key={obs.id}
+              className="p-3 rounded-xl bg-[#F5F9FC] border border-[#D8E5EC] flex flex-col justify-between gap-1 transition hover:border-[#147FB3]"
             >
-              <div className="h-2 bg-slate-800 rounded w-16" />
-              <div className="h-4 bg-slate-700 rounded w-20" />
-              <div className="h-2 bg-slate-800 rounded w-24" />
-            </div>
-          ))}
-        </div>
-      ) : observations.length > 0 ? (
-        <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
-          {observations
-            .filter((obs) => obs.variable_name !== 'imd_marine_warning')
-            .map((obs: NormalizedObservationContract) => (
-              <div
-                key={obs.id}
-                className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800/90 flex flex-col gap-1 hover:border-cyan-500/50 transition-all group relative"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 truncate">
-                    {getVariableIcon(obs.variable_name)}
-                    <span className="text-[9px] font-label-caps text-slate-300 truncate max-w-[80px] font-semibold">
-                      {formatVarTitle(obs.variable_name)}
-                    </span>
-                  </div>
-                  <span
-                    className={`text-[8px] font-telemetry px-1 py-0.2 rounded font-bold ${
-                      obs.status === 'LIVE'
-                        ? 'text-emerald-400 bg-emerald-950/60 border border-emerald-800/40'
-                        : 'text-cyan-400 bg-cyan-950/40'
-                    }`}
-                  >
-                    {obs.status === 'LIVE' ? 'LIVE' : obs.quality_level}
-                  </span>
-                </div>
-
-                <div className="text-sm font-bold text-slate-100 font-telemetry tracking-tight">
-                  {obs.numeric_value !== null && obs.numeric_value !== undefined
-                    ? `${obs.numeric_value} ${obs.unit || ''}`
-                    : 'RECORDED'}
-                </div>
-
-                <div className="flex items-center justify-between text-[8px] font-telemetry text-slate-500">
-                  <span className="truncate">
-                    {new Date(obs.observed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} UTC
-                  </span>
-                  <span className="text-slate-400 truncate max-w-[70px]">
-                    {((obs.raw_metadata as Record<string, unknown>)?.agency as string) ||
-                      (obs.category === 'OCEAN' ? 'INCOIS' : 'IMD')}
-                  </span>
-                </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-[#587083] uppercase truncate max-w-[90px]">
+                  {formatVarTitle(obs.variable_name)}
+                </span>
+                {getVariableIcon(obs.variable_name)}
               </div>
-            ))}
-        </div>
-      ) : (
-        <div className="p-4 rounded-lg bg-slate-900/40 border border-slate-800/80 text-center flex flex-col items-center gap-2">
-          <AlertCircle className="w-5 h-5 text-amber-400" />
-          <p className="text-xs text-slate-300 font-medium">No persisted observation records found.</p>
-          <div className="flex gap-2">
-            <button
-              onClick={handleSyncIncois}
-              disabled={syncingIncois}
-              className="px-2.5 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-label-caps rounded transition-colors"
-            >
-              INGEST INCOIS
-            </button>
-            <button
-              onClick={handleSyncImd}
-              disabled={syncingImd}
-              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs font-label-caps rounded transition-colors"
-            >
-              INGEST IMD
-            </button>
-            <button
-              onClick={handleSyncDemo}
-              disabled={syncingDemo}
-              className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs font-label-caps rounded transition-colors"
-            >
-              DEMO
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* Provenance Footnote */}
-      <div className="pt-1.5 border-t border-slate-800/60 flex items-center justify-between text-[9px] font-telemetry text-slate-500">
-        <span>INCOIS OSF · IMD Coastal Weather</span>
-        <div className="flex gap-2">
-          <a
-            href="https://incois.gov.in"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-cyan-400 hover:underline flex items-center gap-0.5"
-          >
-            INCOIS <ExternalLink className="w-2.5 h-2.5" />
-          </a>
-          <span>•</span>
-          <a
-            href="https://mausam.imd.gov.in"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sky-400 hover:underline flex items-center gap-0.5"
-          >
-            IMD <ExternalLink className="w-2.5 h-2.5" />
-          </a>
-        </div>
+              <div className="text-sm font-bold text-[#123B5D] font-mono">
+                {obs.numeric_value !== null && obs.numeric_value !== undefined ? (
+                  <>
+                    {obs.numeric_value} {obs.unit || ''}
+                  </>
+                ) : (
+                  <span className="text-xs font-semibold text-[#587083]">Active</span>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between text-[9px] text-[#7E93A3] pt-1 border-t border-[#EDF5F8] font-telemetry">
+                <span className="truncate max-w-[65px]">{obs.dataset_identifier.replace('incois_', '').replace('imd_', '')}</span>
+                <span className={`px-1 rounded font-bold ${obs.status === 'LIVE' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-200 text-slate-700'}`}>
+                  {obs.status}
+                </span>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="col-span-full py-6 text-center text-xs text-[#587083]">
+            No observation records currently persisted for {activeRegion.name}. Click Ingestion buttons above.
+          </div>
+        )}
       </div>
     </div>
   );

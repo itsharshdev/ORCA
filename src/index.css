@@ -1,48 +1,52 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-background: #071424;
-  --color-surface: #071424;
-  --color-surface-dim: #071424;
-  --color-surface-bright: #2e3a4b;
-  --color-surface-container-lowest: #030f1e;
-  --color-surface-container-low: #101c2c;
-  --color-surface-container: #142031;
-  --color-surface-container-high: #1f2b3c;
-  --color-surface-container-highest: #2a3547;
-  --color-surface-glass: rgba(22, 33, 54, 0.75);
+  --color-background: #F5F9FC;
+  --color-surface: #FFFFFF;
+  --color-surface-secondary: #EDF5F8;
+  --color-surface-soft-blue: #E8F4FA;
+  --color-surface-navy: #123B5D;
+  --color-surface-darkest: #0B253A;
 
-  --color-primary: #b9c7e4;
-  --color-primary-container: #0a192f;
-  --color-secondary: #46eaed;
-  --color-secondary-container: #00cdd0;
-  --color-tertiary: #accae8;
-  
-  --color-on-surface: #d7e3fa;
-  --color-on-surface-variant: #94a3b8;
-  --color-outline: #8f9097;
-  --color-outline-variant: #44474d;
+  --color-primary: #147FB3;
+  --color-primary-navy: #123B5D;
+  --color-sky-blue: #4DB7D8;
+  --color-seafoam: #63C9B1;
+  --color-coral: #F47C6C;
+  --color-sun: #F2B84B;
 
-  --color-status-go: #2ecc71;
-  --color-status-caution: #f1c40f;
-  --color-status-avoid: #e74c3c;
-  --color-map-accent: #14b8a6;
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #94a3b8;
+  --color-text-primary: #102B40;
+  --color-text-secondary: #587083;
+  --color-text-muted: #7E93A3;
+  --color-border-subtle: #D8E5EC;
+
+  --color-status-go: #2E9B73;
+  --color-status-caution: #D99520;
+  --color-status-avoid: #D65B5B;
+  --color-status-insufficient: #6F7F8F;
 
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
 :root {
-  --bg-primary: #071424;
-  --bg-surface: #0a192f;
-  --bg-surface-glass: rgba(22, 33, 54, 0.85);
-  --accent-cyan: #46eaed;
-  --status-go: #2ecc71;
-  --status-caution: #f1c40f;
-  --status-avoid: #e74c3c;
+  --bg-marine: #F5F9FC;
+  --surface-white: #FFFFFF;
+  --surface-subtle: #EDF5F8;
+  --navy-deep: #123B5D;
+  --blue-ocean: #147FB3;
+  --blue-sky: #4DB7D8;
+  --seafoam: #63C9B1;
+  --coral: #F47C6C;
+  --text-main: #102B40;
+  --text-muted: #587083;
+  --border-card: #D8E5EC;
+
+  --status-go: #2E9B73;
+  --status-caution: #D99520;
+  --status-avoid: #D65B5B;
+  --status-insufficient: #6F7F8F;
 }
 
 * {
@@ -53,8 +57,8 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background-color: #071424;
-  color: #d7e3fa;
+  background-color: #F5F9FC;
+  color: #102B40;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   min-height: 100vh;
   width: 100%;
@@ -62,7 +66,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Typography Helpers matching Stitch Design Spec */
+/* Custom Typography Helpers matching Tidal Light Spec */
 .font-telemetry {
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: -0.01em;
@@ -83,78 +87,69 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Glassmorphism Panel styles */
-.hud-glass {
-  background: rgba(14, 26, 45, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.15);
+/* Tidal Light Card & Glass styles */
+.tidal-card {
+  background: #FFFFFF;
+  border: 1px solid #D8E5EC;
+  box-shadow: 0 2px 8px -2px rgba(18, 59, 93, 0.06), 0 1px 4px -1px rgba(18, 59, 93, 0.04);
 }
 
-.hud-glass-borderless {
-  background: rgba(14, 26, 45, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+.tidal-card-hover {
+  background: #FFFFFF;
+  border: 1px solid #D8E5EC;
+  box-shadow: 0 2px 8px -2px rgba(18, 59, 93, 0.06), 0 1px 4px -1px rgba(18, 59, 93, 0.04);
+  transition: all 0.2s ease-in-out;
 }
 
-/* Leaflet Dark Marine Theme Overrides */
+.tidal-card-hover:hover {
+  border-color: #147FB3;
+  box-shadow: 0 8px 20px -4px rgba(20, 127, 179, 0.12), 0 3px 6px -2px rgba(20, 127, 179, 0.08);
+  transform: translateY(-1px);
+}
+
+.tidal-soft-blue {
+  background: #E8F4FA;
+  border: 1px solid #CFE6F3;
+}
+
+.tidal-navy-surface {
+  background: #123B5D;
+  color: #FFFFFF;
+}
+
+/* Leaflet Tidal Light Theme Overrides */
 .leaflet-container {
-  background: #071424 !important;
+  background-color: #E2EFF7 !important;
   font-family: 'Inter', sans-serif !important;
-  width: 100%;
-  height: 100%;
-}
-
-.leaflet-tile-pane {
-  filter: brightness(0.8) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
-}
-
-.leaflet-control-zoom {
-  border: 1px solid rgba(148, 163, 184, 0.2) !important;
-  border-radius: 8px !important;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
-}
-
-.leaflet-control-zoom a {
-  background-color: #0e1a2d !important;
-  color: #46eaed !important;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2) !important;
-}
-
-.leaflet-control-zoom a:hover {
-  background-color: #1f2b3c !important;
-  color: #ffffff !important;
 }
 
 .leaflet-popup-content-wrapper {
-  background: #0e1a2d !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(70, 234, 237, 0.4) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  background: #FFFFFF !important;
+  color: #102B40 !important;
+  border: 1px solid #D8E5EC !important;
+  box-shadow: 0 10px 25px -5px rgba(18, 59, 93, 0.15) !important;
+  border-radius: 12px !important;
 }
 
 .leaflet-popup-tip {
-  background: #0e1a2d !important;
-  border: 1px solid rgba(70, 234, 237, 0.4) !important;
+  background: #FFFFFF !important;
 }
 
-/* Custom Scrollbar for Intelligence Panels */
+/* Custom Scrollbar for Tidal Light */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(7, 20, 36, 0.5);
+  background: #EDF5F8;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
-  border-radius: 3px;
+  background: #CBD5E1;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(70, 234, 237, 0.5);
+  background: #94A3B8;
 }

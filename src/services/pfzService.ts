@@ -42,12 +42,7 @@ export interface PfzResponseUI {
   error?: string | null;
 }
 
-const getApiBaseUrl = (): string => {
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
-  }
-  return import.meta.env.VITE_API_BASE_URL || '/api/v1';
-};
+import { getApiBaseUrl } from './apiConfig';
 
 export const pfzService = {
   /**

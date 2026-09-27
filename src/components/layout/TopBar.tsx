@@ -44,36 +44,44 @@ export const TopBar: React.FC = () => {
 
   return (
     <>
-      <header className="h-14 border-b border-slate-800 bg-[#071424]/95 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between z-30 shrink-0 select-none">
+      <header className="h-14 border-b border-[#D8E5EC] bg-white px-3 sm:px-5 flex items-center justify-between z-30 shrink-0 select-none shadow-[0_1px_3px_rgba(18,59,93,0.05)]">
         {/* Left: Brand + Region Switcher */}
         <div className="flex items-center gap-3">
           {/* ORCA Logo Brand */}
-          <div className="flex items-center gap-2 pr-2 border-r border-slate-800 hidden sm:flex">
-            <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-              <Anchor className="w-4 h-4" />
+          <div 
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 pr-3 border-r border-[#D8E5EC] cursor-pointer"
+          >
+            <div className="w-8 h-8 rounded-lg bg-[#E8F4FA] border border-[#CFE6F3] flex items-center justify-center text-[#147FB3] shadow-sm">
+              <Anchor className="w-4 h-4 text-[#147FB3]" />
             </div>
-            <span className="font-display-decision font-bold text-sm tracking-wider text-white">
-              ORCA
-            </span>
+            <div className="flex flex-col">
+              <span className="font-display-decision font-black text-base tracking-tight text-[#123B5D]">
+                ORCA
+              </span>
+              <span className="text-[9px] font-semibold text-[#587083] uppercase tracking-wider hidden sm:block">
+                Marine Intelligence
+              </span>
+            </div>
           </div>
 
           {/* Region Selector */}
-          <div className="flex items-center gap-1.5 text-xs font-telemetry text-slate-300">
-            <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+          <div className="flex items-center gap-1.5 text-xs font-telemetry text-[#123B5D]">
+            <MapPin className="w-3.5 h-3.5 text-[#147FB3] shrink-0" />
             <div className="relative inline-flex items-center">
               <select
                 value={activeRegionId}
                 onChange={handleRegionChange}
                 disabled={isOrchestrating}
-                className="bg-slate-900 border border-slate-700/80 hover:border-cyan-500/50 rounded-lg py-1 pl-2.5 pr-7 text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-400 cursor-pointer appearance-none transition-colors"
+                className="bg-[#F5F9FC] border border-[#CBD5E1] hover:border-[#147FB3] rounded-lg py-1 pl-2.5 pr-7 text-xs font-semibold text-[#123B5D] focus:outline-none focus:border-[#147FB3] cursor-pointer appearance-none transition-colors shadow-xs"
               >
                 <option value="maharashtra">Maharashtra (Alibaug / Mumbai)</option>
                 <option value="tamil_nadu">Tamil Nadu (Nagapattinam / Bay of Bengal)</option>
               </select>
-              <ChevronDown className="w-3.5 h-3.5 text-cyan-400 absolute right-2 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 text-[#587083] absolute right-2 pointer-events-none" />
             </div>
 
-            <span className="hidden lg:inline text-slate-500">• {activeRegion.seaBody}</span>
+            <span className="hidden lg:inline text-[#587083] font-medium">• {activeRegion.seaBody}</span>
           </div>
         </div>
 
@@ -82,7 +90,7 @@ export const TopBar: React.FC = () => {
           {/* Data Health Pill (Click opens full DataHealthModal) */}
           <button
             onClick={() => setShowHealthModal(true)}
-            className="flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition"
+            className="flex items-center gap-1.5 cursor-pointer hover:opacity-95 transition"
             title="Click to inspect live vs fallback data source audit"
           >
             <DataSourceStatusBar />
@@ -92,18 +100,18 @@ export const TopBar: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setShowRoleMenu(!showRoleMenu)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-label-caps transition cursor-pointer ${roleConfig.badgeStyle}`}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg border border-[#CBD5E1] bg-[#F5F9FC] hover:bg-[#E8F4FA] text-xs font-semibold text-[#123B5D] transition cursor-pointer shadow-xs"
               title="Active user perspective (Click to switch workspace)"
             >
-              <RoleIcon className="w-3.5 h-3.5" />
+              <RoleIcon className="w-3.5 h-3.5 text-[#147FB3]" />
               <span className="font-bold hidden md:inline">{roleConfig.shortLabel}</span>
-              <ChevronDown className="w-3 h-3 opacity-70" />
+              <ChevronDown className="w-3 h-3 text-[#587083]" />
             </button>
 
             {/* Role Switcher Dropdown */}
             {showRoleMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-[#0b1b30] border border-slate-700 rounded-xl shadow-2xl p-2 z-50 flex flex-col gap-1 animate-fade-in">
-                <div className="px-2.5 py-1.5 text-[10px] font-label-caps text-slate-400 border-b border-slate-800">
+              <div className="absolute right-0 mt-2 w-64 bg-white border border-[#D8E5EC] rounded-xl shadow-xl p-2 z-50 flex flex-col gap-1 animate-fade-in">
+                <div className="px-2.5 py-1.5 text-[10px] font-label-caps text-[#587083] border-b border-[#EDF5F8]">
                   SWITCH OPERATIONAL ROLE
                 </div>
                 {AVAILABLE_ROLES.map((rKey) => {
@@ -114,22 +122,22 @@ export const TopBar: React.FC = () => {
                     <button
                       key={rKey}
                       onClick={() => handleRoleChange(rKey)}
-                      className={`w-full p-2 rounded-lg text-left text-xs flex items-center justify-between transition ${
+                      className={`w-full p-2 rounded-lg text-left text-xs flex items-center justify-between transition cursor-pointer ${
                         isCur
-                          ? 'bg-cyan-500/20 text-white font-bold border border-cyan-500/40'
-                          : 'hover:bg-slate-800 text-slate-300'
+                          ? 'bg-[#E8F4FA] text-[#123B5D] font-bold border border-[#CFE6F3]'
+                          : 'hover:bg-[#F5F9FC] text-[#587083]'
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4 text-cyan-400 shrink-0" />
+                        <Icon className="w-4 h-4 text-[#147FB3] shrink-0" />
                         <div>
-                          <div className="text-xs">{rConf.shortLabel}</div>
-                          <div className="text-[10px] text-slate-400 font-normal truncate max-w-[140px]">
+                          <div className="text-xs text-[#123B5D] font-semibold">{rConf.shortLabel}</div>
+                          <div className="text-[10px] text-[#587083] font-normal truncate max-w-[140px]">
                             {rConf.tagline}
                           </div>
                         </div>
                       </div>
-                      {isCur && <UserCheck className="w-3.5 h-3.5 text-cyan-400" />}
+                      {isCur && <UserCheck className="w-3.5 h-3.5 text-[#147FB3]" />}
                     </button>
                   );
                 })}
@@ -141,20 +149,20 @@ export const TopBar: React.FC = () => {
           <div
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-label-caps border ${
               isOnline
-                ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/40'
-                : 'bg-rose-950/40 text-rose-400 border-rose-800/40'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'bg-rose-50 text-rose-700 border-rose-200'
             }`}
             title={isOnline ? 'Online (Coastal Mesh / 4G / Satellite)' : 'Offline (Local Pre-cached Mode)'}
           >
             {isOnline ? (
               <>
-                <Wifi className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="hidden sm:inline">ONLINE</span>
+                <Wifi className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="hidden sm:inline font-bold">ONLINE</span>
               </>
             ) : (
               <>
-                <WifiOff className="w-3.5 h-3.5 text-rose-400" />
-                <span className="hidden sm:inline">OFFLINE</span>
+                <WifiOff className="w-3.5 h-3.5 text-rose-600" />
+                <span className="hidden sm:inline font-bold">OFFLINE</span>
               </>
             )}
           </div>

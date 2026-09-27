@@ -184,7 +184,7 @@ export const DataHealthModal: React.FC<DataHealthModalProps> = ({ isOpen, onClos
         <div className="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between text-xs">
           <span className="text-slate-400 font-telemetry flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            Zero-Hallucination Safety Invariant
+            Deterministic Safety Invariant
           </span>
           <button
             onClick={onClose}

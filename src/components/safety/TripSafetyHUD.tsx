@@ -103,68 +103,68 @@ export const TripSafetyHUD: React.FC<TripSafetyHUDProps> = ({
 
   return (
     <div
-      className={`hud-glass rounded-xl p-4 border shadow-xl flex flex-col gap-3 relative overflow-hidden ${
+      className={`bg-white rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col gap-4 relative overflow-hidden transition-all ${
         isRestricted
-          ? 'border-rose-500/40 bg-rose-950/10'
+          ? 'border-rose-300 bg-rose-50/30'
           : isCaution
-          ? 'border-amber-500/40 bg-amber-950/10'
-          : 'border-emerald-500/30 bg-[#071424]/90'
+          ? 'border-amber-300 bg-amber-50/20'
+          : 'border-[#D8E5EC] bg-white'
       } ${className}`}
     >
       {/* Header / Trip Identity */}
-      <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+      <div className="flex items-center justify-between border-b border-[#EDF5F8] pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-[#E8F4FA] border border-[#CFE6F3] text-[#147FB3]">
             <Anchor className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-[10px] text-slate-400 uppercase font-telemetry tracking-wider">
-              YOUR TRIP
+            <div className="text-[10px] text-[#587083] uppercase font-telemetry tracking-wider font-bold">
+              YOUR TRIP CONTEXT
             </div>
-            <h3 className="text-sm font-bold text-white tracking-wide font-display-decision">
-              {vessel.name}
+            <h3 className="text-base font-bold text-[#123B5D] tracking-tight font-display-decision">
+              {vessel.name} ({vessel.lengthMeters}m)
             </h3>
           </div>
         </div>
 
         <div className="text-right text-[11px] font-telemetry">
-          <span className="text-cyan-300 font-bold">{departureTime} departure</span>
-          <span className="text-slate-400 block text-[10px]">{durationHours} hr planned voyage</span>
+          <span className="text-[#147FB3] font-bold">{departureTime} departure</span>
+          <span className="text-[#587083] block text-[10px]">{durationHours} hr planned voyage</span>
         </div>
       </div>
 
       {/* 2-Column: Fishing Opportunity (Left) vs Deterministic Safety (Right) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Fishing Opportunity Signal */}
-        <div className="bg-slate-900/70 rounded-lg p-2.5 border border-slate-800 flex flex-col justify-between">
+        <div className="bg-[#F5F9FC] rounded-xl p-3.5 border border-[#D8E5EC] flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-label-caps text-emerald-400 font-bold uppercase flex items-center gap-1">
-                <Compass className="w-3 h-3" />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-label-caps text-[#2E9B73] font-bold uppercase flex items-center gap-1">
+                <Compass className="w-3.5 h-3.5 text-[#2E9B73]" />
                 FISHING OPPORTUNITY
               </span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">
+              <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold font-mono">
                 POTENTIAL ZONE
               </span>
             </div>
-            <div className="mt-1.5">
-              <div className="text-xs font-bold text-slate-200">
+            <div className="mt-1">
+              <div className="text-xs font-bold text-[#123B5D]">
                 {nearestPfz?.zoneName || 'Offshore Thermal Front Sector'}
               </div>
-              <div className="text-[11px] font-telemetry text-slate-300 mt-0.5 flex items-center gap-2">
+              <div className="text-[11px] font-telemetry text-[#587083] mt-0.5 flex items-center gap-2 font-medium">
                 <span>{nearestPfz?.distanceKmFromPort || 18.5} km</span>
                 <span>•</span>
                 <span className="flex items-center gap-0.5">
-                  <Navigation className="w-2.5 h-2.5 inline-block text-cyan-400" />
+                  <Navigation className="w-2.5 h-2.5 inline-block text-[#147FB3]" />
                   WSW ({nearestPfz?.bearingDegrees || 245}°)
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="mt-2 pt-1.5 border-t border-slate-800/80 text-[10px] text-slate-400 flex items-center justify-between">
-            <span>Valid until:</span>
-            <strong className="text-slate-300 font-mono">
+          <div className="mt-2.5 pt-2 border-t border-[#D8E5EC] text-[10px] text-[#587083] flex items-center justify-between font-telemetry">
+            <span>Advisory Valid:</span>
+            <strong className="text-[#123B5D]">
               {nearestPfz?.validUntil ? new Date(nearestPfz.validUntil).toLocaleDateString() : '28 Sep 2026'}
             </strong>
           </div>
@@ -172,56 +172,56 @@ export const TripSafetyHUD: React.FC<TripSafetyHUDProps> = ({
 
         {/* GIS Safety Clearance Status */}
         <div
-          className={`rounded-lg p-2.5 border flex flex-col justify-between ${
+          className={`rounded-xl p-3.5 border flex flex-col justify-between ${
             isRestricted
-              ? 'bg-rose-950/40 border-rose-800/60 text-rose-200'
+              ? 'bg-rose-50 border-rose-300 text-rose-900'
               : isCaution
-              ? 'bg-amber-950/40 border-amber-800/60 text-amber-200'
-              : 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200'
+              ? 'bg-amber-50 border-amber-300 text-amber-950'
+              : 'bg-emerald-50 border-emerald-300 text-emerald-950'
           }`}
         >
           <div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[10px] font-label-caps font-bold uppercase flex items-center gap-1">
                 {isRestricted ? (
-                  <ShieldAlert className="w-3 h-3 text-rose-400" />
+                  <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
                 ) : isCaution ? (
-                  <AlertTriangle className="w-3 h-3 text-amber-400" />
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
                 ) : (
-                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 )}
                 SAFETY STATUS
               </span>
               <span
-                className={`text-[9px] px-1.5 py-0.5 rounded font-bold font-mono uppercase ${
+                className={`text-[9px] px-2 py-0.5 rounded font-bold font-mono uppercase ${
                   isRestricted
-                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                    ? 'bg-rose-100 text-rose-800 border border-rose-300'
                     : isCaution
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                 }`}
               >
                 {gisResult ? gisResult.status : loading ? 'CHECKING...' : 'CLEAR'}
               </span>
             </div>
 
-            <div className="text-[11px] font-medium mt-1.5 leading-snug">
+            <div className="text-xs font-bold mt-1 leading-snug">
               {isRestricted ? (
-                <span className="text-rose-300 font-bold">CRITICAL: RESTRICTION CONFLICT</span>
+                <span className="text-rose-700 font-bold">CRITICAL: RESTRICTION CONFLICT</span>
               ) : isCaution ? (
-                <span className="text-amber-300">CAUTION: PROXIMITY BUFFER</span>
+                <span className="text-amber-800 font-bold">CAUTION: PROXIMITY BUFFER ACTIVE</span>
               ) : (
-                <span className="text-emerald-300 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  CORRIDOR CLEAR
+                <span className="text-emerald-700 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  CORRIDOR VERIFIED CLEAR
                 </span>
               )}
             </div>
-            <div className="text-[10px] text-slate-300 mt-1">
+            <div className="text-[11px] text-[#587083] mt-1 font-medium">
               {gisResult?.proximityChecks.nearestRestrictedZone ? (
                 <span>
                   Nearest boundary: {gisResult.proximityChecks.nearestRestrictedZone.name} (
-                  {gisResult.proximityChecks.nearestRestrictedZone.distanceKm} km)
+                  {gisResult.proximityChecks.nearestRestrictedZone.distanceKm.toFixed(1)} km)
                 </span>
               ) : (
                 <span>No active spatial hazard or restricted zone intersection.</span>
@@ -229,8 +229,8 @@ export const TripSafetyHUD: React.FC<TripSafetyHUDProps> = ({
             </div>
           </div>
 
-          <div className="mt-2 pt-1.5 border-t border-slate-800/60 flex items-center justify-between text-[10px]">
-            <span className="text-slate-400 font-telemetry">PostGIS Geofence</span>
+          <div className="mt-2.5 pt-2 border-t border-black/10 flex items-center justify-between text-[10px] font-telemetry">
+            <span className="text-[#587083]">PostGIS Geofence</span>
             <span className="font-bold">
               {gisResult?.safetyClearance ? 'CLEARANCE GRANTED' : 'CLEARANCE DENIED'}
             </span>
@@ -239,22 +239,21 @@ export const TripSafetyHUD: React.FC<TripSafetyHUDProps> = ({
       </div>
 
       {/* Safety Precedence Notice */}
-      <div className="bg-slate-900/90 rounded-lg p-2 border border-slate-800 text-[10px] text-slate-300 flex items-start gap-1.5">
-        <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-bold text-white uppercase font-label-caps">
+      <div className="bg-[#F5F9FC] rounded-xl p-3 border border-[#D8E5EC] text-xs text-[#102B40] flex items-start gap-2">
+        <Info className="w-4 h-4 text-[#147FB3] shrink-0 mt-0.5" />
+        <div className="leading-relaxed">
+          <span className="font-bold text-[#123B5D] uppercase font-label-caps">
             SAFETY PRECEDENCE PRINCIPLE:
           </span>{' '}
-          PFZ indicates fishing opportunity. Spatial boundaries and weather warnings represent hard
-          constraints. Opportunity NEVER overrides safety constraints.
+          PFZ coordinates represent pelagic fishing opportunities. Naval restricted zones and marine warnings represent hard safety constraints. Opportunity signals NEVER override safety constraints.
         </div>
       </div>
 
       {/* Action Buttons & Explanation Toggle */}
-      <div className="flex items-center justify-between pt-1 border-t border-slate-800/80">
+      <div className="flex items-center justify-between pt-2 border-t border-[#EDF5F8]">
         <button
           onClick={() => setShowExplanation(!showExplanation)}
-          className="text-[11px] font-bold text-cyan-400 hover:text-white flex items-center gap-1 transition"
+          className="text-xs font-bold text-[#147FB3] hover:text-[#0284C7] flex items-center gap-1 transition cursor-pointer"
         >
           <span>{showExplanation ? 'HIDE DETAILS' : 'WHY THIS VERDICT?'}</span>
           <ChevronRight className={`w-3.5 h-3.5 transition-transform ${showExplanation ? 'rotate-90' : ''}`} />
@@ -262,7 +261,7 @@ export const TripSafetyHUD: React.FC<TripSafetyHUDProps> = ({
 
         <Link
           to={ROUTES.MAP}
-          className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-label-caps tracking-wider transition flex items-center gap-1.5 shadow-md"
+          className="text-xs font-bold px-3.5 py-1.5 rounded-lg bg-[#147FB3] hover:bg-[#0284C7] text-white font-label-caps tracking-wider transition flex items-center gap-1.5 shadow-xs"
         >
           <span>INSPECT ON MAP</span>
           <ExternalLink className="w-3 h-3" />
@@ -271,19 +270,19 @@ export const TripSafetyHUD: React.FC<TripSafetyHUDProps> = ({
 
       {/* Expandable Explanation Panel */}
       {showExplanation && gisResult && (
-        <div className="mt-1 bg-slate-950/80 rounded-lg p-3 border border-slate-800 text-xs flex flex-col gap-2 animate-fade-in">
-          <div className="font-bold text-white text-[11px] uppercase tracking-wider font-label-caps">
+        <div className="bg-[#F5F9FC] rounded-xl p-3.5 border border-[#D8E5EC] text-xs flex flex-col gap-2 animate-fade-in">
+          <div className="font-bold text-[#123B5D] text-[11px] uppercase tracking-wider font-label-caps">
             DETERMINISTIC EVALUATION DETAILS
           </div>
-          <p className="text-slate-300 text-[11px] leading-relaxed">{gisResult.explanation}</p>
+          <p className="text-[#587083] text-xs leading-relaxed">{gisResult.explanation}</p>
 
           {gisResult.opportunityConflict && (
-            <div className="p-2 rounded bg-rose-950/40 border border-rose-800/50 text-[11px] text-rose-300">
+            <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-300 text-xs text-rose-800">
               <strong>Opportunity Conflict:</strong> {gisResult.opportunityConflict.conflictingReason}
             </div>
           )}
 
-          <div className="text-[10px] font-telemetry text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800">
+          <div className="text-[10px] font-telemetry text-[#587083] flex items-center justify-between pt-2 border-t border-[#D8E5EC]">
             <span>Evaluated at: {new Date(gisResult.evaluatedAt).toLocaleTimeString()}</span>
             <span>Rules checked: {gisResult.provenance.rulesEnforced.length}</span>
           </div>

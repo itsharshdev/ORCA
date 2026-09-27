@@ -1,7 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  Compass, 
+  Home,
+  MessageSquareQuote,
   Map, 
   Navigation2, 
   ShieldCheck, 
@@ -14,7 +15,8 @@ import {
   ShieldAlert,
   Activity,
   Database,
-  Ship
+  Ship,
+  User
 } from 'lucide-react';
 import { ROUTES } from '@/routes';
 import { useRole } from '@/hooks/useRole';
@@ -23,30 +25,31 @@ export const Sidebar: React.FC = () => {
   const { activeRole } = useRole();
 
   const primaryModules = [
-    { label: 'Status & Home', path: ROUTES.DASHBOARD, icon: Compass },
-    { label: 'Trip Planner', path: ROUTES.MISSION, icon: Navigation2, tag: 'Plan' },
-    { label: 'Marine Map', path: ROUTES.MAP, icon: Map },
-    { label: 'Alert Center', path: ROUTES.ALERTS, icon: Bell, tag: 'Live' },
-    { label: 'Decision Audit', path: ROUTES.DECISIONS, icon: ShieldCheck, tag: 'Rules' },
+    { label: 'Fisherman Home', path: ROUTES.DASHBOARD, icon: Home },
+    { label: 'Ask ORCA', path: ROUTES.ASK, icon: MessageSquareQuote, tag: 'AI Core' },
+    { label: 'Mission Planner', path: ROUTES.MISSION, icon: Navigation2, tag: 'Trip' },
+    { label: 'Tactical Marine Map', path: ROUTES.MAP, icon: Map },
+    { label: 'Alert Center', path: ROUTES.ALERTS, icon: Bell, tag: 'Alerts' },
+    { label: 'Decision Detail', path: ROUTES.DECISIONS, icon: ShieldCheck, tag: 'Audit' },
     { label: 'Mission History', path: ROUTES.HISTORY, icon: History },
   ];
 
   const roleWorkspaces = [
-    { label: 'Fisherman Workspace', path: ROUTES.FISHERMAN, icon: Anchor, role: 'FISHERMAN' },
+    { label: 'Fisherman View', path: ROUTES.FISHERMAN, icon: Anchor, role: 'FISHERMAN' },
     { label: 'Coastal Authority', path: ROUTES.AUTHORITY, icon: ShieldAlert, role: 'COASTAL_AUTHORITY' },
-    { label: 'Disaster Mgmt (NDRF)', path: ROUTES.DISASTER, icon: Activity, role: 'DISASTER_MANAGER' },
-    { label: 'Marine Research', path: ROUTES.RESEARCHER, icon: Database, role: 'RESEARCHER' },
-    { label: 'Maritime Operator', path: ROUTES.OPERATOR, icon: Ship, role: 'MARITIME_OPERATOR' },
+    { label: 'Disaster Management', path: ROUTES.DISASTER, icon: Activity, role: 'DISASTER_MANAGER' },
+    { label: 'Marine Research', path: ROUTES.RESEARCH, icon: Database, role: 'RESEARCHER' },
+    { label: 'Fleet Operator', path: ROUTES.OPERATOR, icon: Ship, role: 'MARITIME_OPERATOR' },
   ];
 
   return (
-    <aside className="hidden md:flex flex-col w-64 hud-glass border-r border-slate-800/80 shrink-0 select-none z-30">
+    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#D8E5EC] shrink-0 select-none z-30 shadow-[1px_0_4px_rgba(18,59,93,0.03)]">
       {/* Navigation List */}
       <div className="p-3 flex-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
         {/* Primary Operational Modules */}
         <div className="flex flex-col gap-1">
-          <div className="px-3 py-1 text-[10px] font-label-caps text-slate-500 tracking-wider">
-            PRIMARY MODULES
+          <div className="px-3 py-1.5 text-[10px] font-label-caps text-[#7E93A3] tracking-wider font-bold">
+            OPERATIONAL MODULES
           </div>
 
           {primaryModules.map((item) => {
@@ -57,10 +60,10 @@ export const Sidebar: React.FC = () => {
                 to={item.path}
                 end={item.path === ROUTES.DASHBOARD}
                 className={({ isActive }) => `
-                  flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-all group
+                  flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group
                   ${isActive 
-                    ? 'bg-cyan-500/15 text-cyan-300 border-l-4 border-cyan-400 font-semibold shadow-[inset_0_0_12px_rgba(70,234,237,0.1)]' 
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border-l-4 border-transparent'
+                    ? 'bg-[#E8F4FA] text-[#147FB3] border-l-4 border-[#147FB3] shadow-xs' 
+                    : 'text-[#587083] hover:text-[#123B5D] hover:bg-[#F5F9FC] border-l-4 border-transparent'
                   }
                 `}
               >
@@ -69,7 +72,7 @@ export const Sidebar: React.FC = () => {
                   <span>{item.label}</span>
                 </div>
                 {item.tag && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-telemetry">
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#EDF5F8] text-[#587083] font-telemetry font-bold">
                     {item.tag}
                   </span>
                 )}
@@ -79,8 +82,8 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* Role Workspaces */}
-        <div className="flex flex-col gap-1 pt-2 border-t border-slate-800/80">
-          <div className="px-3 py-1 text-[10px] font-label-caps text-slate-500 tracking-wider">
+        <div className="flex flex-col gap-1 pt-3 border-t border-[#EDF5F8]">
+          <div className="px-3 py-1 text-[10px] font-label-caps text-[#7E93A3] tracking-wider font-bold">
             ROLE WORKSPACES
           </div>
 
@@ -94,17 +97,17 @@ export const Sidebar: React.FC = () => {
                 className={({ isActive }) => `
                   flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-all group
                   ${isActive 
-                    ? 'bg-purple-500/15 text-purple-300 border-l-4 border-purple-400 font-semibold shadow-[inset_0_0_12px_rgba(168,85,247,0.1)]' 
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border-l-4 border-transparent'
+                    ? 'bg-[#E8F4FA] text-[#123B5D] border-l-4 border-[#123B5D] font-bold shadow-xs' 
+                    : 'text-[#587083] hover:text-[#123B5D] hover:bg-[#F5F9FC] border-l-4 border-transparent'
                   }
                 `}
               >
                 <div className="flex items-center gap-2.5">
-                  <Icon className="w-4 h-4 text-slate-400 group-hover:text-cyan-400" />
+                  <Icon className="w-4 h-4 text-[#587083] group-hover:text-[#147FB3]" />
                   <span className="truncate">{ws.label}</span>
                 </div>
                 {isCurrentRole && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-[#147FB3]" />
                 )}
               </NavLink>
             );
@@ -112,38 +115,49 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Vessel Quick Profile Telemetry */}
-      <div className="p-3 mx-3 mb-2 rounded-xl bg-slate-900/60 border border-slate-800/80 text-xs">
-        <div className="flex items-center justify-between text-[11px] font-label-caps text-slate-400 mb-1">
+      {/* Active Vessel Profile Badge */}
+      <div className="p-3 mx-3 mb-2 rounded-xl bg-[#F5F9FC] border border-[#D8E5EC] text-xs">
+        <div className="flex items-center justify-between text-[10px] font-label-caps text-[#7E93A3] mb-1 font-bold">
           <span className="flex items-center gap-1">
-            <SlidersHorizontal className="w-3 h-3 text-cyan-400" />
+            <SlidersHorizontal className="w-3 h-3 text-[#147FB3]" />
             ACTIVE CRAFT
           </span>
-          <span className="text-cyan-400 font-telemetry text-[10px]">WGS84</span>
+          <span className="text-[#147FB3] font-telemetry text-[10px]">WGS84</span>
         </div>
-        <div className="font-semibold text-slate-200 truncate">Matsya Sagar 1</div>
-        <div className="text-[11px] text-slate-400 font-telemetry">8.5m • Sassoon Docks Terminal</div>
+        <div className="font-bold text-[#123B5D] truncate">Matsya Sagar 1</div>
+        <div className="text-[11px] text-[#587083] font-telemetry">8.5m • Sassoon Docks Terminal</div>
       </div>
 
-      {/* System Settings & Sign Out */}
-      <div className="p-3 border-t border-slate-800/60 flex flex-col gap-1">
+      {/* System Settings & User Profile */}
+      <div className="p-3 border-t border-[#EDF5F8] flex flex-col gap-1">
+        <NavLink
+          to={ROUTES.PROFILE}
+          className={({ isActive }) => `
+            flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
+            ${isActive ? 'text-[#147FB3] font-bold bg-[#E8F4FA]' : 'text-[#587083] hover:text-[#123B5D] hover:bg-[#F5F9FC]'}
+          `}
+        >
+          <User className="w-4 h-4 text-[#587083]" />
+          <span>Profile &amp; Vessel</span>
+        </NavLink>
+
         <NavLink
           to={ROUTES.SETTINGS}
           className={({ isActive }) => `
-            flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-colors
-            ${isActive ? 'text-cyan-300 font-bold bg-cyan-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'}
+            flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
+            ${isActive ? 'text-[#147FB3] font-bold bg-[#E8F4FA]' : 'text-[#587083] hover:text-[#123B5D] hover:bg-[#F5F9FC]'}
           `}
         >
-          <Settings className="w-4 h-4" />
+          <Settings className="w-4 h-4 text-[#587083]" />
           <span>System Settings</span>
         </NavLink>
 
         <NavLink
           to={ROUTES.LOGIN}
-          className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 transition-colors"
+          className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-[#7E93A3] hover:text-rose-600 hover:bg-rose-50 transition-colors"
         >
           <LogOut className="w-4 h-4" />
-          <span>Exit / Switch Account</span>
+          <span>Switch Account</span>
         </NavLink>
       </div>
     </aside>

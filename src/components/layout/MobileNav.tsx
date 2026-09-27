@@ -1,25 +1,25 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  Compass, 
+  Home,
+  MessageSquareQuote,
   Map, 
   Navigation2, 
-  Bell, 
-  Settings 
+  Bell
 } from 'lucide-react';
 import { ROUTES } from '@/routes';
 
 export const MobileNav: React.FC = () => {
   const navItems = [
-    { label: 'Home', path: ROUTES.DASHBOARD, icon: Compass },
+    { label: 'Home', path: ROUTES.DASHBOARD, icon: Home },
+    { label: 'Ask ORCA', path: ROUTES.ASK, icon: MessageSquareQuote },
     { label: 'Trips', path: ROUTES.MISSION, icon: Navigation2 },
     { label: 'Map', path: ROUTES.MAP, icon: Map },
     { label: 'Alerts', path: ROUTES.ALERTS, icon: Bell },
-    { label: 'Settings', path: ROUTES.SETTINGS, icon: Settings },
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 hud-glass border-t border-slate-800/80 z-50 flex items-center justify-around px-2 select-none safe-area-pb">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-[#D8E5EC] z-50 flex items-center justify-around px-2 select-none shadow-[0_-2px_10px_rgba(18,59,93,0.05)] safe-area-pb">
       {navItems.map((item) => {
         const Icon = item.icon;
         return (
@@ -30,8 +30,8 @@ export const MobileNav: React.FC = () => {
             className={({ isActive }) => `
               flex flex-col items-center justify-center w-14 h-12 rounded-xl text-[10px] font-label-caps transition-all
               ${isActive 
-                ? 'text-cyan-300 bg-cyan-500/15 border border-cyan-400/30 font-bold scale-105 shadow-[0_0_10px_rgba(70,234,237,0.2)]' 
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'text-[#147FB3] bg-[#E8F4FA] font-bold scale-105' 
+                : 'text-[#587083] hover:text-[#123B5D]'
               }
             `}
           >

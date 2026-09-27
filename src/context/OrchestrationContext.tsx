@@ -7,6 +7,7 @@ import type {
 } from '@/types/agents';
 import type { RegionId } from '@/data';
 import { executeMultiAgentOrchestration } from '@/orchestration/agentOrchestrator';
+import { orcaQueryService } from '@/services/orcaQueryService';
 import { OrchestrationContext } from './orchestrationContextDef';
 
 const initialOrchestration: OrchestrationPackage = {
@@ -260,7 +261,188 @@ export const OrchestrationProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     try {
-      const result = await executeMultiAgentOrchestration(
+      // Step 1: Try backend /orca/query endpoint
+      const res = await orcaQueryService.queryOrca({
+        queryText: query,
+        regionId,
+        structuredMission: {
+          activity: 'FISHING',
+          departureTime: departureOverride || '05:45 IST',
+          durationHours: durationOverride || 5,
+          sectorId: regionId,
+        },
+      });
+
+      // Step 2: Map backend OrcaQueryResponse to frontend OrchestrationPackage
+      const mappedPackage: OrchestrationPackage = {
+        orchestrationId: res.queryId,
+        requestedQuery: query,
+        timestamp: new Date(res.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        executionTimeMs: res.executionTimeMs,
+        analysisStatus: 'ready',
+        planner: {
+          agentId: 'planner',
+          agentName: res.agentTrace.planner.agentName,
+          role: res.agentTrace.planner.role,
+          status: 'completed',
+          startedAt: res.agentTrace.planner.startedAt,
+          completedAt: res.agentTrace.planner.completedAt,
+          summary: res.agentTrace.planner.summary,
+          data: res.agentTrace.planner.data as any,
+          evidence: res.agentTrace.planner.evidence.map((e) => ({
+            key: e.key,
+            label: e.label,
+            value: e.observedValue,
+            impact: e.impact.toLowerCase() as any,
+            provenance: {
+              source: e.provenance.source,
+              timestamp: e.provenance.observedAt,
+              status: e.provenance.status.toLowerCase() as any,
+            },
+          })),
+          confidence: res.agentTrace.planner.confidenceScore,
+          sourceStatus: res.agentTrace.planner.provenanceStatus.toLowerCase() as any,
+        },
+        ocean: {
+          agentId: 'ocean',
+          agentName: res.agentTrace.oceanography.agentName,
+          role: res.agentTrace.oceanography.role,
+          status: 'completed',
+          startedAt: res.agentTrace.oceanography.startedAt,
+          completedAt: res.agentTrace.oceanography.completedAt,
+          summary: res.agentTrace.oceanography.summary,
+          data: res.agentTrace.oceanography.data as any,
+          evidence: res.agentTrace.oceanography.evidence.map((e) => ({
+            key: e.key,
+            label: e.label,
+            value: e.observedValue,
+            impact: e.impact.toLowerCase() as any,
+            provenance: {
+              source: e.provenance.source,
+              timestamp: e.provenance.observedAt,
+              status: e.provenance.status.toLowerCase() as any,
+            },
+          })),
+          confidence: res.agentTrace.oceanography.confidenceScore,
+          sourceStatus: res.agentTrace.oceanography.provenanceStatus.toLowerCase() as any,
+        },
+        weather: {
+          agentId: 'weather',
+          agentName: res.agentTrace.meteorology.agentName,
+          role: res.agentTrace.meteorology.role,
+          status: 'completed',
+          startedAt: res.agentTrace.meteorology.startedAt,
+          completedAt: res.agentTrace.meteorology.completedAt,
+          summary: res.agentTrace.meteorology.summary,
+          data: res.agentTrace.meteorology.data as any,
+          evidence: res.agentTrace.meteorology.evidence.map((e) => ({
+            key: e.key,
+            label: e.label,
+            value: e.observedValue,
+            impact: e.impact.toLowerCase() as any,
+            provenance: {
+              source: e.provenance.source,
+              timestamp: e.provenance.observedAt,
+              status: e.provenance.status.toLowerCase() as any,
+            },
+          })),
+          confidence: res.agentTrace.meteorology.confidenceScore,
+          sourceStatus: res.agentTrace.meteorology.provenanceStatus.toLowerCase() as any,
+        },
+        pfz: {
+          agentId: 'pfz',
+          agentName: res.agentTrace.pfzFisheries.agentName,
+          role: res.agentTrace.pfzFisheries.role,
+          status: 'completed',
+          startedAt: res.agentTrace.pfzFisheries.startedAt,
+          completedAt: res.agentTrace.pfzFisheries.completedAt,
+          summary: res.agentTrace.pfzFisheries.summary,
+          data: res.agentTrace.pfzFisheries.data as any,
+          evidence: res.agentTrace.pfzFisheries.evidence.map((e) => ({
+            key: e.key,
+            label: e.label,
+            value: e.observedValue,
+            impact: e.impact.toLowerCase() as any,
+            provenance: {
+              source: e.provenance.source,
+              timestamp: e.provenance.observedAt,
+              status: e.provenance.status.toLowerCase() as any,
+            },
+          })),
+          confidence: res.agentTrace.pfzFisheries.confidenceScore,
+          sourceStatus: res.agentTrace.pfzFisheries.provenanceStatus.toLowerCase() as any,
+        },
+        geoSafety: {
+          agentId: 'geoSafety',
+          agentName: res.agentTrace.geoSafety.agentName,
+          role: res.agentTrace.geoSafety.role,
+          status: 'completed',
+          startedAt: res.agentTrace.geoSafety.startedAt,
+          completedAt: res.agentTrace.geoSafety.completedAt,
+          summary: res.agentTrace.geoSafety.summary,
+          data: res.agentTrace.geoSafety.data as any,
+          evidence: res.agentTrace.geoSafety.evidence.map((e) => ({
+            key: e.key,
+            label: e.label,
+            value: e.observedValue,
+            impact: e.impact.toLowerCase() as any,
+            provenance: {
+              source: e.provenance.source,
+              timestamp: e.provenance.observedAt,
+              status: e.provenance.status.toLowerCase() as any,
+            },
+          })),
+          confidence: res.agentTrace.geoSafety.confidenceScore,
+          sourceStatus: res.agentTrace.geoSafety.provenanceStatus.toLowerCase() as any,
+        },
+        decision: {
+          verdict: res.decision.verdict,
+          confidenceScore: res.decision.confidence.score,
+          primaryDriver: res.decision.primaryDriver,
+          explanation: res.decision.explanation,
+          recommendedDeparture: res.decision.recommendedDeparture,
+          recommendedReturn: res.decision.recommendedReturn,
+          recommendedZone: {
+            id: res.decision.recommendedZone?.id || 'PFZ-MUM-01',
+            name: res.decision.recommendedZone?.name || 'Alibaug Outer Bank',
+            distanceKm: res.decision.recommendedZone?.distanceKm || 18.5,
+            bearing: res.decision.recommendedZone?.bearingDegrees || 245,
+            opportunity: (res.decision.recommendedZone?.opportunityLevel?.toLowerCase() as any) || 'high',
+          },
+          ruleEvaluations: res.decision.ruleEvaluations.map((r) => ({
+            ruleId: r.ruleId as any,
+            ruleName: r.ruleName,
+            category: r.category.toLowerCase() as any,
+            verdictImpact: r.verdictImpact as any,
+            reason: r.reason,
+            evidenceRef: r.evidenceRef,
+            deterministicScore: r.deterministicScore,
+          })),
+          safetyOverridesTriggered: res.decision.safetyOverridesTriggered,
+          positiveFactors: res.decision.positiveFactors,
+          riskFactors: res.decision.riskFactors,
+          dataQuality: {
+            status: res.decision.dataQuality.status.toLowerCase() as any,
+            completenessScore: res.decision.dataQuality.completenessScore,
+            evaluatedSourcesCount: res.decision.dataQuality.availableSources,
+            totalRequiredSources: res.decision.dataQuality.requiredSources,
+          },
+          evaluatedAt: res.decision.evaluatedAt,
+        },
+      };
+
+      setOrchestration(mappedPackage);
+      setAgentStatuses({
+        planner: 'completed',
+        ocean: 'completed',
+        weather: 'completed',
+        pfz: 'completed',
+        geoSafety: 'completed',
+      });
+      return mappedPackage;
+    } catch (apiErr) {
+      console.warn('Live backend orca/query call failed, utilizing local deterministic orchestrator fallback:', apiErr);
+      const fallbackResult = await executeMultiAgentOrchestration(
         query, 
         regionId, 
         (agentId, status) => {
@@ -273,8 +455,8 @@ export const OrchestrationProvider: React.FC<{ children: React.ReactNode }> = ({
         departureOverride
       );
 
-      setOrchestration(result);
-      return result;
+      setOrchestration(fallbackResult);
+      return fallbackResult;
     } finally {
       setIsOrchestrating(false);
     }
