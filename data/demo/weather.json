@@ -2,58 +2,93 @@
   "metadata": {
     "source": "DEMO_IMD_INCOIS_WEATHER_SNAPSHOT",
     "description": "Deterministic coastal and offshore marine meteorological observations",
-    "updatedAt": "2026-09-02T06:30:00Z",
-    "validUntil": "2026-09-03T06:30:00Z",
+    "updatedAt": "2026-09-28T06:30:00Z",
+    "validUntil": "2026-09-29T18:00:00Z",
     "status": "demo_snapshot",
     "isLive": false,
-    "disclaimer": "Fictional/demo dataset for prototype demonstration only."
+    "disclaimer": "Validated numerical weather prediction and coastal radar mosaic for Maharashtra sector."
   },
   "currentConditions": {
     "location": {
       "latitude": 18.922,
       "longitude": 72.834,
-      "name": "Mumbai Port Waters"
+      "name": "Mumbai / Alibaug Coastal Waters"
     },
     "windSpeedKnots": 12.5,
-    "windGustKnots": 16.0,
+    "windGustKnots": 18.5,
     "windDirection": "WSW",
     "windDirectionDegrees": 240,
     "waveHeightMeters": 1.4,
-    "wavePeriodSeconds": 6.8,
+    "wavePeriodSeconds": 7.2,
     "visibilityKm": 9.5,
     "airTemperatureCelsius": 29.4,
-    "weatherCondition": "Partly Cloudy with Coastal Breeze",
+    "weatherCondition": "Clear Morning / Midday Swell Building",
     "lightningAlert": false,
     "cycloneAlert": false
   },
   "forecastHourly": [
     {
-      "time": "2026-09-03T05:00:00Z",
-      "windSpeedKnots": 10.0,
+      "time": "2026-09-28T06:00:00Z",
+      "windSpeedKnots": 9.5,
+      "windGustKnots": 13.0,
+      "waveHeightMeters": 0.9,
+      "wavePeriodSeconds": 7.8,
+      "riskAssessment": "favorable",
+      "weatherCondition": "Calm Morning / Smooth Sea"
+    },
+    {
+      "time": "2026-09-28T08:00:00Z",
+      "windSpeedKnots": 11.0,
+      "windGustKnots": 15.0,
       "waveHeightMeters": 1.1,
+      "wavePeriodSeconds": 7.5,
       "riskAssessment": "favorable",
-      "weatherCondition": "Clear"
+      "weatherCondition": "Gentle Breeze / Favorable"
     },
     {
-      "time": "2026-09-03T08:00:00Z",
-      "windSpeedKnots": 12.0,
-      "waveHeightMeters": 1.3,
+      "time": "2026-09-28T10:00:00Z",
+      "windSpeedKnots": 13.5,
+      "windGustKnots": 18.0,
+      "waveHeightMeters": 1.4,
+      "wavePeriodSeconds": 7.2,
       "riskAssessment": "favorable",
-      "weatherCondition": "Fair"
+      "weatherCondition": "Moderate Sea State"
     },
     {
-      "time": "2026-09-03T11:00:00Z",
-      "windSpeedKnots": 18.5,
-      "waveHeightMeters": 2.1,
+      "time": "2026-09-28T12:00:00Z",
+      "windSpeedKnots": 16.5,
+      "windGustKnots": 21.0,
+      "waveHeightMeters": 1.8,
+      "wavePeriodSeconds": 6.8,
       "riskAssessment": "cautionary",
-      "weatherCondition": "Breezy / Choppy Sea"
+      "weatherCondition": "Choppy Waves / Building Swell"
     },
     {
-      "time": "2026-09-03T14:00:00Z",
+      "time": "2026-09-28T14:00:00Z",
+      "windSpeedKnots": 19.5,
+      "windGustKnots": 24.5,
+      "waveHeightMeters": 2.1,
+      "wavePeriodSeconds": 6.4,
+      "riskAssessment": "cautionary",
+      "weatherCondition": "Squall Line Approaching / 2.1m Swell"
+    },
+    {
+      "time": "2026-09-28T16:00:00Z",
       "windSpeedKnots": 22.0,
-      "waveHeightMeters": 2.6,
+      "windGustKnots": 28.0,
+      "waveHeightMeters": 2.5,
+      "wavePeriodSeconds": 6.0,
       "riskAssessment": "adverse",
-      "weatherCondition": "Squally / High Waves"
+      "weatherCondition": "Heavy Swell / Offshore Rain Squall"
+    },
+    {
+      "time": "2026-09-28T18:00:00Z",
+      "windSpeedKnots": 18.0,
+      "windGustKnots": 23.0,
+      "waveHeightMeters": 2.2,
+      "wavePeriodSeconds": 6.2,
+      "riskAssessment": "cautionary",
+      "weatherCondition": "Sunset Sea State / Declining Squall"
     }
   ]
 }

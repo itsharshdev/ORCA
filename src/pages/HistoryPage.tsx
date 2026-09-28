@@ -46,7 +46,7 @@ interface HistoryRecord {
 }
 
 export const HistoryPage: React.FC = () => {
-  const [filter, setFilter] = useState<'ALL' | 'GO' | 'CAUTION' | 'AVOID'>('ALL');
+  const [filter, setFilter] = useState<'ALL' | 'GO' | 'CAUTION' | 'AVOID' | 'INSUFFICIENT_DATA'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [persistedMissions, setPersistedMissions] = useState<MissionRecord[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<HistoryRecord | null>(null);
@@ -54,8 +54,8 @@ export const HistoryPage: React.FC = () => {
   const defaultHistoryData: HistoryRecord[] = [
     {
       id: 'DEC-20260902-01',
-      timestamp: '2026-09-02 08:30 IST',
-      mission: 'Commercial Fishing (5h)',
+      timestamp: '2026-09-28 09:45 IST',
+      mission: 'Morning Coastal Fishing Trip (5h)',
       vessel: 'Matsya Sagar 1 (8.5m)',
       zone: 'Zone Alpha (Offshore Alibaug)',
       verdict: 'CAUTION',
@@ -63,9 +63,9 @@ export const HistoryPage: React.FC = () => {
       reason: 'Significant wave swell height reaches 2.1m post-midday; return window constrained before afternoon sea chop.',
       dataStatus: 'demo_snapshot',
       inputs: {
-        departureTime: '05:45 IST',
+        departureTime: '09:45 IST',
         durationHours: 5,
-        activity: 'Commercial Gillnetting',
+        activity: 'Commercial Fishing',
       },
       telemetrySnapshot: {
         waveHeight: '2.1m (Max tolerance 1.8m)',
@@ -123,6 +123,54 @@ export const HistoryPage: React.FC = () => {
         geofenceStatus: 'Clear of buffer, but offshore storm track intersection',
       },
       rulesTriggered: ['RULE_01_CYCLONE_WIND_GALE', 'RULE_03_VESSEL_WAVE_LIMIT'],
+    },
+    {
+      id: 'DEC-20260830-01',
+      timestamp: '2026-08-30 11:00 IST',
+      mission: 'Coastal Gillnet Run (4h)',
+      vessel: 'Sagar Kripa (9m)',
+      zone: 'Revdanda Estuary Approach',
+      verdict: 'INSUFFICIENT_DATA',
+      confidence: 35.0,
+      reason: 'Missing OSF wave telemetry combined with coastal radar blackout; deterministic fail-safe policy prevents unverified clearance.',
+      dataStatus: 'demo_snapshot',
+      inputs: {
+        departureTime: '11:00 IST',
+        durationHours: 4,
+        activity: 'Gillnet Fishing',
+      },
+      telemetrySnapshot: {
+        waveHeight: 'DATA UNAVAILABLE (Telemetry loss)',
+        windSpeed: '14 kts (Estimated)',
+        tideState: 'Flood tide',
+        pfzRelevance: 'Unavailable',
+        geofenceStatus: 'PostGIS boundary confirmed, hydrographic model unconfirmed',
+      },
+      rulesTriggered: ['RULE_00_CRITICAL_TELEMETRY_REQUIRED', 'RULE_FAIL_SAFE_HOLD'],
+    },
+    {
+      id: 'DEC-20260829-04',
+      timestamp: '2026-08-29 06:15 IST',
+      mission: 'Morning Reef Transit (4.5h)',
+      vessel: 'Matsya Sagar 1 (8.5m)',
+      zone: 'Khanderi Island Sector',
+      verdict: 'GO',
+      confidence: 91.5,
+      reason: 'Stable morning atmospheric window, wave swell 1.1m within tolerance, clear navigational corridor.',
+      dataStatus: 'demo_snapshot',
+      inputs: {
+        departureTime: '06:15 IST',
+        durationHours: 4.5,
+        activity: 'Commercial Handline',
+      },
+      telemetrySnapshot: {
+        waveHeight: '1.1m (Well within 1.8m tolerance)',
+        windSpeed: '9 kts (Gentle breeze)',
+        tideState: 'Slack water',
+        pfzRelevance: 'Reef fringe pelagic concentration (SST 28.2°C)',
+        geofenceStatus: 'Clear corridor verified with 3.8 km naval zone buffer',
+      },
+      rulesTriggered: ['RULE_ALL_PASS_BASELINE'],
     },
   ];
 
@@ -183,6 +231,7 @@ export const HistoryPage: React.FC = () => {
   const goCount = allRecords.filter((r) => r.verdict === 'GO').length;
   const cautionCount = allRecords.filter((r) => r.verdict === 'CAUTION').length;
   const avoidCount = allRecords.filter((r) => r.verdict === 'AVOID').length;
+  const insufficientCount = allRecords.filter((r) => r.verdict === 'INSUFFICIENT_DATA').length;
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col gap-6 select-none animate-fade-in">
@@ -202,7 +251,7 @@ export const HistoryPage: React.FC = () => {
         </div>
 
         {/* Quick Decision Counts */}
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-2 text-xs flex-wrap">
           <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold font-mono">
             {goCount} GO
           </span>
@@ -212,6 +261,11 @@ export const HistoryPage: React.FC = () => {
           <span className="px-2.5 py-1 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold font-mono">
             {avoidCount} AVOID
           </span>
+          {insufficientCount > 0 && (
+            <span className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 border border-slate-300 font-bold font-mono">
+              {insufficientCount} INSUFFICIENT
+            </span>
+          )}
         </div>
       </div>
 
@@ -220,18 +274,18 @@ export const HistoryPage: React.FC = () => {
         {/* Verdict Filter Buttons */}
         <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
           <span className="text-xs font-bold text-[#587083] mr-1">Verdict:</span>
-          {(['ALL', 'GO', 'CAUTION', 'AVOID'] as const).map((tab) => (
+          {(['ALL', 'GO', 'CAUTION', 'AVOID', 'INSUFFICIENT_DATA'] as const).map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => setFilter(tab)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
                 filter === tab
                   ? 'bg-[#147FB3] text-white shadow-2xs'
                   : 'bg-[#F8FAFC] text-[#587083] hover:text-[#123B5D] border border-[#E2EDF4]'
               }`}
             >
-              {tab}
+              {tab === 'INSUFFICIENT_DATA' ? 'INSUFFICIENT' : tab}
             </button>
           ))}
         </div>

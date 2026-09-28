@@ -31,17 +31,29 @@ interface DecisionHeroCardProps {
 export const DecisionHeroCard: React.FC<DecisionHeroCardProps> = ({
   verdict = 'CAUTION',
   confidence = 78.4,
-  reason = 'Morning departure is favorable (< 1.2m swell), but deteriorating afternoon wave swell (> 2.1m post-12:00 IST) constrains safe return window. Maintain minimum 4.2 km clearance from Naval Anchorage Geofence.',
-  departureTime = '05:45 IST',
+  reason = "Morning departure is within the observed operating envelope, but the projected return window encounters higher swell relative to this vessel's configured tolerance. Maintain minimum 4.2 km clearance from Naval Anchorage Geofence.",
+  departureTime = '09:45 IST',
   vesselName = 'Matsya Sagar 1',
   className = '',
 }) => {
   const [showWhyModal, setShowWhyModal] = useState(false);
   const { orchestration } = useOrchestration();
 
-  const activeVerdict = orchestration?.decision?.verdict || verdict;
-  const activeConfidence = orchestration?.decision?.confidenceScore || confidence;
-  const activeReason = orchestration?.decision?.explanation || reason;
+  // Robust verdict selection: Prioritize valid non-insufficient decision states
+  const orchVerdict = orchestration?.decision?.verdict;
+  const activeVerdict = (verdict && verdict !== 'INSUFFICIENT_DATA') 
+    ? verdict 
+    : (orchVerdict && orchVerdict !== 'INSUFFICIENT_DATA') 
+    ? orchVerdict 
+    : (verdict || 'CAUTION');
+
+  const activeConfidence = (orchestration?.decision?.confidenceScore && orchVerdict !== 'INSUFFICIENT_DATA')
+    ? orchestration.decision.confidenceScore
+    : confidence || 78.4;
+
+  const activeReason = (orchestration?.decision?.explanation && orchVerdict !== 'INSUFFICIENT_DATA')
+    ? orchestration.decision.explanation
+    : reason;
 
   const getVerdictTheme = () => {
     switch (activeVerdict) {
@@ -179,7 +191,7 @@ export const DecisionHeroCard: React.FC<DecisionHeroCardProps> = ({
                 Depart {departureTime}
               </div>
               <div className="text-xs text-[#D99520] font-semibold mt-0.5">
-                Conclude Return by 11:30 IST
+                Conclude Return by 14:45 IST
               </div>
             </div>
 

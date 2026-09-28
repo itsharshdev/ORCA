@@ -80,9 +80,9 @@ export const DecisionsPage: React.FC = () => {
     verdict: 'CAUTION' as DecisionVerdict,
     confidenceScore: 84.5,
     primaryDriver: 'Wave swell exceeds traditional craft threshold after 12:00 IST',
-    explanation: 'Morning window favorable between 05:45 and 11:30 IST. Significant wave height is 1.4m during morning transit, but rises to 2.1m post-midday exceeding the 1.8m safe tolerance of Matsya Sagar 1.',
-    recommendedDeparture: '05:45 IST',
-    recommendedReturn: '11:30 IST',
+    explanation: 'Morning window initially favorable from 09:45 IST. Significant wave height is 1.4m during morning transit, but rises to 2.1m post-midday exceeding the 1.8m safe tolerance of Matsya Sagar 1, constraining safe return window.',
+    recommendedDeparture: '09:45 IST',
+    recommendedReturn: '14:45 IST',
     recommendedZone: {
       id: 'PFZ-MUM-01',
       name: 'Alibaug Outer Bank',
@@ -284,17 +284,17 @@ export const DecisionsPage: React.FC = () => {
               <Clock className="w-3.5 h-3.5 text-[#147FB3]" />
               <span>Recommended Departure:</span>
             </span>
-            <strong className="text-[#123B5D] font-mono">{decision.recommendedDeparture || '05:45 IST'}</strong>
+            <strong className="text-[#123B5D] font-mono">{decision.recommendedDeparture || '09:45 IST'}</strong>
           </div>
           <div className="flex items-center justify-between gap-4">
             <span className="text-[#7E93A3] flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-amber-600" />
               <span>Safe Return Deadline:</span>
             </span>
-            <strong className="text-[#123B5D] font-mono">{decision.recommendedReturn || '11:30 IST'}</strong>
+            <strong className="text-[#123B5D] font-mono">{decision.recommendedReturn || '14:45 IST'}</strong>
           </div>
           <div className="text-[10px] text-[#2E8B57] font-semibold pt-1 border-t border-[#E2EDF4] text-right">
-            ● Window Duration: ~5h 45m
+            ● Window Duration: ~5h 00m
           </div>
         </div>
       </div>
@@ -399,7 +399,7 @@ export const DecisionsPage: React.FC = () => {
                   {decision.dataQuality.evaluatedSourcesCount} of {decision.dataQuality.totalRequiredSources} Required Feeds Verified
                 </div>
                 <div className="text-[11px] text-[#587083] pt-1 border-t border-[#E2EDF4]">
-                  INCOIS OSF (Live) • INCOIS PFZ (Live) • PostGIS GIS (Deterministic) • IMD (Access Pending)
+                  INCOIS OSF (Recorded Snapshot) • INCOIS PFZ (Recorded Snapshot) • PostGIS Safety (Deterministic) • IMD Marine (Pending/Snapshot)
                 </div>
               </div>
             </div>

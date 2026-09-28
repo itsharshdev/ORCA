@@ -28,9 +28,9 @@ export const WhyDecisionModal: React.FC<WhyDecisionModalProps> = ({
   isOpen,
   onClose,
   verdict = 'CAUTION',
-  reason = 'Morning departure is favorable (< 1.2m swell), but deteriorating afternoon wave swell (> 2.1m post-12:00 IST) constrains safe return window. Maintain minimum 4.2 km clearance from Naval Anchorage Geofence.',
+  reason = 'Morning departure window is favorable (1.4m swell), but deteriorating afternoon wave swell (2.1m post-midday) constrains safe return window for Matsya Sagar 1 (1.8m craft limit). Maintain minimum 4.2 km clearance from Naval Anchorage Geofence.',
   vesselName = 'Matsya Sagar 1',
-  departureTime = '05:45 IST',
+  departureTime = '09:45 IST',
   durationHours = 5,
 }) => {
   if (!isOpen) return null;
@@ -111,7 +111,7 @@ export const WhyDecisionModal: React.FC<WhyDecisionModalProps> = ({
                     INCOIS Wave Swell
                   </span>
                   <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-mono text-[9px] font-bold border border-emerald-300">
-                    LIVE ERDDAP
+                    INCOIS OSF • RECORDED SNAPSHOT
                   </span>
                 </div>
                 <div className="text-[#102B40] font-bold text-sm">
@@ -127,10 +127,10 @@ export const WhyDecisionModal: React.FC<WhyDecisionModalProps> = ({
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-bold text-[#123B5D] flex items-center gap-1.5">
                     <Fish className="w-3.5 h-3.5 text-[#2E9B73]" />
-                    INCOIS PFZ Advisory
+                    INCOIS PFZ (Opportunity Only)
                   </span>
                   <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-mono text-[9px] font-bold border border-emerald-300">
-                    LIVE WFS
+                    INCOIS PFZ • RECORDED SNAPSHOT
                   </span>
                 </div>
                 <div className="text-[#102B40] font-bold text-sm">
@@ -149,7 +149,7 @@ export const WhyDecisionModal: React.FC<WhyDecisionModalProps> = ({
                     PostGIS Spatial Geofence
                   </span>
                   <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-mono text-[9px] font-bold border border-blue-300">
-                    DETERMINISTIC
+                    LOCAL DETERMINISTIC
                   </span>
                 </div>
                 <div className="text-[#102B40] font-bold text-sm">
@@ -168,7 +168,7 @@ export const WhyDecisionModal: React.FC<WhyDecisionModalProps> = ({
                     IMD Marine Warnings
                   </span>
                   <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-mono text-[9px] font-bold border border-amber-300">
-                    DEMO / PENDING
+                    IMD • ACCESS PENDING / DEMO SNAPSHOT
                   </span>
                 </div>
                 <div className="text-[#102B40] font-bold text-sm">

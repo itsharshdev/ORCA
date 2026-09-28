@@ -35,7 +35,7 @@ export const MissionPlannerPage: React.FC = () => {
   const [missionName, setMissionName] = useState('Morning Coastal Fishing Trip');
   const [activity, setActivity] = useState<'fishing' | 'survey' | 'patrol'>('fishing');
   const [vesselId, setVesselId] = useState(vesselsData.profiles[0]?.id || 'VESSEL-001');
-  const [departureTime, setDepartureTime] = useState('05:45');
+  const [departureTime, setDepartureTime] = useState('09:45');
   const [durationHours, setDurationHours] = useState(5);
   const [selectedZoneId, setSelectedZoneId] = useState(pfzData.zones[0]?.id || 'PFZ-MUM-01');
   const [mustReturnBeforeSunset, setMustReturnBeforeSunset] = useState(true);

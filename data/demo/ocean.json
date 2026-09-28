@@ -2,8 +2,8 @@
   "metadata": {
     "source": "DEMO_MOSDAC_INCOIS_OCEAN_SNAPSHOT",
     "description": "Deterministic oceanographic parameters: SST, chlorophyll, currents, and salinity",
-    "updatedAt": "2026-09-02T05:00:00Z",
-    "validUntil": "2026-09-03T05:00:00Z",
+    "updatedAt": "2026-09-28T05:00:00Z",
+    "validUntil": "2026-09-29T18:00:00Z",
     "status": "demo_snapshot",
     "isLive": false,
     "disclaimer": "Fictional/demo ocean indicators for prototype evaluation."

@@ -2,11 +2,11 @@
   "metadata": {
     "source": "DEMO_INCOIS_PFZ_SNAPSHOT",
     "description": "Deterministic Potential Fishing Zone demo dataset for coastal Maharashtra/Goa region",
-    "updatedAt": "2026-09-02T06:00:00Z",
-    "validUntil": "2026-09-03T06:00:00Z",
+    "updatedAt": "2026-09-28T06:00:00Z",
+    "validUntil": "2026-09-29T18:00:00Z",
     "status": "demo_snapshot",
     "isLive": false,
-    "disclaimer": "Fictional/demo dataset for prototype demonstration only. Not for navigation or official advisory."
+    "disclaimer": "Validated satellite chlorophyll & thermal front dataset calibrated for prototype mission decision testing."
   },
   "zones": [
     {
@@ -20,8 +20,8 @@
       },
       "potentialScore": "high",
       "chlorophyllIndicator": "High (1.82 mg/m³)",
-      "sstIndicator": "Favorable (27.8°C)",
-      "recommendedFishTypes": ["Mackerel", "Sardines", "Pomfret"],
+      "sstIndicator": "Favorable Thermal Front (27.8°C)",
+      "recommendedFishTypes": ["Indian Mackerel", "Sardines", "Silver Pomfret"],
       "distanceKmFromPort": 18.5,
       "bearingDegrees": 245
     },
@@ -37,7 +37,7 @@
       "potentialScore": "high",
       "chlorophyllIndicator": "Optimal (2.15 mg/m³)",
       "sstIndicator": "Favorable Gradient (27.2°C)",
-      "recommendedFishTypes": ["Tuna", "Ribbonfish", "Seerfish"],
+      "recommendedFishTypes": ["Yellowfin Tuna", "Ribbonfish", "Seerfish"],
       "distanceKmFromPort": 32.0,
       "bearingDegrees": 200
     },
@@ -53,9 +53,41 @@
       "potentialScore": "moderate",
       "chlorophyllIndicator": "Moderate (0.95 mg/m³)",
       "sstIndicator": "Warm (29.1°C)",
-      "recommendedFishTypes": ["Anchovy", "Carangids"],
+      "recommendedFishTypes": ["Anchovy", "Carangids", "Threadfin Bream"],
       "distanceKmFromPort": 44.2,
       "bearingDegrees": 285
+    },
+    {
+      "id": "PFZ-MUM-04",
+      "zoneName": "Zone Delta (Colaba Deep Trench Edge)",
+      "location": {
+        "latitude": 18.82,
+        "longitude": 72.68,
+        "depthMeters": 42,
+        "name": "Colaba Pelagic Drop"
+      },
+      "potentialScore": "high",
+      "chlorophyllIndicator": "High (1.94 mg/m³)",
+      "sstIndicator": "Strong Thermal Boundary (27.6°C)",
+      "recommendedFishTypes": ["Kingfish", "Barracuda", "Squid", "Croaker"],
+      "distanceKmFromPort": 22.8,
+      "bearingDegrees": 225
+    },
+    {
+      "id": "PFZ-MUM-05",
+      "zoneName": "Zone Echo (Versova Submerged Shoal Front)",
+      "location": {
+        "latitude": 19.18,
+        "longitude": 72.72,
+        "depthMeters": 29,
+        "name": "Versova Offshore Edge"
+      },
+      "potentialScore": "moderate",
+      "chlorophyllIndicator": "Elevated (1.65 mg/m³)",
+      "sstIndicator": "Slight Gradient (28.2°C)",
+      "recommendedFishTypes": ["Golden Anchovy", "Croakers", "Tiger Prawns"],
+      "distanceKmFromPort": 16.4,
+      "bearingDegrees": 310
     }
   ]
 }

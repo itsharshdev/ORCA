@@ -2,7 +2,7 @@
   "metadata": {
     "source": "DEMO_VESSEL_REGISTRY",
     "description": "Standard fishing vessel profiles for mission-constraint and risk evaluation",
-    "updatedAt": "2026-09-02T00:00:00Z",
+    "updatedAt": "2026-09-28T09:45:00Z",
     "status": "demo_snapshot"
   },
   "profiles": [
@@ -57,6 +57,84 @@
         "name": "Harbor Berth"
       },
       "currentHeadingDegrees": 180
+    },
+    {
+      "id": "VESSEL-003",
+      "name": "Sagar Kanya III",
+      "registrationNo": "IND-MH-02-MM-412",
+      "vesselType": "gillnetter_motorized",
+      "lengthMeters": 11.2,
+      "beamMeters": 3.0,
+      "draftMeters": 1.4,
+      "engineHp": 60,
+      "cruisingSpeedKnots": 7.2,
+      "maxWaveToleranceMeters": 2.2,
+      "maxWindToleranceKnots": 22.0,
+      "fuelCapacityHours": 18.0,
+      "crewSize": 4,
+      "homePort": {
+        "latitude": 18.641,
+        "longitude": 72.872,
+        "name": "Alibaug Port Jetty"
+      },
+      "currentLocation": {
+        "latitude": 18.641,
+        "longitude": 72.872,
+        "name": "Alibaug Outer Berth"
+      },
+      "currentHeadingDegrees": 210
+    },
+    {
+      "id": "VESSEL-004",
+      "name": "Jal Tarang 2",
+      "registrationNo": "IND-MH-01-MM-905",
+      "vesselType": "fiberglass_canoe",
+      "lengthMeters": 7.8,
+      "beamMeters": 1.9,
+      "draftMeters": 0.9,
+      "engineHp": 15,
+      "cruisingSpeedKnots": 5.8,
+      "maxWaveToleranceMeters": 1.5,
+      "maxWindToleranceKnots": 15.0,
+      "fuelCapacityHours": 8.0,
+      "crewSize": 2,
+      "homePort": {
+        "latitude": 19.135,
+        "longitude": 72.812,
+        "name": "Versova Fishing Village"
+      },
+      "currentLocation": {
+        "latitude": 19.135,
+        "longitude": 72.812,
+        "name": "Versova Creek Creekfront"
+      },
+      "currentHeadingDegrees": 270
+    },
+    {
+      "id": "VESSEL-005",
+      "name": "Varuna Shanti",
+      "registrationNo": "IND-MH-03-MM-318",
+      "vesselType": "deep_pelagic_trawler",
+      "lengthMeters": 16.5,
+      "beamMeters": 4.4,
+      "draftMeters": 2.1,
+      "engineHp": 140,
+      "cruisingSpeedKnots": 9.5,
+      "maxWaveToleranceMeters": 3.2,
+      "maxWindToleranceKnots": 30.0,
+      "fuelCapacityHours": 48.0,
+      "crewSize": 8,
+      "homePort": {
+        "latitude": 18.956,
+        "longitude": 72.851,
+        "name": "Ferry Wharf / Bhaucha Dhakka"
+      },
+      "currentLocation": {
+        "latitude": 18.956,
+        "longitude": 72.851,
+        "name": "Deepwater Anchorage Berth 3"
+      },
+      "currentHeadingDegrees": 160
     }
   ]
 }

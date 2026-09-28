@@ -356,10 +356,10 @@ export const AlertsPage: React.FC = () => {
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <h3 className="text-base font-bold text-[#123B5D]">
-              No Operational Alerts Found
+              No Active Operational Alerts
             </h3>
             <p className="text-xs text-[#587083] max-w-md">
-              There are currently no active hazards or warnings matching the selected filters for {activeRegion.name}.
+              There are currently no active hazards or warnings matching the selected filters for {activeRegion.name}. All evaluated marine security corridors remain clear.
             </p>
           </div>
         )}

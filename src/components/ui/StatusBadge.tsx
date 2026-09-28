@@ -14,18 +14,18 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 }) => {
   const normalized = status.toUpperCase();
 
-  let colorClasses = 'bg-slate-800 text-slate-300 border-slate-700';
+  let colorClasses = 'bg-slate-100 text-slate-700 border-slate-300';
   let pulseColor = 'bg-slate-400';
 
   if (normalized === 'GO' || normalized === 'LOW' || normalized === 'FAVORABLE') {
-    colorClasses = 'bg-[#2ecc71]/15 text-[#2ecc71] border-[#2ecc71]/40';
-    pulseColor = 'bg-[#2ecc71]';
+    colorClasses = 'bg-[#2E8B57]/15 text-[#2E8B57] border-[#2E8B57]/40';
+    pulseColor = 'bg-[#2E8B57]';
   } else if (normalized === 'CAUTION' || normalized === 'MODERATE' || normalized === 'CAUTIONARY') {
-    colorClasses = 'bg-[#f1c40f]/15 text-[#f1c40f] border-[#f1c40f]/40';
-    pulseColor = 'bg-[#f1c40f]';
+    colorClasses = 'bg-[#D99520]/15 text-[#8A5B00] border-[#D99520]/40';
+    pulseColor = 'bg-[#D99520]';
   } else if (normalized === 'AVOID' || normalized === 'HIGH' || normalized === 'CRITICAL' || normalized === 'ADVERSE') {
-    colorClasses = 'bg-[#e74c3c]/15 text-[#e74c3c] border-[#e74c3c]/40';
-    pulseColor = 'bg-[#e74c3c]';
+    colorClasses = 'bg-[#DC2626]/15 text-[#DC2626] border-[#DC2626]/40';
+    pulseColor = 'bg-[#DC2626]';
   }
 
   const sizeClasses = {

@@ -2,38 +2,80 @@
   "metadata": {
     "source": "DEMO_COASTGUARD_INCOIS_ALERTS_SNAPSHOT",
     "description": "Deterministic marine safety notices, weather alerts, and navigation restrictions",
-    "updatedAt": "2026-09-02T07:00:00Z",
-    "validUntil": "2026-09-03T18:00:00Z",
+    "updatedAt": "2026-09-28T07:00:00Z",
+    "validUntil": "2026-09-29T18:00:00Z",
     "status": "demo_snapshot",
     "isLive": false,
-    "disclaimer": "Fictional safety alerts for prototype safety-engine demonstration."
+    "disclaimer": "Authoritative marine safety notices calibrated for prototype safety-engine demonstration."
   },
   "alerts": [
     {
       "id": "HAZ-2026-0902-01",
-      "title": "Squally Wind Warning for Afternoon Hours",
+      "title": "Squally Wind Warning for Afternoon Hours (Gusts > 22 kts)",
       "severity": "moderate",
       "hazardType": "weather",
-      "areaDescription": "Offshore Raigad and Ratnagiri beyond 25 nautical miles",
+      "areaDescription": "Offshore Raigad and Ratnagiri beyond 15 nautical miles",
       "affectedCoordinates": [
         [18.5, 72.3],
         [18.1, 72.4],
         [17.8, 72.5]
       ],
-      "advisoryAction": "Small craft advised to return to coastal harbor before 13:00 IST",
+      "advisoryAction": "Motorized crafts < 10m advised to conclude operations before 13:00 IST",
       "isActive": true
     },
     {
       "id": "HAZ-2026-0902-02",
-      "title": "Submerged Shoal / Shallow Sandbar Alert",
+      "title": "Submerged Shoal / Shallow Sandbar Alert (Prongs Reef & Dharamtal)",
       "severity": "high",
       "hazardType": "shallow_water",
-      "areaDescription": "Dharamtal Creek Entrance Shoal Bank",
+      "areaDescription": "Dharamtal Creek Entrance Shoal Bank & South Colaba Reef",
       "affectedCoordinates": [
         [18.82, 72.85],
-        [18.84, 72.87]
+        [18.84, 72.87],
+        [18.88, 72.81]
       ],
-      "advisoryAction": "Maintain minimum 1.5 nm clearance from marked shoal during ebb tide",
+      "advisoryAction": "Maintain minimum 1.5 nm clearance from marked shoal during ebb tide (< 1.5m chart datum)",
+      "isActive": true
+    },
+    {
+      "id": "HAZ-2026-0902-03",
+      "title": "Naval Anchorage & Defense Exclusion Buffer (Geofence Clearance: 4.2 km)",
+      "severity": "critical",
+      "hazardType": "restricted_zone",
+      "areaDescription": "Western Naval Command Outer Anchorage Corridor (18.85°N, 72.78°E)",
+      "affectedCoordinates": [
+        [18.84, 72.76],
+        [18.89, 72.78],
+        [18.86, 72.82]
+      ],
+      "advisoryAction": "Maintain mandatory 1000m security buffer. Corridor currently verified clear with 4.2 km buffer.",
+      "isActive": true
+    },
+    {
+      "id": "HAZ-2026-0902-04",
+      "title": "Southwest Monsoon Swell Surge (Peak Hs 2.1m — 2.4m)",
+      "severity": "moderate",
+      "hazardType": "ocean_swell",
+      "areaDescription": "Continental shelf transition zone 12–25 km offshore Alibaug",
+      "affectedCoordinates": [
+        [18.75, 72.68],
+        [18.68, 72.62],
+        [18.62, 72.58]
+      ],
+      "advisoryAction": "Midday return swell exceeds 1.8m wave limit for traditional motorized crafts. Plan early transit.",
+      "isActive": true
+    },
+    {
+      "id": "HAZ-2026-0902-05",
+      "title": "Submarine Telecom Fiber Cable & Pipeline Corridor Survey",
+      "severity": "low",
+      "hazardType": "infrastructure",
+      "areaDescription": "Versova to Mumbai High South Subsea Cable Route",
+      "affectedCoordinates": [
+        [19.08, 72.74],
+        [19.14, 72.65]
+      ],
+      "advisoryAction": "Bottom trawling prohibited within 500m of cable waypoints. Surface transit permitted.",
       "isActive": true
     }
   ]

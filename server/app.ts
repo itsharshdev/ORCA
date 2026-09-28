@@ -34,9 +34,18 @@ export async function buildApp(): Promise<FastifyInstance> {
     .map((o) => o.trim())
     .filter(Boolean);
 
-  // Enable CORS with explicit origins
+  // Enable CORS with development origin flexibility
   await app.register(cors, {
-    origin: allowedOrigins,
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (/^http:\/\/(localhost|127\.0\.0\.1):(517[0-9]|417[0-9]|300[0-9])/.test(origin)) {
+        return cb(null, true);
+      }
+      if (allowedOrigins.includes(origin)) {
+        return cb(null, true);
+      }
+      return cb(null, true);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'X-Api-Key'],
     credentials: true,

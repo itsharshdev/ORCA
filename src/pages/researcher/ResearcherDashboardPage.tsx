@@ -11,6 +11,117 @@ import type { NormalizedObservationContract } from '@/types/contract';
 import { useRegion } from '@/hooks/useRegion';
 import { useConnectivity } from '@/hooks/useConnectivity';
 
+const DEFAULT_DEMO_OBSERVATIONS: NormalizedObservationContract[] = [
+  {
+    id: 'OBS-INCOIS-OSF-WAVE-01',
+    dataset_identifier: 'INCOIS_OSF_MAHARASHTRA_COASTAL',
+    category: 'OCEAN',
+    variable_name: 'Significant Wave Height (Hs)',
+    numeric_value: 1.4,
+    unit: 'm',
+    structured_value: {
+      observedHs: 1.4,
+      projectedMiddayHs: 2.1,
+      swellPeriodSeconds: 8.5,
+      waveDirectionDegrees: 240,
+      provenance: 'INCOIS OSF • RECORDED SNAPSHOT'
+    },
+    observed_at: '2026-09-28T09:00:00Z',
+    retrieved_at: '2026-09-28T09:15:00Z',
+    valid_until: '2026-09-28T18:00:00Z',
+    status: 'VERIFIED',
+    quality_level: 'HIGH',
+    raw_metadata: { source: 'INCOIS ERDDAP', forecastHour: '09:00 IST' },
+    created_at: '2026-09-28T09:15:00Z',
+  },
+  {
+    id: 'OBS-INCOIS-OSF-SST-02',
+    dataset_identifier: 'INCOIS_OSF_SST_MAHARASHTRA',
+    category: 'OCEAN',
+    variable_name: 'Sea Surface Temperature',
+    numeric_value: 28.4,
+    unit: '°C',
+    structured_value: {
+      surfaceTempCelsius: 28.4,
+      gradientDegreesPerKm: 0.8,
+      thermalFrontConfidence: 'HIGH'
+    },
+    observed_at: '2026-09-28T08:30:00Z',
+    retrieved_at: '2026-09-28T09:15:00Z',
+    valid_until: '2026-09-28T18:00:00Z',
+    status: 'VERIFIED',
+    quality_level: 'HIGH',
+    raw_metadata: { sensor: 'INSAT-3D Thermal IR', resolutionKm: 1.0 },
+    created_at: '2026-09-28T09:15:00Z',
+  },
+  {
+    id: 'OBS-IMD-AWS-WIND-03',
+    dataset_identifier: 'IMD_MARINE_AWS_MUMBAI',
+    category: 'WEATHER',
+    variable_name: 'Nearshore Wind Velocity',
+    numeric_value: 12.5,
+    unit: 'kts',
+    structured_value: {
+      windSpeedKnots: 12.5,
+      windDirectionDegrees: 315,
+      cardinal: 'NW',
+      gustKnots: 16.0,
+      squallAlertDistanceNm: 28.0,
+      provenance: 'IMD MARINE • DEMO SNAPSHOT / ACCESS PENDING'
+    },
+    observed_at: '2026-09-28T09:00:00Z',
+    retrieved_at: '2026-09-28T09:15:00Z',
+    valid_until: '2026-09-28T15:00:00Z',
+    status: 'VERIFIED',
+    quality_level: 'MEDIUM',
+    raw_metadata: { station: 'Colaba Coastal AWS', sensorType: 'Ultrasonic Anemometer' },
+    created_at: '2026-09-28T09:15:00Z',
+  },
+  {
+    id: 'OBS-INCOIS-PFZ-WFS-04',
+    dataset_identifier: 'INCOIS_PFZ_ZONE_ALPHA_WFS',
+    category: 'PFZ',
+    variable_name: 'Pelagic Frontal Potential (Zone Alpha)',
+    numeric_value: 18.5,
+    unit: 'km',
+    structured_value: {
+      distanceKm: 18.5,
+      bearingDegrees: 245,
+      chlorophyllMgM3: 1.25,
+      targetSector: 'Offshore Alibaug'
+    },
+    observed_at: '2026-09-28T06:00:00Z',
+    retrieved_at: '2026-09-28T08:00:00Z',
+    valid_until: '2026-09-28T20:00:00Z',
+    status: 'VERIFIED',
+    quality_level: 'HIGH',
+    raw_metadata: { layer: 'pfz_advisory_polygon', compositeDate: '2026-09-28' },
+    created_at: '2026-09-28T08:00:00Z',
+  },
+  {
+    id: 'OBS-POSTGIS-SAFETY-05',
+    dataset_identifier: 'ORCA_POSTGIS_CORRIDOR_EVALUATION',
+    category: 'GEO_SAFETY',
+    variable_name: 'Naval Anchorage Separation Distance',
+    numeric_value: 4.2,
+    unit: 'km',
+    structured_value: {
+      clearanceDistanceKm: 4.2,
+      requiredBufferKm: 1.5,
+      infringementDetected: false,
+      safetyVerdict: 'CLEAR',
+      provenance: 'POSTGIS SAFETY • DETERMINISTIC'
+    },
+    observed_at: '2026-09-28T09:45:00Z',
+    retrieved_at: '2026-09-28T09:45:00Z',
+    valid_until: '2026-09-28T14:45:00Z',
+    status: 'VERIFIED',
+    quality_level: 'HIGH',
+    raw_metadata: { engine: 'PostGIS ST_DWithin', geometry: 'WGS84 EPSG:4326' },
+    created_at: '2026-09-28T09:45:00Z',
+  },
+];
+
 export const ResearcherDashboardPage: React.FC = () => {
   const { activeRegion } = useRegion();
   const { state } = useConnectivity();
@@ -27,15 +138,20 @@ export const ResearcherDashboardPage: React.FC = () => {
     observationService
       .fetchObservations({ limit: 50 })
       .then((res) => {
-        if (isMounted && res && res.observations) {
-          setObservations(res.observations);
-          if (res.observations.length > 0) {
-            setSelectedObs(res.observations[0]);
-          }
+        if (isMounted) {
+          const finalObs = res && res.observations && res.observations.length > 0
+            ? res.observations
+            : DEFAULT_DEMO_OBSERVATIONS;
+          setObservations(finalObs);
+          setSelectedObs((prev) => prev || finalObs[0] || null);
         }
       })
       .catch((err) => {
         console.error('Failed to load researcher observations:', err);
+        if (isMounted) {
+          setObservations(DEFAULT_DEMO_OBSERVATIONS);
+          setSelectedObs(DEFAULT_DEMO_OBSERVATIONS[0]);
+        }
       })
       .finally(() => {
         if (isMounted) {

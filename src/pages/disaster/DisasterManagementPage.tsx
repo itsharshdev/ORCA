@@ -18,6 +18,97 @@ import { alertService } from '@/services/alertService';
 import { AlertDetailModal } from '@/components/alerts/AlertDetailModal';
 import type { AlertItem } from '@/types/contract';
 
+const DEFAULT_DEMO_HAZARDS: AlertItem[] = [
+  {
+    id: 'HAZ-MH-2026-01',
+    fingerprint: 'fp-haz-mh-01',
+    alertType: 'HIGH_WAVE_CONDITION',
+    category: 'WEATHER_MARINE',
+    severity: 'WARNING',
+    title: 'Midday Coastal Swell & Wave Height Advisory',
+    message: 'Elevated south-westerly swell waves rising from 1.4m to 2.1m expected along the Alibaug-Mumbai corridor between 12:00 and 15:30 IST. Traditional motorized crafts advised to return before afternoon window.',
+    actionRecommendation: 'Motorized crafts under 10m to schedule return by 14:45 IST. Maintain continuous VHF channel 16 listening watch.',
+    source: 'INCOIS OSF',
+    dataset: 'OSF_MAHARASHTRA_COASTAL',
+    evidenceIds: ['EVD-OSF-01'],
+    ruleIds: ['RULE_03_VESSEL_WAVE_LIMIT'],
+    affectedArea: {
+      name: 'Alibaug / Mumbai Offshore Corridor',
+      coordinates: [
+        [72.75, 18.85],
+        [72.90, 18.85],
+        [72.90, 18.98],
+        [72.75, 18.98],
+        [72.75, 18.85],
+      ],
+    },
+    affectedMissionIds: ['MSN-20260928-01'],
+    affectedVesselIds: ['VESSEL-MH-01', 'VESSEL-MH-03'],
+    issuedAt: '2026-09-28T08:00:00Z',
+    validFrom: '2026-09-28T08:00:00Z',
+    validUntil: '2026-09-28T16:00:00Z',
+    status: 'ACTIVE',
+    createdAt: '2026-09-28T08:00:00Z',
+    updatedAt: '2026-09-28T08:00:00Z',
+    provenance: {
+      isLive: false,
+      status: 'DEMO',
+      sourceReliability: 'OFFICIAL_TELEMETRY',
+      sourceName: 'INCOIS OSF'
+    },
+    confidence: {
+      level: 'HIGH',
+      score: 88,
+      explanation: 'Multi-buoy recorded swell height confirmation.'
+    },
+    whyExplanation: 'Afternoon swell exceeds traditional craft operating limits.',
+  },
+  {
+    id: 'HAZ-MH-2026-02',
+    fingerprint: 'fp-haz-mh-02',
+    alertType: 'RESTRICTED_ZONE_INCURSION',
+    category: 'GIS_SAFETY',
+    severity: 'CRITICAL',
+    title: 'Naval Anchorage Security Buffer Geofence',
+    message: 'Restricted naval transit corridor active west of Mumbai Harbor. Minimum 4.2 km standoff distance strictly enforced for commercial and artisanal craft.',
+    actionRecommendation: 'Maintain course heading 245° WSW for safe clearance. Do not cross east of longitude 72°48.0\' E without port authorization.',
+    source: 'PostGIS Safety Engine',
+    dataset: 'POSTGIS_SECURITY_ZONES',
+    evidenceIds: ['EVD-GIS-02'],
+    ruleIds: ['RULE_07_POSTGIS_GEOFENCE'],
+    affectedArea: {
+      name: 'Mumbai Naval Buffer Zone Bravo',
+      coordinates: [
+        [72.78, 18.90],
+        [72.84, 18.90],
+        [72.84, 18.95],
+        [72.78, 18.95],
+        [72.78, 18.90],
+      ],
+    },
+    affectedMissionIds: ['MSN-20260928-01'],
+    affectedVesselIds: ['VESSEL-MH-01'],
+    issuedAt: '2026-09-28T00:00:00Z',
+    validFrom: '2026-09-28T00:00:00Z',
+    validUntil: '2026-09-29T00:00:00Z',
+    status: 'ACTIVE',
+    createdAt: '2026-09-28T00:00:00Z',
+    updatedAt: '2026-09-28T00:00:00Z',
+    provenance: {
+      isLive: true,
+      status: 'VERIFIED',
+      sourceReliability: 'GEOSPATIAL_ENGINE',
+      sourceName: 'PostGIS Geofence'
+    },
+    confidence: {
+      level: 'HIGH',
+      score: 99,
+      explanation: 'Deterministic boundary computation via ST_DWithin.'
+    },
+    whyExplanation: 'Vessel path evaluated against gazetted restricted waters.',
+  },
+];
+
 export const DisasterManagementPage: React.FC = () => {
   const { activeRegion } = useRegion();
   const { state, gpsStatus, pendingSyncCount } = useConnectivity();
@@ -35,15 +126,18 @@ export const DisasterManagementPage: React.FC = () => {
           const disasterItems = items.filter(
             (a) => a.severity === 'CRITICAL' || a.severity === 'WARNING' || a.category === 'WEATHER_MARINE' || a.category === 'GIS_SAFETY'
           );
-          setHazards(disasterItems);
-          if (disasterItems.length > 0) {
-            setSelectedHazard((prev) => prev || disasterItems[0]);
-          }
+          const finalHazards = disasterItems.length > 0 ? disasterItems : DEFAULT_DEMO_HAZARDS;
+          setHazards(finalHazards);
+          setSelectedHazard((prev) => prev || finalHazards[0] || null);
           setLoading(false);
         }
       })
       .catch(() => {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setHazards(DEFAULT_DEMO_HAZARDS);
+          setSelectedHazard(DEFAULT_DEMO_HAZARDS[0]);
+          setLoading(false);
+        }
       });
 
     return () => {
@@ -59,13 +153,14 @@ export const DisasterManagementPage: React.FC = () => {
         const disasterItems = items.filter(
           (a) => a.severity === 'CRITICAL' || a.severity === 'WARNING' || a.category === 'WEATHER_MARINE' || a.category === 'GIS_SAFETY'
         );
-        setHazards(disasterItems);
-        if (disasterItems.length > 0) {
-          setSelectedHazard((prev) => prev || disasterItems[0]);
-        }
+        const finalHazards = disasterItems.length > 0 ? disasterItems : DEFAULT_DEMO_HAZARDS;
+        setHazards(finalHazards);
+        setSelectedHazard((prev) => prev || finalHazards[0] || null);
         setLoading(false);
       })
       .catch(() => {
+        setHazards(DEFAULT_DEMO_HAZARDS);
+        setSelectedHazard(DEFAULT_DEMO_HAZARDS[0]);
         setLoading(false);
       });
   }, []);

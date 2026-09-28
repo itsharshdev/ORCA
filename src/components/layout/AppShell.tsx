@@ -18,7 +18,12 @@ export const AppShell: React.FC = () => {
       <div className="flex-1 flex overflow-hidden relative">
         <Sidebar />
         
-        <main className="flex-1 relative flex flex-col overflow-y-auto pb-20 md:pb-6 bg-[#F5F9FC]">
+        <main 
+          className="flex-1 relative flex flex-col overflow-y-auto bg-[#F5F9FC] md:pb-6"
+          style={{
+            paddingBottom: 'max(6rem, calc(4.75rem + env(safe-area-inset-bottom, 0px)))'
+          }}
+        >
           <Outlet />
         </main>
       </div>
