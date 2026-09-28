@@ -86,9 +86,13 @@ export const PfzOpportunityPanel: React.FC<PfzOpportunityPanelProps> = ({
     };
   }, [latitude, longitude, region]);
 
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'failed'>('idle');
+  const [syncErrorMessage, setSyncErrorMessage] = useState<string | null>(null);
+
   const handleSyncToDb = async () => {
     setSyncingDb(true);
     setSyncMessage(null);
+    setSyncErrorMessage(null);
     try {
       const res = await observationService.triggerPfzIngestion({
         latitude,
@@ -97,17 +101,28 @@ export const PfzOpportunityPanel: React.FC<PfzOpportunityPanelProps> = ({
         allowFallback: true,
       });
       if (res.success) {
+        setSyncStatus('success');
         setSyncMessage(
-          `Persisted ${res.totalReceived || 0} PFZ opportunities to PostGIS (${res.isLive ? 'LIVE' : 'DEMO'})`
+          `SYNC COMPLETE: Persisted ${res.totalReceived || 0} PFZ opportunities to PostGIS at ${new Date().toLocaleTimeString()} IST (${res.isLive ? 'LIVE' : 'DEMO_SNAPSHOT'}).`
         );
       } else {
-        setSyncMessage(`Sync failed: ${res.error || 'Unknown error'}`);
+        setSyncStatus('failed');
+        setSyncErrorMessage(
+          res.error || 'Upstream INCOIS WFS endpoint unreachable. Retaining local cached advisories.'
+        );
       }
     } catch (err) {
-      setSyncMessage(err instanceof Error ? err.message : 'Persistence failure');
+      setSyncStatus('failed');
+      setSyncErrorMessage(
+        err instanceof Error ? err.message : 'Database synchronization failure. Using cached thermal fronts.'
+      );
     } finally {
       setSyncingDb(false);
-      setTimeout(() => setSyncMessage(null), 5000);
+      setTimeout(() => {
+        if (syncStatus === 'success') {
+          setSyncMessage(null);
+        }
+      }, 7000);
     }
   };
 
@@ -294,6 +309,32 @@ export const PfzOpportunityPanel: React.FC<PfzOpportunityPanelProps> = ({
         </div>
       )}
 
+      {/* Structured Sync Feedback Notification */}
+      {syncStatus === 'failed' && syncErrorMessage && (
+        <div className="p-3 rounded-xl bg-[#FEF1F2] border border-[#FCA5A5] text-[#991B1B] text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 animate-fade-in">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-[#EF4444] shrink-0" />
+            <div>
+              <span className="font-bold font-telemetry">SYNC FAILED:</span> {syncErrorMessage} (Last retrieval: {lastFetchedTime || 'Cached snapshot'})
+            </div>
+          </div>
+          <button
+            onClick={handleSyncToDb}
+            disabled={syncingDb}
+            className="px-2.5 py-1 bg-white border border-[#FCA5A5] rounded-lg text-xs font-bold text-[#991B1B] hover:bg-[#FEE2E2] transition cursor-pointer shrink-0"
+          >
+            Retry Sync
+          </button>
+        </div>
+      )}
+
+      {syncStatus === 'success' && syncMessage && (
+        <div className="p-3 rounded-xl bg-[#EBF7EE] border border-[#A3E6B5] text-[#1B7339] text-xs flex items-center gap-2 animate-fade-in font-telemetry font-medium">
+          <CheckCircle2 className="w-4 h-4 text-[#2E8B57] shrink-0" />
+          <span>{syncMessage}</span>
+        </div>
+      )}
+
       {/* Supabase Persistence & Status Footer */}
       <div className="flex items-center justify-between pt-2 border-t border-[#EDF5F8] text-[10px] text-[#587083]">
         <div className="flex items-center gap-2">
@@ -305,15 +346,9 @@ export const PfzOpportunityPanel: React.FC<PfzOpportunityPanelProps> = ({
             <Database className="w-3.5 h-3.5 text-[#147FB3]" />
             {syncingDb ? 'Syncing...' : 'Sync to PostGIS'}
           </button>
-          {syncMessage && (
-            <span className="text-[10px] text-emerald-700 flex items-center gap-1 font-medium animate-fade-in">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              {syncMessage}
-            </span>
-          )}
         </div>
         <div className="text-right text-[10px] text-[#7E93A3] font-telemetry">
-          Last check: {lastFetchedTime || 'Just now'}
+          Last retrieval: {lastFetchedTime || 'Cached snapshot'}
         </div>
       </div>
     </div>

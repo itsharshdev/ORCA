@@ -235,6 +235,44 @@ export interface AlertEvaluationInput {
 
 export type ConnectivityState = 'CONNECTED' | 'DEGRADED' | 'OFFLINE' | 'SAFETY_MESSAGE_RECEIVED';
 export type NetworkBearer = 'CELLULAR_4G_5G' | 'CELLULAR_2G' | 'NAVIC_RECEIVER' | 'SATELLITE_MSG' | 'BLUETOOTH_MESH' | 'NONE';
+export type GpsStatus = 'GNSS_FIX_ACQUIRED' | 'SEARCHING' | 'SENSOR_UNAVAILABLE' | 'IP_GEOLOCATION_ONLY' | 'SIMULATED' | 'FIX_ACQUIRED' | 'UNAVAILABLE';
+export type FreshnessState = 'LIVE' | 'FRESH' | 'CACHED' | 'AGING' | 'STALE' | 'EXPIRED' | 'UNAVAILABLE' | 'ACCESS_PENDING' | 'DEMO' | 'DETERMINISTIC';
+
+export interface SafetyBroadcastMessage {
+  id: string;
+  sender: string;
+  headline: string;
+  body: string;
+  severity: 'CRITICAL' | 'WARNING' | 'ADVISORY';
+  broadcastBearer: 'NAVIC_SATELLITE' | 'VHF_COASTAL_RADIO_RELAY' | 'EMERGENCY_CELL_BROADCAST';
+  receivedAt: string;
+  validUntil?: string | null;
+}
+
+export interface SyncMutationItem {
+  id: string;
+  mutationType: 'ACKNOWLEDGE_ALERT' | 'RESOLVE_ALERT' | 'CREATE_MISSION' | 'UPDATE_MISSION' | 'TELEMETRY_LOG';
+  payload: Record<string, unknown>;
+  createdAt: string;
+  attempts: number;
+  lastAttemptAt?: string;
+  error?: string;
+}
+
+export interface SyncBatchRequest {
+  clientId: string;
+  mutations: SyncMutationItem[];
+  connectivityState: ConnectivityState;
+  lastSyncTimestamp?: string | null;
+}
+
+export interface SyncBatchResponse {
+  syncedMutationIds: string[];
+  failedMutations: Array<{ id: string; error: string }>;
+  serverTimestamp: string;
+  state: ConnectivityState;
+  message: string;
+}
 
 export interface ConnectivityEventRecord {
   id: string;
@@ -246,6 +284,23 @@ export interface ConnectivityEventRecord {
   recovered_at?: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
+}
+
+export interface ConnectivityStatus {
+  state: ConnectivityState;
+  bearer: NetworkBearer | string;
+  isOnline: boolean;
+  apiReachable: boolean;
+  gpsStatus: GpsStatus | string;
+  lastSuccessfulContact: string | null;
+  lastSuccessfulSync: string | null;
+  pendingSyncCount: number;
+  safetyMessage?: SafetyBroadcastMessage | null;
+  isSimulated?: boolean;
+  sourceReachability?: Record<string, string>;
+  sources?: Record<string, unknown>;
+  serverTimestamp?: string;
+  status?: string;
 }
 
 export type DecisionRuleCategory = 
@@ -305,3 +360,4 @@ export interface ReplayRecord {
   metadata: Record<string, unknown>;
   created_at: string;
 }
+

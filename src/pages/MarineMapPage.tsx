@@ -4,23 +4,89 @@ import { MapLayerControl } from '@/components/map/MapLayerControl';
 import { MapContextPanel } from '@/components/map/MapContextPanel';
 import { MapLegend } from '@/components/map/MapLegend';
 import { useRegion } from '@/hooks/useRegion';
+import { useRole } from '@/hooks/useRole';
+import { useConnectivity } from '@/hooks/useConnectivity';
 import type { MapLayerVisibility, SelectedMapEntity } from '@/types/map';
 import { Fish, AlertTriangle, ShieldAlert, Anchor } from 'lucide-react';
 
+const ROLE_LAYER_PRESETS: Record<string, { label: string; layers: MapLayerVisibility }> = {
+  FISHERMAN: {
+    label: 'Fisherman View',
+    layers: {
+      userLocation: true,
+      vessel: true,
+      pfzZones: true,
+      weatherRisk: true,
+      hazards: false,
+      boundaries: true,
+      recommendedRoute: true,
+      safeCorridor: true,
+      riskAreas: false,
+    },
+  },
+  COASTAL_AUTHORITY: {
+    label: 'Authority Surveillance',
+    layers: {
+      userLocation: true,
+      vessel: true,
+      pfzZones: false,
+      weatherRisk: false,
+      hazards: true,
+      boundaries: true,
+      recommendedRoute: true,
+      safeCorridor: true,
+      riskAreas: true,
+    },
+  },
+  DISASTER_MANAGER: {
+    label: 'Disaster Hazard Perimeter',
+    layers: {
+      userLocation: true,
+      vessel: true,
+      pfzZones: false,
+      weatherRisk: true,
+      hazards: true,
+      boundaries: true,
+      recommendedRoute: false,
+      safeCorridor: false,
+      riskAreas: true,
+    },
+  },
+  RESEARCHER: {
+    label: 'Research Observations',
+    layers: {
+      userLocation: true,
+      vessel: false,
+      pfzZones: true,
+      weatherRisk: true,
+      hazards: true,
+      boundaries: true,
+      recommendedRoute: false,
+      safeCorridor: true,
+      riskAreas: true,
+    },
+  },
+};
+
 export const MarineMapPage: React.FC = () => {
   const { activeRegion } = useRegion();
+  const { activeRole } = useRole();
+  const { state, gpsStatus } = useConnectivity();
   const { pfzData, hazardsData, boundariesData, vesselsData, mapCenter } = activeRegion;
 
-  const [layers, setLayers] = useState<MapLayerVisibility>({
-    userLocation: true,
-    vessel: true,
-    pfzZones: true,
-    weatherRisk: true,
-    hazards: true,
-    boundaries: true,
-    recommendedRoute: true,
-    safeCorridor: true,
-    riskAreas: true,
+  // Initialize with active role's recommended layers
+  const [layers, setLayers] = useState<MapLayerVisibility>(() => {
+    return ROLE_LAYER_PRESETS[activeRole]?.layers || {
+      userLocation: true,
+      vessel: true,
+      pfzZones: true,
+      weatherRisk: true,
+      hazards: true,
+      boundaries: true,
+      recommendedRoute: true,
+      safeCorridor: true,
+      riskAreas: true,
+    };
   });
 
   const topPfz = pfzData.zones[0];
@@ -181,14 +247,58 @@ export const MarineMapPage: React.FC = () => {
         <MapLayerControl layers={layers} onChange={setLayers} />
       </div>
 
-      {/* Quick Jump Ribbon (Top Center / Right) */}
+      {/* Floating Connectivity Notice (Top Center) */}
+      {state !== 'CONNECTED' && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 rounded-xl bg-white/95 backdrop-blur-md border border-[#D8E5EC] shadow-md flex items-center gap-2 text-xs font-semibold text-[#123B5D]">
+          <span className={`w-2 h-2 rounded-full ${state === 'OFFLINE' ? 'bg-[#EF4444]' : 'bg-[#D99520]'}`} />
+          <span>{state === 'OFFLINE' ? 'OFFLINE: CACHED VECTOR SHELL' : 'DEGRADED: HIGH LATENCY'}</span>
+          <span className="text-[10px] text-[#5A7C99] font-mono border-l border-[#D8E5EC] pl-2">GPS: {gpsStatus}</span>
+        </div>
+      )}
+
+      {/* Quick Jump & Preset Ribbon (Top Right) */}
       <div className="absolute top-4 right-4 z-20 hidden sm:flex items-center gap-2 p-1.5 rounded-2xl bg-white/95 backdrop-blur-md border border-[#D8E5EC] shadow-md">
+        {/* Role Layer Presets */}
+        <div className="flex items-center gap-1 pr-2 border-r border-[#D8E5EC]">
+          {Object.entries(ROLE_LAYER_PRESETS).map(([key, config]) => (
+            <button
+              key={key}
+              onClick={() => setLayers(config.layers)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                activeRole === key
+                  ? 'bg-[#147FB3] text-white shadow-2xs font-bold'
+                  : 'text-[#587083] hover:text-[#123B5D] hover:bg-[#F5F9FC]'
+              }`}
+              title={`Apply ${config.label} layer configuration`}
+            >
+              {config.label.split(' ')[0]}
+            </button>
+          ))}
+          <button
+            onClick={() => setLayers({
+              userLocation: true,
+              vessel: true,
+              pfzZones: true,
+              weatherRisk: true,
+              hazards: true,
+              boundaries: true,
+              recommendedRoute: true,
+              safeCorridor: true,
+              riskAreas: true,
+            })}
+            className="px-2 py-1 rounded-lg text-[10px] text-[#7E93A3] hover:text-[#123B5D] hover:bg-[#F5F9FC] transition cursor-pointer"
+            title="Enable all layers"
+          >
+            All
+          </button>
+        </div>
+
         <button
           onClick={selectTopZone}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#147FB3] bg-[#E8F4FA] hover:bg-[#CFE6F3] transition cursor-pointer"
         >
           <Fish className="w-3.5 h-3.5" />
-          <span>PFZ Zone</span>
+          <span>PFZ</span>
         </button>
 
         <button

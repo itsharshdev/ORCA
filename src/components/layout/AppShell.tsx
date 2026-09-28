@@ -3,10 +3,14 @@ import { Outlet } from 'react-router-dom';
 import { TopBar } from './TopBar';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
+import { OrcaBootSplash } from '@/components/ui/OrcaBootSplash';
 
 export const AppShell: React.FC = () => {
   return (
     <div className="flex flex-col h-screen w-screen bg-[#F5F9FC] text-[#102B40] overflow-hidden">
+      {/* Restrained Startup Splash Screen */}
+      <OrcaBootSplash />
+
       {/* Top Application Header */}
       <TopBar />
 

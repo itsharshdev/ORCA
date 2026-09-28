@@ -155,3 +155,21 @@ export const alertEvaluateBodySchema = z.object({
   }).optional(),
 });
 
+export const syncBatchRequestSchema = z.object({
+  clientId: z.string().min(1),
+  mutations: z.array(
+    z.object({
+      id: z.string().min(1),
+      mutationType: z.enum(['ACKNOWLEDGE_ALERT', 'RESOLVE_ALERT', 'CREATE_MISSION', 'UPDATE_MISSION', 'TELEMETRY_LOG']),
+      payload: z.record(z.string(), z.unknown()),
+      createdAt: z.string(),
+      attempts: z.number().int().nonnegative(),
+      lastAttemptAt: z.string().optional(),
+      error: z.string().optional(),
+    })
+  ),
+  connectivityState: z.enum(['CONNECTED', 'DEGRADED', 'OFFLINE', 'SAFETY_MESSAGE_RECEIVED']),
+  lastSyncTimestamp: z.string().nullable().optional(),
+});
+
+

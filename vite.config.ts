@@ -16,8 +16,8 @@ export default defineConfig({
         name: 'ORCA — Marine Ecosystem Reasoning with Collaborative Agents',
         short_name: 'ORCA',
         description: 'Agentic AI-powered conversational marine intelligence and decision support platform for fishermen and coastal operators.',
-        theme_color: '#071322',
-        background_color: '#071322',
+        theme_color: '#123B5D',
+        background_color: '#F5F9FC',
         display: 'standalone',
         orientation: 'any',
         start_url: '/',
@@ -29,6 +29,25 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*tile\.openstreetmap\.org\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'osm-tiles-cache',
+              expiration: {
+                maxEntries: 250,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
       }
     })
   ],

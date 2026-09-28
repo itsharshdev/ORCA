@@ -66,3 +66,55 @@ export const requireAuth = async (request: FastifyRequest, reply: FastifyReply):
   request.user = user;
   request.accessToken = token;
 };
+
+/**
+ * PreHandler hook enforcing server-side Role-Based Access Control (RBAC).
+ * Enforces that caller holds one of the specified operational roles.
+ */
+export const requireRole = (allowedRoles: string[]) => {
+  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    // If not already authenticated via requireAuth, execute authentication first
+    if (!request.user) {
+      await requireAuth(request, reply);
+      if (reply.sent) return;
+    }
+
+    const user = request.user;
+    if (!user) {
+      return reply.status(401).send({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication is required to perform this operation.',
+          details: null,
+          requestId: request.id,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
+    // Role resolution: user.role > header x-orca-role > default FISHERMAN
+    const roleFromHeader = (request.headers['x-orca-role'] as string | undefined)?.toUpperCase();
+    const userRole = (user.role || roleFromHeader || 'FISHERMAN').toUpperCase();
+
+    const normalizedAllowed = allowedRoles.map((r) => r.toUpperCase());
+    const isAuthorized =
+      normalizedAllowed.includes(userRole) ||
+      userRole === 'ADMIN' ||
+      userRole === 'SERVICE_ROLE';
+
+    if (!isAuthorized) {
+      return reply.status(403).send({
+        error: {
+          code: 'FORBIDDEN',
+          message: `Role '${userRole}' is not authorized to perform this operation. Allowed roles: ${allowedRoles.join(', ')}.`,
+          details: {
+            userRole,
+            requiredRoles: allowedRoles,
+          },
+          requestId: request.id,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+  };
+};

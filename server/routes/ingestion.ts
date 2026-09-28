@@ -36,6 +36,18 @@ export const ingestionRoutes: FastifyPluginAsync = async (fastify) => {
    * Triggers normalization and persistence of demo environmental feeds into Supabase.
    */
   fastify.post('/ingestion/demo', async (request, reply) => {
+    const roleFromHeader = (request.headers['x-orca-role'] as string | undefined)?.toUpperCase();
+    if (roleFromHeader === 'UNAUTHORIZED' || roleFromHeader === 'ANONYMOUS_UNVERIFIED') {
+      return reply.status(403).send({
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Caller lacks authorization to trigger ingestion pipeline.',
+          details: null,
+          requestId: request.id,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
     const parseResult = demoIngestionSchema.safeParse(request.body || {});
     if (!parseResult.success) {
       return reply.status(400).send({

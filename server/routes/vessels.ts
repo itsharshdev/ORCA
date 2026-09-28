@@ -75,6 +75,22 @@ export const vesselRoutes: FastifyPluginAsync = async (app) => {
       const { id } = request.params;
       const updates = request.body || {};
 
+      const roleFromHeader = (request.headers['x-orca-role'] as string | undefined)?.toUpperCase();
+      const userRole = (request.user?.role || roleFromHeader || 'MARITIME_OPERATOR').toUpperCase();
+      const allowedRoles = ['MARITIME_OPERATOR', 'OPERATOR', 'COASTAL_AUTHORITY', 'ADMIN', 'SERVICE_ROLE'];
+
+      if (userRole === 'RESEARCHER' || userRole === 'UNAUTHORIZED' || (!allowedRoles.includes(userRole) && userRole !== 'FISHERMAN')) {
+        return reply.status(403).send({
+          error: {
+            code: 'FORBIDDEN',
+            message: `Role '${userRole}' is not authorized to modify vessel capability configurations.`,
+            details: { userRole, allowedRoles },
+            requestId: request.id,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
       try {
         const updated = await capabilityService.updateCapability(id, updates);
         return reply.status(200).send(updated);

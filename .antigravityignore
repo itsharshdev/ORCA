@@ -1,0 +1,16 @@
+# Antigravity Indexing Ignore Rules
+node_modules/
+dist/
+dist-ssr/
+build/
+coverage/
+.vite/
+.cache/
+logs/
+*.log
+*.zip
+scratch/
+.system_generated/
+*.webp
+*.mp4
+*.png.tmp

@@ -9,9 +9,11 @@ import {
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/routes';
 import { useRegion } from '@/hooks/useRegion';
+import { useConnectivity } from '@/hooks/useConnectivity';
 
 export const OperatorDashboardPage: React.FC = () => {
   const { activeRegion } = useRegion();
+  const { state, pendingSyncCount } = useConnectivity();
 
   const scheduledVoyages = [
     {
@@ -77,6 +79,38 @@ export const OperatorDashboardPage: React.FC = () => {
           <span>DISPATCH NEW VOYAGE</span>
         </Link>
       </div>
+
+      {/* Operator Offline / Degraded Dispatch Notice */}
+      {state !== 'CONNECTED' && (
+        <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+          state === 'OFFLINE'
+            ? 'bg-[#FEF1F2] border-[#FCA5A5] text-[#991B1B]'
+            : state === 'SAFETY_MESSAGE_RECEIVED'
+            ? 'bg-[#EFF6FF] border-[#93C5FD] text-[#1E40AF]'
+            : 'bg-[#FEF9EE] border-[#FAD889] text-[#996000]'
+        }`}>
+          <div className="flex items-start sm:items-center gap-2.5">
+            <Ship className={`w-4 h-4 mt-0.5 sm:mt-0 flex-shrink-0 ${state === 'OFFLINE' ? 'text-[#EF4444]' : 'text-[#D99520]'}`} />
+            <div>
+              <div className="font-bold flex items-center gap-2">
+                <span>{state === 'OFFLINE' ? 'OFFLINE FLEET DISPATCH MODE' : state === 'SAFETY_MESSAGE_RECEIVED' ? 'SAFETY BROADCAST RECEIVED (COASTAL ALERT)' : 'DEGRADED NETWORK'}</span>
+              </div>
+              <p className="mt-0.5 text-[11px] leading-relaxed opacity-90">
+                {state === 'OFFLINE'
+                  ? 'Scheduled voyages and departure clearance envelopes reflect cached mission plans. New voyage dispatches require network link or will be queued locally as drafts.'
+                  : state === 'SAFETY_MESSAGE_RECEIVED'
+                  ? 'Urgent safety broadcast active. Review vessel clearances before issuing voyage dispatches.'
+                  : 'High latency detected. Scheduled voyages retained from local store.'}
+              </p>
+            </div>
+          </div>
+          {pendingSyncCount > 0 && (
+            <div className="flex-shrink-0 px-2.5 py-1 rounded-lg bg-white/80 border border-current font-semibold text-[11px]">
+              {pendingSyncCount} pending sync
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Main Grid: Map (Left 7 Cols) + Scheduled Voyages (Right 5 Cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

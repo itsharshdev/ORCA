@@ -121,13 +121,24 @@ export const alertRoutes: FastifyPluginAsync = async (fastify) => {
     const { id } = parseParam.data;
     const { operatorId, role, note } = parseBody.data;
 
-    // Check for unauthorized mutation role
-    if (role === 'UNAUTHORIZED' || role === 'ANONYMOUS_UNVERIFIED') {
+    // Check header x-orca-role or body role
+    const effectiveRole = ((request.headers['x-orca-role'] as string) || role || 'COASTAL_AUTHORITY').toUpperCase();
+    const allowedAcknowledgeRoles = [
+      'COASTAL_AUTHORITY',
+      'DISASTER_MANAGEMENT',
+      'DISASTER_MANAGER',
+      'MARITIME_OPERATOR',
+      'COASTAL_OPERATOR',
+      'OPERATOR',
+      'ADMIN',
+    ];
+
+    if (!allowedAcknowledgeRoles.includes(effectiveRole)) {
       return reply.status(403).send({
         error: {
           code: 'FORBIDDEN',
-          message: 'Caller lacks authorization to mutate operational alert state.',
-          details: null,
+          message: `Role '${effectiveRole}' lacks authorization to mutate operational alert state. Allowed roles: ${allowedAcknowledgeRoles.join(', ')}.`,
+          details: { role: effectiveRole, requiredRoles: allowedAcknowledgeRoles },
           requestId: request.id,
           timestamp: new Date().toISOString(),
         },
@@ -137,7 +148,7 @@ export const alertRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       const updated = await alertService.acknowledgeAlert(id, {
         id: operatorId,
-        role: role || 'COASTAL_OPERATOR',
+        role: effectiveRole,
         note,
       });
 
@@ -194,13 +205,20 @@ export const alertRoutes: FastifyPluginAsync = async (fastify) => {
     const { id } = parseParam.data;
     const { operatorId, role, note } = parseBody.data;
 
-    // Check for unauthorized mutation role
-    if (role === 'UNAUTHORIZED' || role === 'ANONYMOUS_UNVERIFIED') {
+    const effectiveRole = ((request.headers['x-orca-role'] as string) || role || 'DISASTER_MANAGEMENT').toUpperCase();
+    const allowedResolveRoles = [
+      'DISASTER_MANAGEMENT',
+      'DISASTER_MANAGER',
+      'COASTAL_AUTHORITY',
+      'ADMIN',
+    ];
+
+    if (!allowedResolveRoles.includes(effectiveRole)) {
       return reply.status(403).send({
         error: {
           code: 'FORBIDDEN',
-          message: 'Caller lacks authorization to resolve operational alert state.',
-          details: null,
+          message: `Role '${effectiveRole}' lacks authorization to resolve operational alerts. Allowed roles: ${allowedResolveRoles.join(', ')}.`,
+          details: { role: effectiveRole, requiredRoles: allowedResolveRoles },
           requestId: request.id,
           timestamp: new Date().toISOString(),
         },

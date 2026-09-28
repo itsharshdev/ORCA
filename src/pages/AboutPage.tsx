@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Anchor, ShieldCheck, Database } from 'lucide-react';
+import { ShieldCheck, Database } from 'lucide-react';
 import { ROUTES } from '@/routes';
+import { OrcaLogo } from '@/components/common/OrcaLogo';
 
 export const AboutPage: React.FC = () => {
   return (
@@ -9,12 +10,7 @@ export const AboutPage: React.FC = () => {
       <header className="h-16 border-b border-[#D8E5EC] bg-white px-4 sm:px-8 flex items-center justify-between shadow-xs sticky top-0 z-40">
         <div className="flex items-center gap-2.5">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#E8F4FA] border border-[#CFE6F3] flex items-center justify-center text-[#147FB3]">
-              <Anchor className="w-4 h-4" />
-            </div>
-            <span className="font-display-decision font-black text-lg tracking-tight text-[#123B5D]">
-              ORCA
-            </span>
+            <OrcaLogo size="md" showText={true} />
           </Link>
         </div>
 

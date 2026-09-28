@@ -9,12 +9,14 @@ import {
   Search
 } from 'lucide-react';
 import { useRegion } from '@/hooks/useRegion';
+import { useConnectivity } from '@/hooks/useConnectivity';
 import { alertService } from '@/services/alertService';
 import { AlertDetailModal } from '@/components/alerts/AlertDetailModal';
 import type { AlertItem } from '@/types/contract';
 
 export const AuthorityDashboardPage: React.FC = () => {
   const { activeRegion } = useRegion();
+  const { state, gpsStatus, pendingSyncCount } = useConnectivity();
   const [searchTerm, setSearchTerm] = useState('');
   const [incursionAlerts, setIncursionAlerts] = useState<AlertItem[]>([]);
   const [selectedAlert, setSelectedAlert] = useState<AlertItem | null>(null);
@@ -113,6 +115,39 @@ export const AuthorityDashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Authority Offline / Degraded Connectivity Notice */}
+      {state !== 'CONNECTED' && (
+        <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+          state === 'OFFLINE'
+            ? 'bg-[#FEF1F2] border-[#FCA5A5] text-[#991B1B]'
+            : state === 'SAFETY_MESSAGE_RECEIVED'
+            ? 'bg-[#EFF6FF] border-[#93C5FD] text-[#1E40AF]'
+            : 'bg-[#FEF9EE] border-[#FAD889] text-[#996000]'
+        }`}>
+          <div className="flex items-start sm:items-center gap-2.5">
+            <Radio className={`w-4 h-4 mt-0.5 sm:mt-0 flex-shrink-0 ${state === 'OFFLINE' ? 'text-[#EF4444]' : 'text-[#D99520]'}`} />
+            <div>
+              <div className="font-bold flex items-center gap-2">
+                <span>{state === 'OFFLINE' ? 'OFFLINE OPERATIONAL SURVEILLANCE' : state === 'SAFETY_MESSAGE_RECEIVED' ? 'SAFETY BROADCAST RECEIVED (COASTAL ALERT)' : 'DEGRADED NETWORK TELEMETRY'}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/70 font-mono font-medium">GPS: {gpsStatus}</span>
+              </div>
+              <p className="mt-0.5 text-[11px] leading-relaxed opacity-90">
+                {state === 'OFFLINE'
+                  ? 'Surveillance positions and restricted zones reflect cached local radar snapshots. Live AIS telemetry streaming is offline. Stale fleet tracks are flagged.'
+                  : state === 'SAFETY_MESSAGE_RECEIVED'
+                  ? 'Urgent marine broadcast received over alternate bearer. Coastal craft advisory and perimeter monitoring prioritised.'
+                  : 'High latency detected on coastal feed. PostGIS geofence checks remain authoritative locally, but live craft coordinates may be delayed.'}
+              </p>
+            </div>
+          </div>
+          {pendingSyncCount > 0 && (
+            <div className="flex-shrink-0 px-2.5 py-1 rounded-lg bg-white/80 border border-current font-semibold text-[11px]">
+              {pendingSyncCount} pending sync {pendingSyncCount === 1 ? 'item' : 'items'}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Main Grid: Map (Left 7 Cols) + Fleet Operations Panel (Right 5 Cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

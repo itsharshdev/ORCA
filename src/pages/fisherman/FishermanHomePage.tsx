@@ -8,6 +8,7 @@ import { VesselCapabilityCard } from '@/components/vessel/VesselCapabilityCard';
 import { MarineMapCanvas } from '@/components/map/MarineMapCanvas';
 import { useRegion } from '@/hooks/useRegion';
 import { useOrchestration } from '@/hooks/useOrchestration';
+import { useConnectivity } from '@/hooks/useConnectivity';
 import { 
   MapPin, 
   Compass, 
@@ -21,7 +22,9 @@ import {
   Sliders,
   ChevronRight,
   Waves,
-  Anchor
+  Anchor,
+  AlertCircle,
+  RotateCcw
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/routes';
@@ -29,6 +32,7 @@ import { ROUTES } from '@/routes';
 export const FishermanHomePage: React.FC = () => {
   const { activeRegion } = useRegion();
   const { runOrchestration, isOrchestrating } = useOrchestration();
+  const { state, bearer, gpsStatus } = useConnectivity();
   const { vesselsData, pfzData } = activeRegion;
   const vessel = vesselsData.profiles[0];
   const topPfz = pfzData.zones[0];
@@ -137,6 +141,77 @@ export const FishermanHomePage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* 2b. Role-Specific Offline Reality HUD (Step 11) */}
+      {state !== 'CONNECTED' && (
+        <div className={`rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col gap-3 ${
+          state === 'OFFLINE'
+            ? 'bg-rose-50/60 border-rose-200'
+            : state === 'SAFETY_MESSAGE_RECEIVED'
+            ? 'bg-purple-50/60 border-purple-200'
+            : 'bg-amber-50/60 border-amber-200'
+        }`}>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${
+                state === 'OFFLINE' ? 'bg-rose-600' : state === 'SAFETY_MESSAGE_RECEIVED' ? 'bg-purple-600' : 'bg-amber-500'
+              } animate-pulse`} />
+              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#123B5D]">
+                {state === 'OFFLINE'
+                  ? 'OFFLINE MODE — What Can You Safely Rely On Right Now?'
+                  : state === 'SAFETY_MESSAGE_RECEIVED'
+                  ? 'EMERGENCY SAFETY MESSAGE RECEIVED'
+                  : 'DEGRADED CONNECTIVITY — Relying on Verified Pre-Cached Data'}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-mono font-bold">
+              <span className="px-2 py-0.5 rounded bg-white border border-[#CBD5E1] text-[#123B5D]">
+                GPS: {gpsStatus} (Sensor Active)
+              </span>
+              <span className="px-2 py-0.5 rounded bg-white border border-[#CBD5E1] text-[#123B5D]">
+                Transport: {bearer}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div className="p-3 rounded-xl bg-white border border-[#D8E5EC] flex flex-col gap-1">
+              <div className="font-bold text-emerald-800 text-[11px] flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>CONFIRMED SAFE &amp; RELIABLE (LOCAL)</span>
+              </div>
+              <ul className="text-[11px] text-[#4A6478] space-y-0.5 list-disc list-inside">
+                <li>Vessel wave limit: <strong>1.8m maximum</strong> (Matsya Sagar 1 hull)</li>
+                <li>Naval Anchorage geofence clearance (&gt;4.2 km buffer)</li>
+                <li>WGS84 GPS coordinate location (hardware fix active)</li>
+              </ul>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white border border-[#D8E5EC] flex flex-col gap-1">
+              <div className="font-bold text-rose-800 text-[11px] flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span>UNAVAILABLE OR AGING (CAUTION)</span>
+              </div>
+              <ul className="text-[11px] text-[#4A6478] space-y-0.5 list-disc list-inside">
+                <li>Real-time afternoon swell updates offline</li>
+                <li>Live IMD squall warning updates paused</li>
+                <li>New trip clearance locked to <strong>INSUFFICIENT_DATA</strong></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-1 border-t border-black/5 text-[11px] text-[#587083]">
+            <span>Decision below represents last cached replay. Do not assume live telemetry.</span>
+            <Link
+              to={ROUTES.HISTORY}
+              className="text-[#147FB3] font-bold hover:underline flex items-center gap-1"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Browse Cached Decision Archive</span>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* 3. Priority 2 & 3: CURRENT DECISION + Plain Language Rationale */}
       <DecisionHeroCard

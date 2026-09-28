@@ -13,12 +13,14 @@ import {
   Ship
 } from 'lucide-react';
 import { useRegion } from '@/hooks/useRegion';
+import { useConnectivity } from '@/hooks/useConnectivity';
 import { alertService } from '@/services/alertService';
 import { AlertDetailModal } from '@/components/alerts/AlertDetailModal';
 import type { AlertItem } from '@/types/contract';
 
 export const DisasterManagementPage: React.FC = () => {
   const { activeRegion } = useRegion();
+  const { state, gpsStatus, pendingSyncCount } = useConnectivity();
   const [hazards, setHazards] = useState<AlertItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedHazard, setSelectedHazard] = useState<AlertItem | null>(null);
@@ -131,6 +133,39 @@ export const DisasterManagementPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Disaster Management Offline / Degraded Notice */}
+      {state !== 'CONNECTED' && (
+        <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+          state === 'OFFLINE'
+            ? 'bg-[#FEF1F2] border-[#FCA5A5] text-[#991B1B]'
+            : state === 'SAFETY_MESSAGE_RECEIVED'
+            ? 'bg-[#EFF6FF] border-[#93C5FD] text-[#1E40AF]'
+            : 'bg-[#FEF9EE] border-[#FAD889] text-[#996000]'
+        }`}>
+          <div className="flex items-start sm:items-center gap-2.5">
+            <AlertTriangle className={`w-4 h-4 mt-0.5 sm:mt-0 flex-shrink-0 ${state === 'OFFLINE' ? 'text-[#EF4444]' : 'text-[#D99520]'}`} />
+            <div>
+              <div className="font-bold flex items-center gap-2">
+                <span>{state === 'OFFLINE' ? 'OFFLINE DISASTER RESPONSE MODE' : state === 'SAFETY_MESSAGE_RECEIVED' ? 'SAFETY BROADCAST RECEIVED (COASTAL ALERT)' : 'DEGRADED HAZARD FEED'}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/70 font-mono font-medium">GPS: {gpsStatus}</span>
+              </div>
+              <p className="mt-0.5 text-[11px] leading-relaxed opacity-90">
+                {state === 'OFFLINE'
+                  ? 'Hazard zones and craft exposures are rendered from cached local emergency databases. Live satellite cyclone tracking & wave surge feeds require active network. Evacuation margins degrade conservatively.'
+                  : state === 'SAFETY_MESSAGE_RECEIVED'
+                  ? 'Special maritime emergency bulletin active over safety broadcast bearer. Verify vessel broadcast distribution below.'
+                  : 'High latency on disaster response feed. Cached hazard polygons and exposure counts retained. Retrying uplink.'}
+              </p>
+            </div>
+          </div>
+          {pendingSyncCount > 0 && (
+            <div className="flex-shrink-0 px-2.5 py-1 rounded-lg bg-white/80 border border-current font-semibold text-[11px]">
+              {pendingSyncCount} pending sync {pendingSyncCount === 1 ? 'action' : 'actions'}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Suggested Layout:
           ACTIVE HAZARDS

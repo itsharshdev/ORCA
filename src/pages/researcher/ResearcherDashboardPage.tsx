@@ -9,9 +9,11 @@ import {
 import { observationService } from '@/services/observationService';
 import type { NormalizedObservationContract } from '@/types/contract';
 import { useRegion } from '@/hooks/useRegion';
+import { useConnectivity } from '@/hooks/useConnectivity';
 
 export const ResearcherDashboardPage: React.FC = () => {
   const { activeRegion } = useRegion();
+  const { state } = useConnectivity();
   const [observations, setObservations] = useState<NormalizedObservationContract[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
@@ -86,6 +88,31 @@ export const ResearcherDashboardPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Researcher Offline / Degraded Notice */}
+      {state !== 'CONNECTED' && (
+        <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+          state === 'OFFLINE'
+            ? 'bg-[#FEF1F2] border-[#FCA5A5] text-[#991B1B]'
+            : state === 'SAFETY_MESSAGE_RECEIVED'
+            ? 'bg-[#EFF6FF] border-[#93C5FD] text-[#1E40AF]'
+            : 'bg-[#FEF9EE] border-[#FAD889] text-[#996000]'
+        }`}>
+          <div className="flex items-start sm:items-center gap-2.5">
+            <Database className="w-4 h-4 mt-0.5 sm:mt-0 flex-shrink-0 text-[#6C5CE7]" />
+            <div>
+              <div className="font-bold flex items-center gap-2">
+                <span>{state === 'OFFLINE' ? 'OFFLINE OBSERVATION REPOSITORY (INDEXEDDB CACHE)' : 'DEGRADED UPSTREAM REACHABILITY'}</span>
+              </div>
+              <p className="mt-0.5 text-[11px] leading-relaxed opacity-90">
+                {state === 'OFFLINE'
+                  ? 'Displaying local cached telemetry snapshot. Live INCOIS OSF, PFZ WFS, and IMD sync are offline. Provenance timestamps and dataset identifiers remain preserved.'
+                  : 'Observation synchronization experiencing packet latency. Retaining cached telemetry.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filter Toolbar */}
       <div className="bg-white rounded-2xl p-4 border border-[#D8E5EC] shadow-sm flex flex-wrap items-center justify-between gap-3">
@@ -171,12 +198,14 @@ export const ResearcherDashboardPage: React.FC = () => {
                         <td className="p-3">
                           <span
                             className={`px-1.5 py-0.5 rounded text-[9px] font-bold font-mono border ${
-                              obs.status === 'LIVE'
+                              state === 'OFFLINE'
+                                ? 'bg-[#F0F5F9] text-[#5A7C99] border-[#D8E5EC]'
+                                : obs.status === 'LIVE'
                                 ? 'bg-[#EBF7EE] text-[#2E8B57] border-[#A3E6B5]'
                                 : 'bg-[#FEF9EE] text-[#D99520] border-[#FAD889]'
                             }`}
                           >
-                            {obs.status}
+                            {state === 'OFFLINE' && obs.status === 'LIVE' ? 'CACHED' : obs.status}
                           </span>
                         </td>
                       </tr>

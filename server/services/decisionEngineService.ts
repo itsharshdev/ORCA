@@ -685,8 +685,57 @@ export class DecisionEngineService {
     const waveHeight = req.environmentalContext?.waveHeightMeters;
     const windSpeed = req.environmentalContext?.windSpeedKnots;
 
+    // Check for impossible/corrupted numeric values (negative, NaN, Infinity, or physically impossible bounds)
+    const isWaveCorrupted =
+      waveHeight !== undefined &&
+      waveHeight !== null &&
+      (isNaN(waveHeight) || !isFinite(waveHeight) || waveHeight < 0 || waveHeight > 35);
+
+    const isWindCorrupted =
+      windSpeed !== undefined &&
+      windSpeed !== null &&
+      (isNaN(windSpeed) || !isFinite(windSpeed) || windSpeed < 0 || windSpeed > 250);
+
+    if (isWaveCorrupted || isWindCorrupted) {
+      hasCriticalDataMissing = true;
+      const ruleId = 'RULE_04_CORRUPTED_TELEMETRY_VALUE';
+      const evidId = 'EVID-CORRUPTED-TELEMETRY';
+
+      rules.push({
+        ruleId,
+        ruleName: 'Telemetry Numerical Sanity & Range Validation',
+        category: 'DATA_QUALITY',
+        input: { waveHeight, windSpeed },
+        threshold: { waveRangeMeters: [0, 35], windRangeKnots: [0, 250] },
+        thresholdSource: 'OFFICIAL_SOURCED',
+        result: 'FAIL',
+        severity: 'CRITICAL',
+        reason: 'Received physically impossible, negative, or non-finite environmental telemetry values; decision cannot be safely evaluated.',
+        evidenceRef: evidId,
+      });
+
+      evidence.push({
+        evidenceId: evidId,
+        category: 'SAFETY',
+        source: 'ORCA_DATA_VALIDATION_GATEWAY',
+        dataset: 'TELEMETRY_SANITY_CHECK',
+        variable: 'corruptedTelemetrySignal',
+        value: `wave: ${waveHeight}, wind: ${windSpeed}`,
+        unit: null,
+        observedAt: evaluatedAt,
+        retrievedAt: evaluatedAt,
+        spatialRelevance: 'NOT_APPLICABLE',
+        temporalRelevance: 'UNKNOWN',
+        quality: 'POOR',
+        status: 'UNAVAILABLE',
+        ruleIds: [ruleId],
+        decisionImpact: 'CRITICAL_BLOCKER',
+        notes: 'Impossible numerical values (negative, NaN, Infinity, or extreme outlier) detected.',
+      });
+    }
+
     // Missing wave data when vessel wave evaluation is required
-    if (waveHeight === undefined || waveHeight === null || isNaN(waveHeight)) {
+    if (waveHeight === undefined || waveHeight === null || isNaN(waveHeight) || isWaveCorrupted) {
       hasCriticalDataMissing = true;
       const ruleId = 'RULE_04_MISSING_WAVE_OBSERVATION';
       const evidId = 'EVID-OCEAN-MISSING';
@@ -700,7 +749,7 @@ export class DecisionEngineService {
         thresholdSource: 'OFFICIAL_SOURCED',
         result: 'UNKNOWN',
         severity: 'CRITICAL',
-        reason: 'Significant wave height (Hs) observation is missing; sea state seaworthiness cannot be verified.',
+        reason: 'Significant wave height (Hs) observation is missing or invalid; sea state seaworthiness cannot be verified.',
         evidenceRef: evidId,
       });
 
@@ -721,12 +770,12 @@ export class DecisionEngineService {
         status: 'UNAVAILABLE',
         ruleIds: [ruleId],
         decisionImpact: 'CRITICAL_BLOCKER',
-        notes: 'Mandatory oceanographic wave datum is missing.',
+        notes: 'Mandatory oceanographic wave datum is missing or invalid.',
       });
     }
 
     // Missing wind data
-    if (windSpeed === undefined || windSpeed === null || isNaN(windSpeed)) {
+    if (windSpeed === undefined || windSpeed === null || isNaN(windSpeed) || isWindCorrupted) {
       hasCriticalDataMissing = true;
       const ruleId = 'RULE_04_MISSING_WIND_OBSERVATION';
       const evidId = 'EVID-WEATHER-MISSING';
@@ -1146,16 +1195,21 @@ export class DecisionEngineService {
     let summary: string;
     let explanation: string;
 
-    if (hasSevereWarning || hasGisBreach || hasVesselCriticalFail || isGisUnavailable) {
+    if (hasSevereWarning || hasGisBreach) {
       state = 'AVOID';
       primaryDriver = blockingFactors[0] || 'Critical safety constraint violation';
       summary = `MISSION PROHIBITED (AVOID): ${primaryDriver}`;
-      explanation = `Safety clearance is denied. One or more mandatory safety constraints (severe warning, restricted geofence, or vessel limit) were breached. Do not depart.`;
+      explanation = `Safety clearance is denied. One or more mandatory safety constraints (severe warning, restricted geofence, or military buffer) were breached. Do not depart.`;
     } else if (hasCriticalDataMissing) {
       state = 'INSUFFICIENT_DATA';
-      primaryDriver = 'Critical environmental or vessel safety observation missing';
-      summary = 'INSUFFICIENT DATA: Required safety observations unsupplied.';
-      explanation = 'ORCA cannot verify Seaworthiness or safety clearance because essential wave, wind, or vessel parameters are missing. Exercise extreme caution.';
+      primaryDriver = 'Critical environmental or vessel safety observation missing or invalid';
+      summary = 'INSUFFICIENT DATA: Required safety observations unsupplied or corrupted.';
+      explanation = 'ORCA cannot verify seaworthiness or safety clearance because essential wave, wind, or vessel parameters are missing or corrupted. In strict adherence to maritime safety standards, affirmative clearance cannot be granted.';
+    } else if (hasVesselCriticalFail || isGisUnavailable) {
+      state = 'AVOID';
+      primaryDriver = blockingFactors[0] || 'Vessel operating limits exceeded';
+      summary = `MISSION PROHIBITED (AVOID): ${primaryDriver}`;
+      explanation = `Safety clearance is denied. Verified environmental conditions exceed vessel physical operating limits or geospatial service is unavailable. Do not depart.`;
     } else if (hasModerateWarning || hasGisCaution || hasVesselCaution || hasTemporalCaution || isDataStale) {
       state = 'CAUTION';
       primaryDriver = cautionFactors[0] || 'Operational advisory active';

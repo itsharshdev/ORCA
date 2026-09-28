@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Anchor, 
   ArrowRight, 
   ShieldCheck, 
   Sparkles, 
@@ -13,6 +12,8 @@ import {
 } from 'lucide-react';
 import { ROUTES } from '@/routes';
 
+import { OrcaLogo } from '@/components/common/OrcaLogo';
+
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -20,18 +21,8 @@ export const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-[#F5F9FC] text-[#102B40] flex flex-col justify-between selection:bg-[#E8F4FA]">
       {/* Top Landing Navbar */}
       <header className="h-16 border-b border-[#D8E5EC] bg-white px-4 sm:px-8 flex items-center justify-between shadow-xs sticky top-0 z-40">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#E8F4FA] border border-[#CFE6F3] flex items-center justify-center text-[#147FB3] shadow-xs">
-            <Anchor className="w-4 h-4" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-display-decision font-black text-lg tracking-tight text-[#123B5D]">
-              ORCA
-            </span>
-            <span className="text-[9px] font-semibold text-[#5A7C99] uppercase tracking-wider">
-              Smart India Hackathon 2026 • PS26176
-            </span>
-          </div>
+        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate(ROUTES.HOME)}>
+          <OrcaLogo size="md" showText={true} />
         </div>
 
         <div className="flex items-center gap-3">

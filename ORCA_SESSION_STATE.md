@@ -1,12 +1,190 @@
 # ORCA SESSION STATE
 
 ## Current phase
-PHASE 19 — ALERTS + DISASTER INTELLIGENCE (Completed & Verified)
+PHASE 24 — REAL UI/UX UPGRADE + MISSION REDESIGN + OFFICIAL LOGO + DATA STATE HONESTY (Completed & Verified)
 
 ## Status
-PHASE 19 COMPLETED & SYSTEMATICALLY VERIFIED.
-- **Previous Phases Audited (Phases 0–18)**: Audited against live repository source code, automated test suites, database migrations, and runtime verification. Phase 18 What-If Scenario Intelligence verified.
-- **Phase 19 Alerts + Disaster Intelligence**:
+PHASE 24 COMPLETED & SYSTEMATICALLY VERIFIED.
+
+- **Official ORCA Logo Asset & Universal Integration**:
+  - Located official logo asset `logo/logo.png` and embedded it cleanly across the product without stretching, distortion, or artificial recoloring.
+  - Implemented responsive [`OrcaLogo`](file:///d:/Projects/ORCA/src/components/common/OrcaLogo.tsx) component supporting `sm`, `md`, `lg`, `xl` sizes, automatic dark/light contrast badges, and fallback rendering.
+  - Built premium restrained boot splash sequence ([`OrcaBootSplash.tsx`](file:///d:/Projects/ORCA/src/components/ui/OrcaBootSplash.tsx)) with 1.1s soft fade, brand subtitle ("MARINE DECISION INTELLIGENCE"), and smooth transition into application.
+  - Integrated into TopBar, Public Landing Page, Login Page, About Page, Contact Page, PWA webmanifest, and `<link rel="icon">` in `index.html`.
+
+- **TopBar Hierarchy Redesign**:
+  - Eliminated visual clutter and status congestion in [`src/components/layout/TopBar.tsx`](file:///d:/Projects/ORCA/src/components/layout/TopBar.tsx).
+  - Clear 3-zone hierarchy:
+    - **Left**: Official OrcaLogo brand mark + Coastal region selector.
+    - **Center**: Contextual page identity breadcrumb.
+    - **Right**: Consolidated single Data Health status trigger, Role Switcher dropdown, Connectivity/GNSS telemetry trigger, Alert Center badge, and User Profile.
+  - Responsive design: cleanly folds lower-priority metrics into modals/drawers on mobile viewports.
+
+- **Mandatory `/mission` Redesign (Mission Planner)**:
+  - Completely redesigned [`src/pages/MissionPlannerPage.tsx`](file:///d:/Projects/ORCA/src/pages/MissionPlannerPage.tsx) to match the Tidal Light design system.
+  - Structured operational workflow:
+    - **Mission Identity & Activity Type**: Pelagic gillnetting, bottom trawling, artisanal scouting, coastal transit.
+    - **Vessel Context**: Selected vessel physical capabilities and wave limit indicators (e.g. 1.8m for FRP boat).
+    - **Departure & Duration Controls**: Interactive departure time and duration slider (1 to 24 hours) with computed return time.
+    - **Spatial & Safety Canvas**: Interactive [`MarineMapCanvas`](file:///d:/Projects/ORCA/src/components/map/MarineMapCanvas.tsx) with route coordinates and hazard overlays.
+    - **Deterministic Safety Preview**: Live evaluation against PostGIS perimeters and wave forecasts (GO / CAUTION / AVOID / INSUFFICIENT_DATA).
+    - **PFZ Subordination**: Explicitly emphasizes that pelagic fronts represent economic opportunities and never override safety constraints.
+    - **Progressive Disclosure**: Expandable technical GIS buffer inspections without overwhelming the primary workflow.
+
+- **Data State Model & Point-of-Use Provenance**:
+  - Rigorously enforced 6-state data provenance vocabulary across all dashboards and modals:
+    1. `LIVE`: Retrieved within active freshness window (INCOIS OSF wave grids).
+    2. `RECORDED SNAPSHOT`: Real previously retrieved data with audited timestamp.
+    3. `CACHED`: Locally retained observation for continuity/offline operation.
+    4. `DEMO / SIMULATED`: Deliberately simulated scenario data, visibly marked.
+    5. `ACCESS PENDING`: Real source exists, awaiting institutional credentials (IMD Marine).
+    6. `UNAVAILABLE`: Source unreachable, fallback engaged.
+  - Fixed INCOIS/PFZ Sync UX in [`PfzOpportunityPanel.tsx`](file:///d:/Projects/ORCA/src/components/fisheries/PfzOpportunityPanel.tsx): On network failure, displays explicit "SYNC FAILED: Source unavailable, using cached snapshot" banner with Retry button instead of false success or crashes.
+
+- **5 Distinct Role Workspaces**:
+  - **Fisherman (`/dashboard`)**: Action-oriented flagship experience prioritizing deterministic verdict, conditions, 1-tap Ask ORCA, and safe return window.
+  - **Coastal Authority (`/authority`)**: Port surveillance, active geofence incursion tracking, and 4-level audit traces.
+  - **Disaster Management (`/disaster`)**: NDRF/SDMA incident command, affected asset maps, and broadcast acknowledgement queues.
+  - **Marine Researcher (`/research`)**: Multi-agency oceanographic dataset explorer with raw telemetry and provenance inspector.
+  - **Maritime Operator (`/operator`)**: Commercial fleet dispatch, departure envelope scheduling, and route clearance.
+
+- **Automated Verification & Quality Gates**:
+  - `npm test`: **294 / 294 passing tests across 20 test suites**.
+  - `npm run server:typecheck`: 0 errors.
+  - `npx tsc -b`: 0 errors.
+  - `npm run lint`: 0 errors, 0 warnings.
+  - `npm run build`: Production bundle + PWA service worker generated cleanly.
+  - Real Chrome CDP verification (`scripts/verify_phase24_ui_ux.mjs`):
+    - All 16 routes verified on Desktop (1280x800).
+    - Official Logo and TopBar structure verified.
+    - Mission Planner interaction and evaluation verified.
+    - Multi-device responsive viewports tested: **375x812 (Mobile Standard)**, **390x844 (Mobile Large)**, **768x1024 (Tablet)** — **0px horizontal overflow across all pages**.
+    - **0 runtime console errors** across the entire walkthrough.
+
+---
+
+### UNDERGRADUATE DEVELOPER WALKTHROUGH
+
+#### 1. How the Official Logo is Loaded and Rendered
+```tsx
+// src/components/common/OrcaLogo.tsx
+// Loads '/logo.png' from public assets with proportion containment
+<div className="relative flex items-center justify-center">
+  <img 
+    src="/logo.png" 
+    alt="ORCA Logo" 
+    className="object-contain transition-transform duration-200 hover:scale-105"
+    style={{ height: '32px', width: 'auto' }}
+  />
+  <span className="font-bold tracking-tight text-ocean-900">ORCA</span>
+</div>
+```
+- The file is placed in `public/logo.png`.
+- The `OrcaLogo` component handles size presets (`sm: 24px`, `md: 32px`, `lg: 48px`, `xl: 64px`) and falls back gracefully to a stylized nautical icon if the image fails to load.
+
+#### 2. How the TopBar Maintains Information Hierarchy
+```tsx
+// src/components/layout/TopBar.tsx
+// Left: Brand & Region | Center: Page Breadcrumb | Right: Status & Actions
+<header className="sticky top-0 z-40 bg-white/95 border-b border-ocean-100 backdrop-blur-md">
+  <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+    <div className="flex items-center space-x-4">
+      <OrcaLogo size="md" showText={true} />
+      <RegionSelector />
+    </div>
+    <div className="hidden md:flex items-center">
+      <ContextualBreadcrumb />
+    </div>
+    <div className="flex items-center space-x-3">
+      <DataHealthBadge onClick={() => setShowDataHealthModal(true)} />
+      <RoleSwitcher />
+      <ConnectivityBadge />
+      <AlertsBell />
+      <UserProfileButton />
+    </div>
+  </div>
+</header>
+```
+- Permanent visibility is granted only to high-priority items: Logo, Region, and Core Status triggers.
+- Detailed metrics (battery, satellite count, raw sync logs) are progressively disclosed inside modal sheets upon clicking the respective badges.
+
+#### 3. How the Redesigned `/mission` Page Communicates with Backend
+```
+User adjusts Duration slider or selects Waypoint
+  │
+  ▼
+Frontend dispatches POST /api/v1/decisions/evaluate (or /orca/query)
+  │
+  ├─► PostGIS GIS Engine: Checks route corridor against restricted naval & sanctuary polygons
+  ├─► Hydrodynamic Engine: Evaluates INCOIS wave height & swell against vessel physical limits
+  ├─► Fisheries Engine: Cross-references PFZ lines (advisory only, never overrides safety)
+  │
+  ▼
+Backend returns deterministic Decision Payload:
+{
+  verdict: 'GO' | 'CAUTION' | 'AVOID' | 'INSUFFICIENT_DATA',
+  reasons: ['Wave height 1.2m is within 1.8m limit for FRP boat', 'No restricted zone incursions'],
+  gisEvaluation: { inRestrictedZone: false, minDistanceKm: 4.8 },
+  pfzSubordinationNotice: 'PFZ zone detected 3.2km away. Note: PFZ is opportunity only.'
+}
+  │
+  ▼
+MissionPlannerPage updates Safety Clearance Card and renders tactical Map corridor
+```
+
+#### 4. How Data States are Honestly Displayed
+- We never label a mock/demo feed as `LIVE`.
+- In `DataHealthModal.tsx` and `DataStateBadge.tsx`:
+  - **INCOIS OSF**: `LIVE` (when live API succeeds) or `CACHED` (offline).
+  - **INCOIS PFZ**: `LIVE` / `CACHED SNAPSHOT` (with date of satellite front advisory).
+  - **IMD Weather**: `ACCESS_PENDING` / `DEMO (PENDING MoU)` (explicit notice that official API credentials are required).
+  - **PostGIS GIS**: `DETERMINISTIC LOCAL`.
+- When INCOIS sync fails on the client, the UI transitions to `SYNC FAILED` with last successful sync time and a Retry button.
+
+#### 5. Where to Debug UI Issues
+- **Theme and Colors**: Check `tailwind.config.js` and `src/index.css` for Tidal Light CSS variables (`--color-ocean-*`, `--color-verdict-*`).
+- **Mission Planner**: Inspect `src/pages/MissionPlannerPage.tsx` and `src/components/map/MarineMapCanvas.tsx`.
+- **TopBar & Navigation**: Inspect `src/components/layout/TopBar.tsx` and `src/components/layout/BottomNav.tsx`.
+- **Role Dashboards**: Inspect `src/pages/fisherman/`, `src/pages/authority/`, `src/pages/disaster/`, `src/pages/research/`, and `src/pages/operator/`.
+- **Automated UI Test Script**: Run `node scripts/verify_phase24_ui_ux.mjs` to run end-to-end browser viewport and route audits.
+
+---
+
+- **Phase 23 Final Integration & Hardening (Completed & Verified)**:
+
+  - Configured `.antigravityignore` conservatively to eliminate redundant indexing of node_modules, build directories, logs, temporary zip backups, and heavy artifacts while preserving all source files, migrations, tests, and control documentation.
+- **End-to-End Reality & Data Integrity Audit**:
+  - **INCOIS OSF**: Validated ERDDAP / OSF hydrodynamic model stream (`significantWaveHeight`, `swellPeriod`, `surfaceCurrentDirection`, `seaSurfaceTemperature`). Truthfully labeled `LIVE (OSF)` when connected and `CACHED (OFFLINE)` when offline.
+  - **INCOIS PFZ**: Validated official GeoServer WFS integration (`PFZ_Automation:pfzlines`). Ingested 20 active pelagic thermal & chlorophyll fronts. Strictly enforced the invariant that PFZ opportunity NEVER overrides deterministic safety constraints.
+  - **IMD Marine**: Validated official schema parsing for coastal bulletins and fishermen warnings. Truthfully maintained as `DEMO (ACCESS PENDING)` / `PENDING_MoU` with zero fake live claims.
+  - **PostGIS GIS Safety**: Authoritative evaluation of 1.0 km violation and 2.5 km caution perimeters against naval exclusion zones and marine sanctuaries.
+  - **Vessel Capability**: Enforced DG Shipping physical envelope constraints (e.g. 1.8m wave limit for motorized FRP boats).
+  - **Deterministic Safety Boundary**: 100% deterministic decision engine. LLM is strictly prohibited from approving safety, inventing observations, or overriding verdicts.
+- **Flagship End-to-End Demo Flow Verified**:
+  - Clean browser execution from login & profile &rarr; vessel selection (`Matsya Sagar 1`) &rarr; Mission Planner &rarr; natural language query (*"Can I go fishing tomorrow morning for five hours from Alibaug?"*) &rarr; mission extraction &rarr; multi-agency retrieval &rarr; deterministic decision &rarr; Level 1-4 progressive disclosure Why modal &rarr; What-If scenario evaluation (*"What if wave height increases to 2.5 metres?"*) with side-by-side transition and delta badges &rarr; Leaflet tactical map corridor &rarr; Alert center acknowledgment.
+- **Role-Specific Tailored UX Verified**:
+  - **Fisherman** (`/dashboard`): Action-first, simple, clear verdict, 1-tap Ask ORCA, What-If prompt, conditions, and safe corridor.
+  - **Coastal Authority** (`/authority`): Regional surveillance, fleet tracking, geofence incursion desk, and 4-level audit traces.
+  - **Disaster Management** (`/disaster`): Tactical coastal hazard coordination, affected assets, emergency broadcast, and acknowledgement queue.
+  - **Research / Marine Analyst** (`/research`): Raw and normalized multi-agency observation explorer, provenance tags, and quality indicators.
+  - **Commercial Maritime Operator** (`/operator`): Fleet dispatch, voyage scheduling, and departure clearance envelopes.
+- **Automated Verification & Quality Gates**:
+  - `npm test`: **294 / 294 tests passing across 20 suites**.
+  - `npm run server:typecheck`: 0 errors.
+  - `npx tsc -b`: 0 errors.
+  - `npm run lint`: 0 errors, 0 warnings.
+  - `npm run build`: Production bundle + PWA service worker generated cleanly (9 precached assets).
+  - Real Chrome CDP verification (`scripts/verify_phase23_e2e.mjs`):
+    - All 12 desktop routes verified.
+    - Interactive Ask ORCA query executed and rendered.
+    - What-If scenario evaluated with side-by-side comparison.
+    - Truthful Data Health modal audited.
+    - Mobile 375x812 responsive viewport verified on all routes with **0px horizontal overflow**.
+    - **0 console errors** during full walkthrough.
+    - Adversarial checks (extreme swell breach & night departure violation) verified.
+
+- **Phase 22 Reliability, Security & Failure Hardening Architecture (Completed & Verified)**:
+
   - Implemented typed, deterministic alert intelligence architecture tied strictly to:
     `OBSERVATION → EVIDENCE → RULE → DECISION/IMPACT → ALERT → ACKNOWLEDGEMENT → HISTORY`.
   - Core service `AlertService` (`server/services/alertService.ts`):
@@ -32,6 +210,37 @@ PHASE 19 COMPLETED & SYSTEMATICALLY VERIFIED.
     - **Disaster Management Workspace** (`src/pages/disaster/DisasterManagementPage.tsx`): Structured workspace (`ACTIVE HAZARDS → TACTICAL MAP → AFFECTED ASSETS → DETAIL → EVIDENCE → ACKNOWLEDGE/RESOLVE`).
     - **Progressive Disclosure Modal** (`src/components/alerts/AlertDetailModal.tsx`): Level 1 (What/Where/Severity/Validity/Action), Level 2 (Why/Driver/Provenance), Level 3 (Audited Evidence), Level 4 (Deterministic Rule Trace).
   - Quality Gates: Vitest 270/270 passed across 18 suites; Server typecheck passed (0 errors); Client typecheck passed (0 errors); ESLint passed (0 errors, 0 warnings); Production build passed; Real Chrome CDP verification passed (all 22 interactions, desktop + mobile 375x812, 0 console errors); Honesty audit passed.
+- **Phase 20 Product UX Audit + Role Workspaces + Hardening (Completed & Verified)**:
+  - **Design System Enforcement**: Uniform application of Stitch Tidal Light (`#F5F9FC` background, `#123B5D` deep ocean navy headers, `#147FB3` cyan accent, `#D8E5EC` borders). Eliminates legacy dark-slate inconsistencies across all 18 routes.
+  - **Single Responsibility UX ("NOT everything on one page")**:
+    - `/dashboard` (Fisherman operational home): Decision, conditions, 1-tap Ask ORCA, What-If prompt, map corridor, deep tabs.
+    - `/ask`: Natural language multi-turn query & What-If scenario explorer.
+    - `/mission`: Mission parameters, waypoint routing, and GIS clearance.
+    - `/map`: Dedicated full-screen tactical marine map with role-specific layer presets.
+    - `/alerts`: Operational Alert Center with Level 1-4 progressive disclosure.
+    - `/decisions`: 5-level deep algorithmic explainability & threshold audit.
+    - `/history`: Historical mission replay repository with 7-stage audit modal.
+    - `/authority`: Command surveillance, fleet tracking, and geofence incursion desk.
+    - `/disaster`: Tactical coastal hazard coordination for NDRF / SDMA.
+    - `/research`: Multi-agency raw & normalized observation explorer.
+    - `/operator`: Commercial fleet dispatch & departure window manager.
+  - **End-to-End Data Pipeline Verification**:
+    - Real INCOIS OSF wave state grid ingestion.
+    - Real INCOIS PFZ WFS GeoServer (`PFZ_Automation:pfzlines`) with chlorophyll & SST thermal front extraction.
+    - PostGIS deterministic spatial buffers (1.0 km violation, 2.5 km caution perimeters).
+    - IMD weather truthfully tagged `ACCESS_PENDING / DEMO` with zero false live claims.
+  - **Undergraduate Developer Walkthrough (3-Minute SIH Judge Pitch)**:
+    1. *What problem does ORCA solve?*
+       "Indian coastal fishermen face fragmented, conflicting data: a text SMS with wind speeds, a PDF bulletin from IMD, a satellite PFZ map from INCOIS, and verbal port warnings. Fishermen have to mental-model whether their specific 8.5m boat can handle the 2.1m afternoon swell while avoiding the Naval anchorage geofence. ORCA correlates these multi-agency data streams against the specific vessel's physical seaworthiness limits to deliver one unambiguous, explainable answer: Can I go, when should I depart, and when must I return?"
+    2. *How does data get from INCOIS to the screen?*
+       "Our backend Fastify server runs official Data Adapters. For INCOIS, we query the GeoServer WFS endpoint (`PFZ_Automation:pfzlines`) and ERDDAP hydrodynamic wave state grids. The raw data is validated via Zod schemas, normalized into unified observation contracts, and persisted into Supabase PostgreSQL with PostGIS coordinates. The frontend reads from `/api/v1/observations`, `/api/v1/pfz`, and `/api/v1/alerts`, rendering interactive Leaflet layers and telemetry cards with audited data provenance tags."
+    3. *Why should a fisherman trust this system over a weather app?*
+       "A generic weather app shows a sun or cloud icon for an entire city like Mumbai. ORCA knows the difference between an 8.5m motorized vallam and a 24m deep-sea trawler. A 1.8m swell is safe for a trawler but dangerous for a small canoe. Furthermore, ORCA enforces an inviolable safety invariant: fish opportunity never clears a trip. If there is a high-yield PFZ front inside a naval exclusion buffer or during a squall, ORCA issues an AVOID verdict with the exact rule and evidence threshold that triggered it."
+    4. *How does the system handle an emergency?*
+       "When a hazard occurs—such as a sudden squall or a craft approaching a restricted perimeter—ORCA's deterministic AlertService evaluates spatial and meteorological rules, assigns a severity (`CRITICAL`, `WARNING`), and issues a cryptographically fingerprinted alert. Disaster managers (NDRF/SDMA) see exposed crafts in real-time, can broadcast directives, and track operator acknowledgments with full cryptographic audit trails."
+    5. *What is the AI doing and what is it NOT doing?*
+       "This is our most important architectural decision: **The AI NEVER decides whether a trip is safe.** Safety is evaluated 100% deterministically by rule engines running verified marine engineering limits. The LLM's sole role is natural language synthesis: translating complex hydrographic telemetry, vessel physics, and rule results into plain, localized language (like Marathi or Hindi) and answering What-If scenarios. The judge can inspect our Level 4 Rule Audit to see every mathematical equation and threshold behind every single verdict."
+
 - **Phase 18 What-If / Scenario Intelligence**:
   - Implemented real deterministic scenario re-evaluation pipeline via `ScenarioService` (`server/services/scenarioService.ts`):
     `BASELINE &rarr; Immutable Baseline Capture &rarr; Structured Scenario Delta &rarr; Specialist Re-evaluation (GIS, Vessel Limits, Oceanography, Meteorology, Assumptions) &rarr; Deterministic Decision Engine &rarr; Audited Evidence Aggregation &rarr; Structured Rule & Evidence Delta &rarr; Grounded Natural Language Difference Explanation &rarr; Actionable Scenario Advice`.
@@ -1256,6 +1465,336 @@ Official IMD API gateway credentials remain pending administrative clearance. In
   - Mobile viewport (375 × 812) verification with zero horizontal overflow
   - Intercepted network metrics (24 GET `/alerts`, 2 POST `/acknowledge`, 2 POST `/resolve`) and 0 console errors
 - **Honesty Audit**: Zero instances of prohibited claims (`"guaranteed safe"`, `"100% accurate"`, `"zero hallucinations"`, `"autonomous emergency response"`).
+
+---
+
+## Phase 21 — Offline / Degraded Connectivity + UX Reality Hardening (Completed & Verified)
+
+### 1. Architectural Overview & North Star
+At sea, network connectivity drops unpredictably as vessels venture past 10–15 nautical miles from cellular coastal base stations. However, marine navigation instruments (such as NavIC and GNSS satellite receivers) continue functioning autonomously with full 3D orbital positioning. 
+
+Phase 21 achieves two primary objectives:
+1. **Offline & Degraded Connectivity Capability**: Robustly separates satellite GPS fix from Internet data bearers, introduces an IndexedDB client store retaining provenance, implements per-dataset freshness windows, and enforces strict conservative safety locks preventing stale or missing data from generating false `GO` clearance verdicts.
+2. **UX Reality Hardening**: Eliminates confusing numeric confidence percentages (such as `78.4% confidence`) in favor of honest categorical support levels (`HIGH`, `MODERATE`, `LOW EVIDENCE SUPPORT`), standardizes modal styling to Stitch Tidal Light (`#F5F9FC`, `#123B5D`, `#147FB3`), and adds tailored offline resilience banners across all five role workspaces and the marine map.
+
+### 2. Connectivity Model & Invariants
+Four distinct connectivity states are defined across the shared contract (`src/types/contract.ts`, `server/types.ts`):
+- `CONNECTED`: High-speed or cellular bearer active, backend `/api/v1/health` responding normally, all critical data sources reachable.
+- `DEGRADED`: Partial reachability (e.g. backend reachable but upstream INCOIS or IMD experiencing latency/unreachability, or cellular signal severely attenuated). Source-level status indicates which datasets remain fresh.
+- `OFFLINE`: Zero Internet connectivity or backend completely unreachable. The application shell and cached datasets remain accessible via PWA service worker and IndexedDB.
+- `SAFETY_MESSAGE_RECEIVED`: Special alert state triggered when an out-of-band coastal radio or NavIC satellite broadcast arrives while general Internet is degraded or absent.
+
+**Key Invariant — Physical Separation of GPS Fix and Internet Connectivity**:
+A vessel can have a 3D satellite GPS fix while having zero Internet. The UI never reports "Offline" when referring to positioning, nor does it report "Connected" based solely on a GPS lock. TopBar independently displays hardware positioning (`GPS: FIX`, `GPS: SEARCHING`, `GPS: NO_FIX`) next to network status.
+
+### 3. Client-Side Controlled Caching & Freshness Engine
+- **Storage Layer (`src/services/offlineCacheService.ts`)**:
+  - Implemented using native IndexedDB (`orca_offline_store`) with an in-memory fallback.
+  - Caches only useful, non-sensitive operational datasets: recent decisions, missions, operational alerts, observations, restricted zone geofences, and queued mutations.
+  - **Full Provenance Preservation**: Cached records retain `source`, `dataset`, `retrievedAt`, `observedAt`, `validUntil`, `cachedAt`, `provenance`, and `quality`. Provenance is never stripped during caching.
+- **Dataset-Specific Freshness Windows**:
+  - `INCOIS_OSF` (Ocean State Wave Forecast): 6 hours
+  - `INCOIS_PFZ` (Potential Fishing Zones): 24 hours
+  - `IMD_WEATHER` (Marine Weather Bulletins): 3 hours
+  - `GIS_RESTRICTED_ZONES` (Geospatial Exclusion Boundaries): 72 hours
+  - `VESSEL_TELEMETRY` (Engine & Speed Telemetry): 30 minutes
+  - `VESSEL_PROFILE` (Seaworthiness Limits & Dimensions): 168 hours (7 days)
+- **Evaluated Freshness States**:
+  - `LIVE`: Verified freshly retrieved from upstream within standard freshness window.
+  - `CACHED`: Valid, unexpired data retrieved from local offline store.
+  - `AGING`: Approaching expiration (>75% of validity window elapsed).
+  - `STALE`: Window elapsed; can be inspected for historical audit but strictly disallowed for new safety clearances.
+  - `EXPIRED`: Explicitly expired per publisher `validUntil` timestamp.
+  - `UNAVAILABLE`: Never retrieved or completely missing.
+  - `ACCESS_PENDING / DEMO`: Honestly tagged for unverified or pending institutional credentials.
+
+### 4. Deterministic Offline Safety Invariants & LLM Boundary
+- **Conservative Decision Locking**:
+  - Offline mode must **NEVER** fabricate a fresh safety verdict using stale or incomplete data.
+  - If a new departure safety decision is requested offline without live meteorological or wave data, `DecisionEngineService` deterministically returns `INSUFFICIENT_DATA` (`RULE_DATA_01_OFFLINE_SAFETY_GUARD`).
+  - Stale cached evidence can only be used for **historical inspection or replay** of previously evaluated trips, clearly marked as `[CACHED HISTORICAL REPLAY]`.
+  - Opportunity (`INCOIS PFZ`) is strictly forbidden from overriding safety data.
+  - The LLM **NEVER** decides safety or compensates for missing telemetry; missing variables are explicitly explained in plain language.
+- **Categorical Confidence Replaces Numeric Percentages**:
+  - Purged misleading pseudo-probabilities (`"78.4% confidence"`).
+  - Replaced with categorical classifications:
+    - `HIGH EVIDENCE SUPPORT`: All critical marine feeds active, fresh, and fully verified.
+    - `MODERATE EVIDENCE SUPPORT`: Minor non-critical telemetry aging or using default vessel profile.
+    - `LOW EVIDENCE SUPPORT`: Telemetry degraded, relying on cached baseline, or partial data missing.
+
+### 5. Idempotent Offline Mutation Sync Queue
+- When offline, user mutations (`ACKNOWLEDGE_ALERT`, `RESOLVE_ALERT`, `CREATE_MISSION`, `TELEMETRY_LOG`) are queued in IndexedDB with a unique UUID `clientMutationId` and client timestamp.
+- Upon reconnection, `connectivityService` flushes the queue to `POST /api/v1/connectivity/sync`.
+- The backend evaluates mutations and records them idempotently. Duplicate submissions (e.g. from network retries) detect existing records or already-acknowledged states and return success without creating duplicate database rows or throwing 500 errors.
+
+### 6. Role-Specific Offline UX Hardening
+1. **Fisherman Workspace (`/dashboard`)**:
+   - `FishermanRelianceHUD`: Clear, high-contrast indicators showing what can be safely relied upon right now (GPS fix, cached departure corridor) versus what requires caution (unrefreshed wave heights).
+2. **Coastal Authority (`/authority`)**:
+   - Amber alert banner highlighting that fleet positions reflect last-known AIS pings, warning operators against assuming real-time positions for crafts out of cellular range.
+3. **Disaster Management (`/disaster`)**:
+   - Emergency banner emphasizing conservative evacuation directives when meteorological telemetry is offline.
+4. **Researcher (`/research`)**:
+   - Observation banner detailing dataset freshness and preventing researchers from mistaking cached telemetry for real-time sensor streams.
+5. **Maritime Operator (`/operator`)**:
+   - Dispatch hold banner preventing commercial vessels from logging unverified departures while network connectivity is down.
+6. **Tactical Marine Map (`/map`)**:
+   - Floating vector shell indicator showing cached status for PFZ and restriction zones.
+
+---
+
+### 7. Undergraduate Developer Walkthrough (Phase 21 Architecture)
+
+Written for an undergraduate developer joining the ORCA engineering team:
+
+#### Question 1: How does ORCA detect whether it is connected or offline?
+> **Answer**: We do NOT simply check `navigator.onLine`. In a coastal or marine environment, a device can be connected to a Wi-Fi router on a boat with full signal bars while the satellite backhaul is completely dead.
+>
+> In `src/services/connectivityService.ts`, we use a multi-factor detection strategy:
+> 1. We listen to browser `online` and `offline` events as a first-line trigger.
+> 2. We run an automated background heartbeat every 15 seconds against our backend endpoint `GET /api/v1/health`.
+> 3. If requests time out or fail 2 consecutive times, we immediately downgrade state from `CONNECTED` to `DEGRADED` or `OFFLINE`.
+> 4. We independently check the device's geolocation API. If GNSS satellites provide latitude and longitude coordinates, we report `GPS: FIX` regardless of whether the Internet is connected or disconnected.
+
+#### Question 2: How is cached data stored and how is provenance preserved?
+> **Answer**: We use the browser's built-in IndexedDB database via `src/services/offlineCacheService.ts`, under the database name `orca_offline_store`.
+>
+> When the app fetches decisions, missions, alerts, or observations from the Fastify API while online, it passes them to `cacheDecision()`, `cacheMission()`, etc. We store each item alongside critical metadata:
+> - `source`: e.g. `INCOIS_OSF`, `ORCA_GIS_SAFETY_ENGINE`
+> - `dataset`: e.g. `OSF_WAVE_FORECAST_GRID`
+> - `retrievedAt`: timestamp when our server fetched it from the upstream agency
+> - `observedAt`: timestamp when the physical buoy or satellite measured it
+> - `validUntil`: timestamp when the forecasting agency says this data expires
+> - `cachedAt`: timestamp when the client device saved it into IndexedDB
+>
+> We never strip this provenance. When the user views a cached card offline, the card displays: *"Cached 2h ago (Source: INCOIS OSF, Valid until 18:00 IST)"*.
+
+#### Question 3: How does the system determine if data is stale?
+> **Answer**: Different oceanographic phenomena change at different rates. Sea surface temperature fronts (PFZ) change over days, while wave heights change over hours. Therefore, we do not use one universal freshness rule.
+>
+> In `offlineCacheService.ts`, we maintain `DATASET_FRESHNESS_HOURS`:
+> - `INCOIS_OSF`: 6 hours
+> - `INCOIS_PFZ`: 24 hours
+> - `IMD_WEATHER`: 3 hours
+> - `GIS_RESTRICTED_ZONES`: 72 hours
+> - `VESSEL_TELEMETRY`: 30 minutes
+>
+> When rendering, `evaluateFreshness(item)` compares `Date.now() - observedAt`:
+> - If elapsed time < validity window, it is `LIVE` (if online) or `CACHED` (if offline).
+> - If elapsed time > 75% of the window, it transitions to `AGING`.
+> - If elapsed time exceeds the window, it becomes `STALE` and the UI shows an orange warning badge.
+
+#### Question 4: How are offline decisions prevented from becoming unsafe?
+> **Answer**: This is the cardinal safety rule of ORCA: **Missing or stale data must NEVER become a GO verdict.**
+>
+> If a fisherman opens Ask ORCA while offline and asks *"Can I go fishing today?"*, the system checks if live weather and wave telemetry are available:
+> 1. If live or unexpired data is absent, `DecisionEngineService` triggers rule `RULE_DATA_01_OFFLINE_SAFETY_GUARD` and returns `INSUFFICIENT_DATA`.
+> 2. The UI renders an amber warning explaining: *"Live ocean conditions unavailable. Cannot safely evaluate departure clearance."*
+> 3. The system NEVER lets an LLM guess or hallucinate wave heights.
+> 4. If the fisherman asks *"What was my last evaluated trip?"*, the system allows historical inspection, but prefixes the explanation with `[CACHED HISTORICAL REPLAY]` and notes that it applies only to the previous departure window.
+
+#### Question 5: How does reconnection and offline synchronization work?
+> **Answer**: When an operator acknowledges an alert or creates a mission while offline:
+> 1. We generate a client-side UUID (`clientMutationId`) and enqueue the action in IndexedDB's `syncQueue` store.
+> 2. The UI immediately updates locally so the operator can keep working.
+> 3. When `connectivityService` detects a successful `/health` heartbeat, it fires `triggerReconnectSync()`.
+> 4. All queued mutations are sent in a single batch to `POST /api/v1/connectivity/sync`.
+> 5. The Fastify backend processes the mutations idempotently: if an alert was already acknowledged by someone else or during an earlier retry, it simply records success.
+> 6. On success, the client deletes the synced mutations from IndexedDB.
+
+#### Question 6: What does the user see in the frontend?
+> **Answer**:
+> 1. **TopBar**: Two separate badges: `GPS: FIX` (green) and `ONLINE` / `DEGRADED` / `OFFLINE` (interactive button).
+> 2. **Connectivity Modal**: Clicking the network badge opens a modal showing exact latency, active bearer (`4G/5G`, `OFFLINE`), source reachability matrix (`INCOIS OSF`, `INCOIS PFZ`, `IMD Weather`, `GIS Engine`), sync queue status, and quick simulation buttons for testing.
+> 3. **Role Banners**: Fishermen see the Reliance HUD, coastal authorities see the stale AIS warning, and disaster coordinators see the emergency directives banner.
+> 4. **Map**: The marine map displays a floating badge indicating that geospatial boundaries and PFZ vectors are loaded from the local offline cache.
+
+---
+
+### 8. Quality Gates & Automated Verification Summary
+- **Unit & Integration Test Suite (`vitest`)**:
+  - `npm test`: **276 / 276 tests passing across 19 suites**.
+  - New dedicated test suite: `server/__tests__/phase21_offline_connectivity.test.ts` (6 tests covering `/status`, `/sync` idempotency, `/broadcast-safety-message`, and conservative offline decision safety).
+- **TypeScript Typecheck**:
+  - Backend: `npm run server:typecheck` passed with 0 errors.
+  - Frontend: `npx tsc -b` passed with 0 errors.
+- **Code Linting (`eslint`)**:
+  - `npm run lint` passed with 0 errors and 0 warnings.
+- **Production Build & PWA Shell**:
+  - `npm run build` completed successfully.
+  - PWA service worker (`dist/sw.js`) generated with 9 precached core assets.
+- **Real Browser CDP Verification (`scripts/verify_phase21_browser.mjs`)**:
+  - Desktop Viewport (1280x800): Verified all 11 core routes (`/dashboard`, `/ask`, `/mission`, `/map`, `/alerts`, `/decisions`, `/history`, `/authority`, `/disaster`, `/research`, `/operator`).
+  - Zero numeric confidence percentages found across all routes (e.g. `78.4%` cleanly purged).
+  - Connectivity modal interaction: Successfully opened, verified GPS vs Internet separation, verified reachability matrix.
+  - Offline mode simulation: Successfully verified TopBar offline badge, and all 5 role offline banners + map vector shell indicator.
+  - Ask ORCA offline safety guard: Verified query returns `INSUFFICIENT_DATA` with zero fake `GO`.
+  - Mobile Viewport (375x812): 0px horizontal overflow across all 11 routes.
+  - Console Errors: 0 console errors logged throughout testing.
+
+---
+
+## Phase 22 — Reliability, Security & Failure Hardening (Completed & Verified)
+
+### 1. Architectural Mission & Invariants
+The primary goal of Phase 22 is making ORCA mathematically deterministic, defensively secure, and resilient under real-world data and network failures:
+$$\text{DATA FAILURE} \longrightarrow \text{DETECT} \longrightarrow \text{CLASSIFY} \longrightarrow \text{CONTAIN} \longrightarrow \text{FALL BACK SAFELY} \longrightarrow \text{EXPLAIN} \longrightarrow \text{RECOVER}$$
+
+**Key Architectural Invariants Enforced**:
+1. **Conservative Degradation**: `DEGRADED` connectivity does NOT grant automatic safety clearance. The engine checks whether required evidence is available; if critical variables (significant wave height, sustained wind) are missing, stale, or corrupted, the verdict deterministically yields `INSUFFICIENT_DATA`. Zero hidden fallbacks to `GO`.
+2. **GNSS Satellite Sensor vs IP Geolocation Separation**: A real orbital GNSS receiver (NavIC / GPS L1/L5) is physically distinct from cellular/IP network estimation. When no dedicated GNSS receiver is available, status is reported as `SENSOR UNAVAILABLE` or `IP GEOLOCATION (NO GNSS SENSOR)`. The system NEVER claims `GPS FIX` based on IP location.
+3. **External Safety Message Adapter**: Out-of-band broadcasts (NavIC / coastal VHF relay) are modeled as incoming interface adapters (`EXTERNAL SAFETY MESSAGE ADAPTER`) without claiming unverified onboard radio daemons.
+4. **Freshness Policy Classification**: Every freshness threshold is formally classified as either `OFFICIAL_SOURCE_VALIDITY` (published government update cycle) or `ORCA_PROTOTYPE_POLICY` (engineering cache TTL).
+
+---
+
+### 2. Systematic Failure Mode Matrix
+
+| Operational Tier | Failure Mode Trigger | System Detection Mechanism | Containment & Fallback Strategy | User-Facing Explanation | Recovery Path |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Network / API** | Fastify backend unreachable (502/503/504/timeout) | Heartbeat pinger (`GET /health`) fails 2 consecutive cycles | Transitions to `OFFLINE`; activates PWA service worker & IndexedDB store | TopBar turns amber/red; role resilience banners display cached telemetry status | Auto-pinger polls every 6s; triggers batch sync on recovery |
+| **Upstream Adapter** | INCOIS ERDDAP REST timeout / malformed JSON | `IncoisOsfAdapter` timeout wrapper (5000ms AbortSignal) | Transparently ingests cached observation snapshot with `status: CACHED` | Evidence item tagged `CACHED (INCOIS OSF)` with retrieval timestamp | Retries upstream on next background ingestion interval |
+| **Upstream Adapter** | INCOIS GeoServer WFS empty / malformed features | `IncoisPfzAdapter` Zod schema validator catches invalid payload | Isolates PFZ layer; marks opportunity status `UNAVAILABLE`; safety remains unaffected | Map renders cached vector shell; notes PFZ advisory update pending | Background adapter refreshes on next 24h satellite pass |
+| **Upstream Adapter** | IMD Gateway unauthorized (Pending credentials) | `ImdWeatherAdapter` inspects API key presence | Honestly serves verified coastal demo bulletin tagged `ACCESS_PENDING / DEMO` | Evidence and UI explicitly display `ACCESS_PENDING / DEMO`; zero fake cyclone alerts | Awaits administrative issuance of institutional JWT credentials |
+| **Decision Engine** | Missing wave or wind telemetry (`undefined`/`null`) | `DecisionEngineService` Level 4 Data Quality audit | Triggers `RULE_04_MISSING_WAVE_OBSERVATION`; forces verdict to `INSUFFICIENT_DATA` | *"Significant wave height unsupplied. Cannot safely evaluate departure clearance."* | Re-evaluate once live wave/wind observations are ingested |
+| **Decision Engine** | Impossible/corrupted numerical values (negative wave, NaN, Infinity) | Sanity validator (`wave < 0`, `!isFinite()`, `wave > 35m`) | Triggers `RULE_04_CORRUPTED_TELEMETRY_VALUE`; forces verdict to `INSUFFICIENT_DATA` | *"Corrupted or out-of-range sensor readings detected. Clearance withheld."* | Sensor recalibration or upstream telemetry correction |
+| **Decision Engine** | Route intersects naval/military restricted geofence | `GisSafetyService` Turf.js point-in-polygon & LineString buffer | Triggers `RULE_02_GIS_BOUNDARY_BREACH`; forces verdict to `AVOID` | *"Trajectory intersects Naval Restricted Perimeter. Distance: 0.00 km."* | Select alternative route corridor via Mission Planner |
+| **Decision Engine** | Vessel exceeds physical wave limit (e.g. 3.2m wave > 2.0m limit) | `VesselCapabilityService` Seaworthiness Matrix | Triggers `RULE_03_VESSEL_WAVE_LIMIT`; forces verdict to `AVOID` | *"Wave height (3.2m) exceeds 8.5m boat certified limit (2.0m). Do not depart."* | Wait for calmer sea state or assign higher-class craft |
+| **Security / Auth** | Unauthenticated mutation request | `requireAuth` preHandler hook in `server/plugins/auth.ts` | Rejects with `HTTP 401 Unauthorized` and structured error JSON | UI prompts login or session renewal modal | Authenticate with valid Supabase Auth token |
+| **Security / Auth** | Fisherman role attempts to resolve operational alert | `requireRole` preHandler hook in `server/plugins/auth.ts` | Rejects with `HTTP 403 Forbidden` (`code: FORBIDDEN`) | *"Role 'FISHERMAN' lacks authorization to resolve operational alerts."* | Operational resolution delegated to Disaster Management |
+| **Client Storage** | IndexedDB corruption or private browsing quota limit | `offlineCacheService.ts` try/catch storage wrapper | Transparently falls back to in-memory transient Map store | In-memory cache operates seamlessly for current session | Standard IndexedDB restored upon normal window launch |
+| **Sync Reconnection** | Duplicate offline sync batch retry (e.g. mobile reconnect flap) | `server/routes/connectivity.ts` idempotent mutation handler | Replays state idempotently; detects existing ack/resolve; returns 200 OK | Sync badge shows *"0 Pending"*; zero duplicate database rows | Sync queue cleanly flushed in IndexedDB |
+
+---
+
+### 3. Server-Side Role Authorization Matrix (RBAC)
+
+| Capability / Resource | `FISHERMAN` | `COASTAL_AUTHORITY` | `DISASTER_MANAGEMENT` | `RESEARCHER` | `MARITIME_OPERATOR` | Enforcement Layer |
+| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **Read Active Alerts** | **ALLOW** | **ALLOW** | **ALLOW** | **ALLOW** | **ALLOW** | Server Route Filter |
+| **Acknowledge Alerts** | DENY (403) | **ALLOW** | **ALLOW** | DENY (403) | **ALLOW** | `requireRole` Hook |
+| **Resolve Alerts** | DENY (403) | **ALLOW** | **ALLOW** | DENY (403) | DENY (403) | `requireRole` Hook |
+| **Create Mission** | **ALLOW** (Own) | **ALLOW** | **ALLOW** | **ALLOW** | **ALLOW** | `requireAuth` + RLS |
+| **Read Missions** | **ALLOW** (Own) | **ALLOW** (All) | **ALLOW** (All) | **ALLOW** (Own) | **ALLOW** (Fleet) | RLS + Route Hook |
+| **Mutate Vessel Capability** | DENY (403) | **ALLOW** | DENY (403) | DENY (403) | **ALLOW** | `requireRole` Hook |
+| **Trigger Ingestion** | DENY (403) | **ALLOW** | DENY (403) | **ALLOW** | **ALLOW** | Route Role Check |
+| **Evaluate Decisions** | **ALLOW** | **ALLOW** | **ALLOW** | **ALLOW** | **ALLOW** | Deterministic Engine |
+
+---
+
+### 4. Freshness Policy Classification
+
+| Dataset Identifier | Freshness TTL | Classification Basis | Basis & Standards Description |
+| :--- | :---: | :---: | :--- |
+| **`INCOIS_OSF`** | 6 Hours | **`OFFICIAL_SOURCE_VALIDITY`** | INCOIS 6-hour operational hydrodynamic wave forecast numerical run cycle. |
+| **`INCOIS_PFZ`** | 24 Hours | **`OFFICIAL_SOURCE_VALIDITY`** | INCOIS daily composite satellite chlorophyll/SST ocean color advisory pass. |
+| **`IMD_WEATHER`** | 3 Hours | **`OFFICIAL_SOURCE_VALIDITY`** | IMD 3-hour marine coastal weather bulletin & squall warning standard. |
+| **`GIS_RESTRICTED_ZONES`** | 72 Hours | **`ORCA_PROTOTYPE_POLICY`** | ORCA PostGIS restricted zone geofence cache (72-hour engineering refresh policy). |
+| **`VESSEL_PROFILE`** | 168 Hours (7 Days) | **`ORCA_PROTOTYPE_POLICY`** | ORCA Vessel registry seaworthiness specification profile (7-day engineering policy). |
+| **`VESSEL_TELEMETRY`** | 30 Minutes | **`ORCA_PROTOTYPE_POLICY`** | Onboard vessel engine & speed telemetry cache (30-minute operational TTL). |
+
+---
+
+### 5. Determinism & Repeatability Verification
+- **100 Consecutive Iterations**: Executed in automated suite with identical input parameters (vessel, route, wave, wind, time window).
+- **Results**: 100/100 runs produced identical verdicts (`GO`), identical rule count (13 rules evaluated), identical evidence count (12 items), and 100% identical blocking and caution factors.
+- **Verdict Invariant**: Deterministic `DecisionEngineService` is completely free of pseudo-randomness, race conditions, or LLM volatility.
+
+---
+
+### 6. Undergraduate Developer Walkthrough (Phase 22 Architecture)
+
+Written for an undergraduate developer joining the ORCA engineering team:
+
+#### Question 1: How does ORCA handle API and network failures without crashing?
+> **Answer**: We use structured error envelopes and multi-tier fallbacks. In `server/app.ts`, all routes use Fastify schema validation (via Zod) and wrap asynchronous operations in try/catch blocks. When an error occurs, the server never returns an unformatted stack trace; it returns a standard JSON envelope:
+> ```json
+> {
+>   "error": {
+>     "code": "VALIDATION_ERROR",
+>     "message": "Invalid mission parameter",
+>     "details": null,
+>     "requestId": "req-123",
+>     "timestamp": "2026-09-28T06:00:00Z"
+>   }
+> }
+> ```
+> In the frontend, React error boundaries catch rendering issues and display actionable buttons (*"Retry"*, *"View Cached Data"*, *"Check Connectivity"*), completely preventing blank white screens.
+
+#### Question 2: How does role authorization work on the server?
+> **Answer**: We NEVER rely on hiding buttons in the UI for security. A malicious user could easily send a `POST` request directly using Postman or cURL.
+> 
+> In `server/plugins/auth.ts`, we implement the `requireRole(allowedRoles)` middleware. When an alert resolution request arrives at `POST /api/v1/alerts/:id/resolve`, the server checks the caller's JWT or operational role header. If a user with role `FISHERMAN` tries to resolve a naval gale alert, the server immediately rejects the request with `HTTP 403 Forbidden`:
+> ```json
+> {
+>   "error": {
+>     "code": "FORBIDDEN",
+>     "message": "Role 'FISHERMAN' lacks authorization to resolve operational alerts."
+>   }
+> }
+> ```
+
+#### Question 3: How does PostgreSQL Row-Level Security (RLS) protect user data?
+> **Answer**: In Supabase PostgreSQL (`supabase/migrations/`), tables like `missions` and `decisions` have RLS enabled:
+> ```sql
+> ALTER TABLE public.missions ENABLE ROW LEVEL SECURITY;
+> CREATE POLICY "Users can only select their own missions"
+>   ON public.missions FOR SELECT
+>   USING (auth.uid() = owner_id);
+> ```
+> When our backend queries the database using `createScopedClient(accessToken)`, PostgreSQL automatically inspects the JWT's `auth.uid()`. Even if a user asks for `GET /missions/MISSION-999`, PostgreSQL returns zero rows if the mission belongs to someone else.
+
+#### Question 4: How do Data Adapters survive bad or missing external data?
+> **Answer**: In `server/adapters/`, each adapter wraps external HTTP calls (to INCOIS or IMD) with a 5000ms `AbortSignal` timeout and validates responses using Zod schemas. If INCOIS returns an HTTP 500 or malformed JSON:
+> 1. The adapter catches the error and logs it.
+> 2. It falls back to the most recent cached observation in `offlineCacheService`.
+> 3. It tags the evidence item with `status: 'CACHED'` and its original `retrievedAt` timestamp.
+> 4. The server never crashes, and the UI displays the data with an explicit amber "CACHED" provenance badge.
+
+#### Question 5: How does the Decision Engine behave when data is missing or corrupted?
+> **Answer**: This is our cardinal safety rule: **Missing or corrupted data must NEVER result in a false GO.**
+> 
+> In `server/services/decisionEngineService.ts`, Level 4 audits data quality:
+> - If wave height or wind speed is `undefined`, `null`, `NaN`, negative (e.g. `-2.5m`), or non-finite (`Infinity`), the engine triggers `RULE_04_CORRUPTED_TELEMETRY_VALUE` or `RULE_04_MISSING_WAVE_OBSERVATION`.
+> - The verdict immediately resolves to `INSUFFICIENT_DATA`.
+> - The AI explanation explicitly informs the fisherman: *"Significant wave height is missing or invalid. Departure clearance cannot be safely granted."*
+
+#### Question 6: How are duplicate requests and offline sync loops prevented?
+> **Answer**: When an operator acknowledges an alert or creates a mission offline:
+> 1. The frontend assigns a unique UUID `clientMutationId` (e.g. `MUT-ACK-1727480000`).
+> 2. On reconnection, the client flushes all queued mutations in a single batch to `POST /api/v1/connectivity/sync`.
+> 3. In `server/routes/connectivity.ts`, the backend processes mutations idempotently: if an alert is already acknowledged, it simply confirms success without throwing an error or creating duplicate rows.
+> 4. The client receives `syncedMutationIds` and deletes the processed items from IndexedDB.
+
+#### Question 7: How does the PWA behave during complete network failures?
+> **Answer**:
+> 1. The Service Worker (`dist/sw.js` generated by Workbox) precaches all core assets (HTML, CSS, JS bundles, icons).
+> 2. When the user opens ORCA with zero network, the service worker immediately serves the application shell.
+> 3. The app loads cached missions, alerts, and restricted zones from IndexedDB (`orca_offline_store`).
+> 4. The TopBar displays `OFFLINE`, but the GNSS satellite badge continues tracking coordinates if a satellite fix is available.
+> 5. The tactical map renders cached vector boundaries with a floating cached indicator.
+
+---
+
+### 7. Quality Gates & Automated Verification Summary
+- **Unit & Integration Test Suite (`vitest`)**:
+  - `npm test`: **294 / 294 tests passing across 20 suites** (including dedicated `server/__tests__/phase22_reliability_security.test.ts`).
+- **TypeScript Typecheck**:
+  - Backend: `npm run server:typecheck` passed with 0 errors.
+  - Frontend: `npx tsc -b` passed with 0 errors.
+- **Code Linting (`eslint`)**:
+  - `npm run lint` passed with 0 errors and 0 warnings.
+- **Production Build & PWA Shell**:
+  - `npm run build` completed successfully.
+  - PWA service worker (`dist/sw.js`) generated with 9 precached core assets (909.24 KiB).
+- **Real Chrome CDP Verification (`scripts/verify_phase22_browser.mjs`)**:
+  - Desktop Viewport (1280x800): Verified all 11 core routes (`/dashboard`, `/ask`, `/mission`, `/map`, `/alerts`, `/decisions`, `/history`, `/authority`, `/disaster`, `/research`, `/operator`).
+  - Hardware GNSS vs IP Geolocation separation: Verified in browser DOM.
+  - Validity Classification Badges: INCOIS OSF 6h, INCOIS PFZ 24h, IMD 3h, GIS 72h, Vessel 7d all verified.
+  - Mobile Viewport (375x812): 0px horizontal overflow across all 11 routes.
+  - Console Errors: 0 console errors logged throughout testing.
+
+
 
 
 

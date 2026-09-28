@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Anchor, 
   ArrowRight, 
   Lock, 
   Mail, 
   ShieldCheck 
 } from 'lucide-react';
-import { APP_NAME, SIH_PROBLEM_STATEMENT } from '@/lib/constants';
+import { SIH_PROBLEM_STATEMENT } from '@/lib/constants';
 import { ROUTES } from '@/routes';
 import { useRole } from '@/hooks/useRole';
 import { AVAILABLE_ROLES, ROLE_CONFIGS } from '@/config/roles';
 import type { UserRole } from '@/types/contract';
+
+import { OrcaLogo } from '@/components/common/OrcaLogo';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -33,18 +34,8 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-screen w-full bg-[#F5F9FC] text-[#102B40] flex flex-col justify-between p-4 sm:p-6 md:p-8 relative select-none">
       {/* Top Header */}
       <header className="w-full max-w-5xl mx-auto flex items-center justify-between z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#E8F4FA] border border-[#CFE6F3] flex items-center justify-center text-[#147FB3]">
-            <Anchor className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-display-decision text-xl font-bold tracking-tight text-[#123B5D]">
-              {APP_NAME}
-            </span>
-            <span className="block text-[10px] text-[#5A7C99]">
-              Marine Decision Intelligence
-            </span>
-          </div>
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(ROUTES.HOME)}>
+          <OrcaLogo size="md" showText={true} />
         </div>
 
         <div className="text-[11px] px-3 py-1 rounded-lg bg-white border border-[#D8E5EC] text-[#5A7C99] hidden sm:block shadow-xs">

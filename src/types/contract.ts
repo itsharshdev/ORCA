@@ -854,7 +854,17 @@ export type EvidenceCategory = 'SAFETY' | 'VESSEL' | 'OCEAN' | 'WEATHER' | 'GIS'
 export type SpatialRelevanceLevel = 'HIGH' | 'MEDIUM' | 'LOW' | 'NOT_APPLICABLE';
 export type TemporalRelevanceLevel = 'CURRENT' | 'VALID_FOR_MISSION' | 'PARTIALLY_VALID' | 'EXPIRED' | 'UNKNOWN';
 export type DataQualityGrade = 'GOOD' | 'DEGRADED' | 'POOR' | 'UNKNOWN';
-export type FreshnessState = 'FRESH' | 'AGING' | 'STALE' | 'EXPIRED' | 'UNAVAILABLE' | 'DEMO' | 'ACCESS_PENDING';
+export type FreshnessState =
+  | 'LIVE'
+  | 'FRESH'
+  | 'CACHED'
+  | 'AGING'
+  | 'STALE'
+  | 'EXPIRED'
+  | 'UNAVAILABLE'
+  | 'ACCESS_PENDING'
+  | 'DEMO'
+  | 'DETERMINISTIC';
 export type EvidenceDecisionImpact = 'POSITIVE' | 'NEUTRAL' | 'CAUTION' | 'CRITICAL_BLOCKER';
 export type ConfidenceLevel = 'HIGH' | 'MODERATE' | 'LOW';
 
@@ -1433,5 +1443,133 @@ export interface AlertFilterOptions {
   vesselId?: string;
   role?: UserRole | string;
 }
+
+// ============================================================================
+// 18. PHASE 21: OFFLINE / DEGRADED CONNECTIVITY & PROVENANCE CACHE CONTRACTS
+// ============================================================================
+
+/**
+ * Formal 4-state connectivity model per Phase 21 North Star.
+ * CONNECTED: Full bidirectional Internet & backend reachability.
+ * DEGRADED: Partial reachability, timeout, high latency, or cellular dropout.
+ * OFFLINE: Zero Internet connectivity (local shell & cached store active).
+ * SAFETY_MESSAGE_RECEIVED: Emergency broadcast received (e.g. NavIC) while data network is degraded/offline.
+ */
+export type ConnectivityState =
+  | 'CONNECTED'
+  | 'DEGRADED'
+  | 'OFFLINE'
+  | 'SAFETY_MESSAGE_RECEIVED';
+
+/**
+ * Physical network transport bearer.
+ */
+export type NetworkBearer =
+  | 'CELLULAR_4G_5G'
+  | 'CELLULAR_2G'
+  | 'NAVIC_RECEIVER'
+  | 'SATELLITE_MSG'
+  | 'BLUETOOTH_MESH'
+  | 'NONE';
+
+/**
+ * Hardware GNSS/GPS sensor fix state (strictly separated from Internet connectivity and IP geolocation).
+ * - GNSS_FIX_ACQUIRED: Verified satellite 3D fix from orbital constellation (NavIC / GPS).
+ * - SEARCHING: GNSS receiver actively acquiring satellite orbital ephemeris.
+ * - SENSOR_UNAVAILABLE: No dedicated hardware GNSS receiver detected on device.
+ * - IP_GEOLOCATION_ONLY: Approximate location estimated from cellular/Wi-Fi/IP (NOT satellite GNSS).
+ * - SIMULATED: Virtualized testbed satellite fix.
+ */
+export type GpsStatus =
+  | 'GNSS_FIX_ACQUIRED'
+  | 'SEARCHING'
+  | 'SENSOR_UNAVAILABLE'
+  | 'IP_GEOLOCATION_ONLY'
+  | 'SIMULATED'
+  | 'FIX_ACQUIRED'
+  | 'UNAVAILABLE';
+
+/**
+ * Emergency broadcast message received via NavIC or coastal safety broadcast.
+ */
+export interface SafetyBroadcastMessage {
+  id: string;
+  sender: string;
+  headline: string;
+  body: string;
+  severity: 'CRITICAL' | 'WARNING' | 'ADVISORY';
+  broadcastBearer: 'NAVIC_SATELLITE' | 'VHF_COASTAL_RADIO_RELAY' | 'EMERGENCY_CELL_BROADCAST';
+  receivedAt: string;
+  validUntil?: string | null;
+}
+
+/**
+ * Comprehensive connectivity status contract.
+ */
+export interface ConnectivityStatus {
+  state: ConnectivityState;
+  bearer: NetworkBearer | string;
+  isOnline: boolean;
+  apiReachable: boolean;
+  gpsStatus: GpsStatus | string;
+  lastSuccessfulContact: string | null;
+  lastSuccessfulSync: string | null;
+  pendingSyncCount: number;
+  safetyMessage?: SafetyBroadcastMessage | null;
+  isSimulated?: boolean;
+  sourceReachability?: Record<string, string>;
+  sources?: Record<string, unknown>;
+  serverTimestamp?: string;
+  status?: string;
+}
+
+/**
+ * Cache envelope preserving complete provenance metadata for offline records.
+ */
+export interface OfflineCachedItem<T = unknown> {
+  id: string;
+  entityType: 'decision' | 'mission' | 'alert' | 'observation' | 'vessel' | 'restricted_zone';
+  data: T;
+  source: string;
+  dataset?: string;
+  retrievedAt: string;
+  observedAt: string;
+  validUntil: string | null;
+  cachedAt: string;
+  status: FreshnessState;
+  qualityLevel: 'HIGH' | 'MEDIUM' | 'LOW' | 'DEGRADED';
+}
+
+/**
+ * Queued offline mutation for reconnection synchronization.
+ */
+export interface SyncMutationItem {
+  id: string;
+  mutationType: 'ACKNOWLEDGE_ALERT' | 'RESOLVE_ALERT' | 'CREATE_MISSION' | 'UPDATE_MISSION' | 'TELEMETRY_LOG';
+  payload: Record<string, unknown>;
+  createdAt: string;
+  attempts: number;
+  lastAttemptAt?: string;
+  error?: string;
+}
+
+/**
+ * Synchronization batch envelope for POST /api/v1/connectivity/sync.
+ */
+export interface SyncBatchRequest {
+  clientId: string;
+  mutations: SyncMutationItem[];
+  connectivityState: ConnectivityState;
+  lastSyncTimestamp?: string | null;
+}
+
+export interface SyncBatchResponse {
+  syncedMutationIds: string[];
+  failedMutations: Array<{ id: string; error: string }>;
+  serverTimestamp: string;
+  state: ConnectivityState;
+  message: string;
+}
+
 
 
